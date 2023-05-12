@@ -1,2 +1,2 @@
 # go-arc-sdk
-Lightweight types, utilities, and protobufs
+This repo contains docs, protobufs, and Go types that allow content creators and publishers to build arc.App implementations in Go.

@@ -30,20 +30,20 @@ func Zero(buf []byte) {
 	}
 }
 
-// Marshalable generalizes efficient serialization
-type Marshalable interface {
+// Marshaler generalizes efficient serialization
+type Marshaler interface {
 	Marshal() ([]byte, error)
 	MarshalToSizedBuffer([]byte) (int, error)
 	Size() int
 }
 
-// Unmarshalable used to generalize deserialization
-type Unmarshalable interface {
+// Unmarshaler used to generalize deserialization
+type Unmarshaler interface {
 	Unmarshal([]byte) error
 }
 
 // SmartMarshal marshals the given item to the given buffer.  If there is not enough space a new one is allocated.  The purpose of this is to reuse a scrap buffer.
-func SmartMarshal(item Marshalable, tryDst []byte) []byte {
+func SmartMarshal(item Marshaler, tryDst []byte) []byte {
 	bufSz := cap(tryDst)
 	encSz := item.Size()
 	if encSz > bufSz {
@@ -63,7 +63,7 @@ func SmartMarshal(item Marshalable, tryDst []byte) []byte {
 // SmartMarshalToBase32 marshals the given item and then encodes it into a base32 (ASCII) byte string.
 //
 // If tryDst is not large enough, a new buffer is allocated and returned in its place.
-func SmartMarshalToBase32(item Marshalable, tryDst []byte) []byte {
+func SmartMarshalToBase32(item Marshaler, tryDst []byte) []byte {
 	bufSz := cap(tryDst)
 	binSz := item.Size()
 	{
@@ -109,7 +109,7 @@ func SmartDecodeFromBase32(srcBase32 []byte, tryDst []byte) ([]byte, error) {
 
 // Buf is a flexible buffer designed for reuse.
 type Buf struct {
-	Unmarshalable
+	Unmarshaler
 
 	Bytes []byte
 }

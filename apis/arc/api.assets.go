@@ -7,6 +7,7 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/process"
 )
 
+// Options when publishing an asset
 type PublishOpts struct {
 	Expiry time.Duration // If <= 0, the publisher chooses the expiration period
 }
@@ -20,7 +21,7 @@ type AssetPublisher interface {
 // MediaAsset wraps any data asset that can be streamed and is typically audio or video.
 type MediaAsset interface {
 
-	// Helpful short description of this asset
+	// Short name or description of this asset for logging
 	Label() string
 
 	// Returns the media / MIME type of this asset
@@ -35,6 +36,7 @@ type MediaAsset interface {
 }
 
 // AssetReader provides read and seek access to its parent MediaAsset.
+//
 // Close() should be called when the reader is no longer needed or when its parent MediaAsset becomes unavailable.
 type AssetReader interface {
 	io.ReadSeekCloser

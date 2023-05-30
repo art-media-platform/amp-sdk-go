@@ -6,7 +6,6 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/process"
 )
 
-
 type CellID uint64
 
 // U64 is a convenience method that converts a CellID to a uint64.
@@ -18,6 +17,8 @@ type Host interface {
 	process.Context
 
 	HostPlanet() Planet
+
+	Registry() Registry
 
 	// StartNewSession creates a new HostSession and binds its Msg transport to the given steam.
 	StartNewSession(parent HostService, via ServerStream) (HostSession, error)
@@ -45,7 +46,6 @@ type HostService interface {
 	GracefulStop()
 }
 
-
 // HostSession in an open session instance with a Host.
 // Closing is initiated via Context.Close().
 type HostSession interface {
@@ -60,7 +60,6 @@ type HostSession interface {
 	LoggedIn() User
 }
 
-
 // User + HostSession --> UserSession?
 type User interface {
 	Session() HostSession
@@ -74,10 +73,8 @@ type User interface {
 
 	// Gets the currently active AppContext for an AppID.
 	// If does not exist and autoCreate is set, a new AppContext is created, started, and returned.
-	GetAppContext(appID string, autoCreate bool) (AppContext, error)
+	GetAppContext(appID UID, autoCreate bool) (AppContext, error)
 }
-
-
 
 // ServerStream wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
 // This is intended to be implemented by a grpc and other transport layers.
@@ -107,7 +104,6 @@ type CellSub interface {
 	PushMsg(msg *Msg) error
 }
 
-
 // Planet is content and governance enclosure.
 // A Planet is 1:1 with a KV database model, which works out well for efficiency and performance.
 type Planet interface {
@@ -131,8 +127,6 @@ type Planet interface {
 	//blob.Store
 }
 
-
-
 type CellContext interface {
 
 	// PinCell pins a requested cell, typically specified by req.PinCell.
@@ -140,19 +134,18 @@ type CellContext interface {
 	PinCell(req *CellReq) (AppCell, error)
 }
 
-
 type AppContext interface {
 	process.Context // Each app instance has a process.Context
 	AssetPublisher  // Allows an app to publish assets for client consumption
 	User() User     // Access to user operations and io
-	CellContext     // How to pin cells
+	CellContext     // How to pin root cells
 
 	// Atomically issues a new and unique ID that will remain globally unique for the duration of this session.
 	// An ID may still expire, go out of scope, or otherwise become meaningless.
 	IssueCellID() CellID
 
-	// Unique state scope ID for this app instance -- defaults to AppID
-	StateScope() string
+	// Unique state scope ID for this app instance -- defaults to the app's UID.
+	StateScope() []byte
 
 	// Uses reflection to build and register (as necessary) an AttrSchema for a given a ptr to a struct.
 	GetSchemaForType(typ reflect.Type) (*AttrSchema, error)
@@ -206,5 +199,3 @@ type AppCell interface {
 	// Called on the goroutine owned by the the target CellID.
 	PushCellState(req *CellReq, opts PushCellOpts) error
 }
-
-

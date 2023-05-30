@@ -380,7 +380,7 @@ message AttrSchema {
     
     // ScopeID specifies an app or scope that should handle this schema's requests.
     // The reserved value "." denotes the app / scope ID that has registered for AttrSchema.CellDataModel (typical).
-    string              ScopeID = 1;
+    //string              ScopeID = 1;
     
     // CellDataModel identifies a data model this schema conforms to, in effect it specifies a scope for the attached Attrs.
     // This URI names a complete data protocol / specification that this collection of AttrSpecs conforms to (and is a subset of).

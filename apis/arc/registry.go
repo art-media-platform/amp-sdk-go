@@ -1,11 +1,22 @@
 package arc
 
-import "sync"
+import (
+	"fmt"
+	"strings"
+	"sync"
+)
+
+func newRegistry() Registry {
+	return &registry{
+		appsByUID:   make(map[UID]*AppModule),
+		appsByModel: make(map[string]*AppModule),
+	}
+}
 
 // Implements arc.Registry
 type registry struct {
 	mu          sync.RWMutex
-	appsByID    map[string]*AppModule
+	appsByUID   map[UID]*AppModule
 	appsByModel map[string]*AppModule // TODO: index by symbol.ID and move into TypeRegistry?
 }
 
@@ -14,10 +25,11 @@ func (reg *registry) RegisterApp(app *AppModule) error {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 
-	if app.AppID == "" {
-		return ErrInvalidAppID
+	// Reject if URI does not conform to standards for AppModule.AppURI
+	if len(strings.Split(app.URI, "/")) != 4 {
+		return ErrInvalidAppURI
 	}
-	reg.appsByID[app.AppID] = app
+	reg.appsByUID[app.UID] = app
 
 	for ID := range app.DataModels.ModelsByID {
 		if ID != "" {
@@ -29,19 +41,35 @@ func (reg *registry) RegisterApp(app *AppModule) error {
 }
 
 // Implements arc.Registry
-func (reg *registry) GetAppByID(appID string) (*AppModule, error) {
+func (reg *registry) GetAppByUID(appUID UID) (*AppModule, error) {
 	reg.mu.RLock()
 	defer reg.mu.RUnlock()
-	app := reg.appsByID[appID]
+
+	app := reg.appsByUID[appUID]
+
+	fmt.Printf("app: %v\n", app)
 	if app == nil {
-		return nil, ErrCode_AppNotFound.Errorf("App not found: %s", appID)
+		return nil, ErrCode_AppNotFound.Errorf("app not found: %v", appUID)
 	} else {
 		return app, nil
 	}
 }
 
 // Implements arc.Registry
-func (reg *registry) SelectAppForSchema(schema *AttrSchema) (*AppModule, error) {
+func (reg *registry) GetAppByURI(appURI string) (*AppModule, error) {
+	reg.mu.RLock()
+	defer reg.mu.RUnlock()
+
+	for _, app := range reg.appsByUID {
+		if app.URI == appURI {
+			return app, nil
+		}
+	}
+	return nil, ErrCode_AppNotFound.Errorf("app not found: %q", appURI)
+}
+
+// Implements arc.Registry
+func (reg *registry) GetAppForSchema(schema *AttrSchema) (*AppModule, error) {
 	if schema == nil {
 		return nil, ErrCode_AppNotFound.Errorf("missing schema")
 	}
@@ -49,16 +77,9 @@ func (reg *registry) SelectAppForSchema(schema *AttrSchema) (*AppModule, error) 
 	reg.mu.RLock()
 	defer reg.mu.RUnlock()
 
-	if schema.ScopeID != ImpliedScopeForDataModel {
-		app := reg.appsByID[schema.ScopeID]
-		if app != nil {
-			return app, nil
-		}
-	}
-
 	app := reg.appsByModel[schema.CellDataModel]
 	if app == nil {
-		return nil, ErrCode_AppNotFound.Errorf("App not found for schema: %s", schema.SchemaDesc())
+		return nil, ErrCode_AppNotFound.Errorf("app not found for schema: %s", schema.SchemaDesc())
 	}
 
 	return app, nil

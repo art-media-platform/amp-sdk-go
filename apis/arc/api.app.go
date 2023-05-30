@@ -3,9 +3,17 @@ package arc
 // AppModule declares a 3rd-party module this is registered with an archost.
 // An app is invoked by its AppID directly or a client requesting a data model this app declares to support.
 type AppModule struct {
-	AppID        string       // "{domain_name}/{module_identifier}"
-	Version      string       // "v{MAJOR}.{MINOR}.{REV}"
-	Dependencies []string     // App URIs this app may need to invoke
+
+	// URI identifies this app using the form "{PublisherID}/{FamilyID}/{AppNameID}/v{MajorVers}" -- e.g. "arcspace.systems/amp/filesys/v1"
+	//   - PublisherID: typically a publicly registered domain name of the publisher of this app
+	//   - FamilyID:    encompassing namespace ID used to group related apps and content
+	//   - AppNameID:   uniquely identifies this app within its parent family and domain.
+	//   - MajorVers:   an integer starting with 1 that is incremented when a breaking change is made to the app's API.
+	URI          string
+	UID          UID          // Universally unique and persistent ID for this module
+	Desc         string       // Human-readable description of this app
+	Version      string       // "v{MajorVers}.{MinorID}.{RevID}"
+	Dependencies []UID        // Module UIDs this app may access via GetAppContext()
 	DataModels   DataModelMap // Data models that this app defines and handles.
 
 	// Called when an App is invoked on an active User session and is not yet running.
@@ -61,24 +69,23 @@ type DataModelMap struct {
 	ModelsByID map[string]DataModel // Maps a data model ID to a data model definition
 }
 
-
-// A Registry is a mapping of IDs to app modules.  It is safe to access from multiple goroutines.
+// Registry maps an app ID to an AppModule.    It is safe to access from multiple goroutines.
 type Registry interface {
 
-	// Registers an app for invocation
+	// Registers an app by its UUID, URI, and schemas it supports.
 	RegisterApp(app *AppModule) error
 
-	// Looks-up an app by an ID / URI
-	GetAppByID(appID string) (*AppModule, error)
+	// Looks-up an app by UUID
+	GetAppByUID(appUID UID) (*AppModule, error)
+
+	// Looks-up an app by URI
+	GetAppByURI(appURI string) (*AppModule, error)
 
 	// Selects the app that best handles the given schema
-	SelectAppForSchema(schema *AttrSchema) (*AppModule, error)
+	GetAppForSchema(schema *AttrSchema) (*AppModule, error)
 }
 
 // NewRegistry returns a new Registry
 func NewRegistry() Registry {
-	return &registry{
-		appsByID:    make(map[string]*AppModule),
-		appsByModel: make(map[string]*AppModule),
-	}
+	return newRegistry()
 }

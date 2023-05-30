@@ -214,7 +214,7 @@ func (tid TID) CopyNext(inTID TID) {
 }
 
 func (schema *AttrSchema) SchemaDesc() string {
-	return path.Join(schema.ScopeID, schema.CellDataModel, schema.SchemaName)
+	return path.Join(schema.CellDataModel, schema.SchemaName)
 }
 
 func (schema *AttrSchema) LookupAttr(attrURI string) *AttrSpec {
@@ -226,15 +226,10 @@ func (schema *AttrSchema) LookupAttr(attrURI string) *AttrSpec {
 	return nil
 }
 
-// func (schema *AttrSchema) SelectAppForSchema() (*AppModule, error) {
-// 	return gAppRegistry.SelectAppForSchema(schema)
-// }
-
-func MakeSchemaForType(scopeID string, valTyp reflect.Type) (*AttrSchema, error) {
+func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 	numFields := valTyp.NumField()
 
 	schema := &AttrSchema{
-		ScopeID:       scopeID,
 		CellDataModel: valTyp.Name(),
 		SchemaName:    "on-demand-reflect",
 		Attrs:         make([]*AttrSpec, 0, numFields),

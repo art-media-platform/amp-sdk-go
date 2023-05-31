@@ -7,11 +7,11 @@ type UID [16]byte
 // Forms an arc.UID explicitly from two uint64 values.
 func FormUID(n0, n1 uint64) UID {
 	uid := UID{}
-	shift := uint(0)
+	shift := uint(56)
 	for i := 0; i < 8; i++ {
 		uid[i+0] = byte(n0 >> shift)
 		uid[i+8] = byte(n1 >> shift)
-		shift += 8
+		shift -= 8
 	}
 	return uid
 }

@@ -1,7 +1,6 @@
 package arc
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 )
@@ -46,10 +45,8 @@ func (reg *registry) GetAppByUID(appUID UID) (*AppModule, error) {
 	defer reg.mu.RUnlock()
 
 	app := reg.appsByUID[appUID]
-
-	fmt.Printf("app: %v\n", app)
 	if app == nil {
-		return nil, ErrCode_AppNotFound.Errorf("app not found: %v", appUID)
+		return nil, ErrCode_AppNotFound.Errorf("app not found: %s", appUID)
 	} else {
 		return app, nil
 	}
@@ -81,6 +78,5 @@ func (reg *registry) GetAppForSchema(schema *AttrSchema) (*AppModule, error) {
 	if app == nil {
 		return nil, ErrCode_AppNotFound.Errorf("app not found for schema: %s", schema.SchemaDesc())
 	}
-
 	return app, nil
 }

@@ -5,10 +5,12 @@ import (
 )
 
 var (
-	ErrStreamClosed  = ErrCode_Disconnected.Error("stream closed")
+	ErrNotConnected  = ErrCode_NotConnected.Error("not connected")
+	ErrStreamClosed  = ErrCode_NotConnected.Error("stream closed")
 	ErrCellNotFound  = ErrCode_CellNotFound.Error("cell not found")
 	ErrShuttingDown  = ErrCode_ShuttingDown.Error("shutting down")
 	ErrInvalidAppURI = ErrCode_AppNotFound.Error("invalid app URI")
+	ErrNoAuthToken   = ErrCode_AuthFailed.Error("no auth token")
 )
 
 // Error makes our custom error type conform to a standard Go error

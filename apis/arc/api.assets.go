@@ -37,7 +37,7 @@ type MediaAsset interface {
 
 // AssetReader provides read and seek access to its parent MediaAsset.
 //
-// Close() should be called when the reader is no longer needed or when its parent MediaAsset becomes unavailable.
+// Close() should be called when an AssetReader is no longer needed (external) or when its parent MediaAsset becomes unavailable (internal)..
 type AssetReader interface {
 	io.ReadSeekCloser
 }

@@ -666,9 +666,10 @@ enum ErrCode {
     ErrCode_Unimplemented               = 5003;
     ErrCode_ReqCanceled                 = 5004;
     ErrCode_ShuttingDown                = 5005;
-    ErrCode_Disconnected                = 5006;
-    ErrCode_InvalidLogin                = 5007;
-    ErrCode_SessionExpired              = 5008;
+    ErrCode_NotConnected                = 5006;
+    ErrCode_AuthFailed                  = 5007;
+    ErrCode_LoginFailed                 = 5008;
+    ErrCode_SessionExpired              = 5009;
     
     ErrCode_ReqNotFound                 = 5010;
     ErrCode_InvalidReq                  = 5020;

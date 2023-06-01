@@ -1,15 +1,8 @@
 package arc
 
 import (
-	"reflect"
-
 	"github.com/arcspace/go-arc-sdk/stdlib/process"
 )
-
-type CellID uint64
-
-// U64 is a convenience method that converts a CellID to a uint64.
-func (ID CellID) U64() uint64 { return uint64(ID) }
 
 // Host is the highest level controller.
 // Child processes attach to it and start new host sessions as needed.
@@ -21,7 +14,7 @@ type Host interface {
 	Registry() Registry
 
 	// StartNewSession creates a new HostSession and binds its Msg transport to the given steam.
-	StartNewSession(parent HostService, via ServerStream) (HostSession, error)
+	StartNewSession(parent HostService, via Transport) (HostSession, error)
 }
 
 // HostService attaches to a arc.Host as a child process, extending host functionality.
@@ -76,9 +69,9 @@ type User interface {
 	GetAppContext(appID UID, autoCreate bool) (AppContext, error)
 }
 
-// ServerStream wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
+// Transport wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
 // This is intended to be implemented by a grpc and other transport layers.
-type ServerStream interface {
+type Transport interface {
 
 	// Describes this stream
 	Desc() string
@@ -88,7 +81,7 @@ type ServerStream interface {
 
 	// SendMsg sends a Msg to the remote client.
 	// ErrStreamClosed is used to denote normal stream close.
-	// Like grpc.ServerStream.SendMsg(), on exit, the Msg has been copied and so can be reused.
+	// Like grpc.Transport.SendMsg(), on exit, the Msg has been copied and so can be reused.
 	SendMsg(m *Msg) error
 
 	// RecvMsg blocks until it receives a Msg or the stream is done.
@@ -100,7 +93,7 @@ type ServerStream interface {
 type CellSub interface {
 
 	// Sets msg.ReqID and pushes the given msg to client, blocking until "complete" (queued) or canceled.
-	// This msg is reclaimed after it is sent, so it should be accessed following this call.
+	// This msg is reclaimed after it is sent, so it should not be accessed following this call.
 	PushMsg(msg *Msg) error
 }
 
@@ -127,42 +120,18 @@ type Planet interface {
 	//blob.Store
 }
 
-type CellContext interface {
+// CellPinner accepts requests to pin cells.
+type CellPinner interface {
 
 	// PinCell pins a requested cell, typically specified by req.PinCell.
 	// req.KwArgs and ChildSchemas can also be used to specify the cell to pin.
-	PinCell(req *CellReq) (AppCell, error)
+	PinCell(req *CellReq) (Cell, error)
+	
+	// PinCell(child arc.CellID, req arc.CellContext) (arc.Cell, error) {
+
 }
 
-type AppContext interface {
-	process.Context // Each app instance has a process.Context
-	AssetPublisher  // Allows an app to publish assets for client consumption
-	User() User     // Access to user operations and io
-	CellContext     // How to pin root cells
-
-	// Atomically issues a new and unique ID that will remain globally unique for the duration of this session.
-	// An ID may still expire, go out of scope, or otherwise become meaningless.
-	IssueCellID() CellID
-
-	// Unique state scope ID for this app instance -- defaults to the app's UID.
-	StateScope() []byte
-
-	// Uses reflection to build and register (as necessary) an AttrSchema for a given a ptr to a struct.
-	GetSchemaForType(typ reflect.Type) (*AttrSchema, error)
-
-	// Starts a child process
-	// StartChild(task *process.Task) (process.Context, error)
-
-	// Loads the data stored at the given key, appends it to the given buffer, and returns the result (or an error).
-	// The given subKey is scoped by both the app and the user so key collision with other users or apps is not possible.
-	// Typically used by apps for holding high-level state or settings.
-	GetAppValue(subKey string) (val []byte, err error)
-
-	// Write analog for GetAppValue()
-	PutAppValue(subKey string, val []byte) error
-}
-
-// PushCellOpts specifies how an AppCell should be pushed to the client
+// PushCellOpts specifies how an Cell should be pushed to the client
 type PushCellOpts uint32
 
 const (
@@ -173,18 +142,23 @@ const (
 func (opts PushCellOpts) PushAsParent() bool { return opts&PushAsParent != 0 }
 func (opts PushCellOpts) PushAsChild() bool  { return opts&PushAsChild != 0 }
 
+
+type CellID uint64
+
+// U64 is a convenience method that converts a CellID to a uint64.
+func (ID CellID) U64() uint64 { return uint64(ID) }
+
 // type CellInfo struct {
 // 	CellID
 // 	CellDataModel string
 // 	Label         string
 // }
 
-// PinnedCell?
-// AppCell is how an App offers a cell instance to the planet runtime.
-type AppCell interface {
+// Cell is how an AppModule instance (AppRuntime) wraps a pinned cell instance to the archost runtime and thus clients.
+type Cell interface {
 	//process.Context    // Started as sub of the app's AppContext
 
-	CellContext
+	CellPinner
 
 	//Info() CellInfo
 

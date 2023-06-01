@@ -1,7 +1,16 @@
 package arc
 
+import (
+	"reflect"
+
+	"github.com/arcspace/go-arc-sdk/stdlib/process"
+)
+
 // AppModule declares a 3rd-party module this is registered with an archost.
-// An app is invoked by its AppID directly or a client requesting a data model this app declares to support.
+//
+// An app can be invoked by:
+//   - a client pinning a cell with a data model that the app handles
+//   - a client or other app invoking its UID or URI directly
 type AppModule struct {
 
 	// URI identifies this app using the form "{PublisherID}/{FamilyID}/{AppNameID}/v{MajorVers}" -- e.g. "arcspace.systems/amp/filesys/v1"
@@ -17,18 +26,50 @@ type AppModule struct {
 	DataModels   DataModelMap // Data models that this app defines and handles.
 
 	// Called when an App is invoked on an active User session and is not yet running.
-	// Msg processing is blocked until this returns -- only AppRuntime calls should block.
 	NewAppInstance func(ctx AppContext) (AppRuntime, error)
+}
+
+// AppContext encapsulates execution of an AppRuntime.
+//
+// An AppModule retains the AppContext it is given via NewAppInstance() for:
+//   - archost operations (e.g. resolve type schemas, publish assets for client consumption -- see AppContext)
+//   - having a context to select{} against (for graceful shutdown)
+type AppContext interface {
+	process.Context // Each app instance has a process.Context
+	AssetPublisher  // Allows an app to publish assets for client consumption
+	User() User     // Access to user operations and io
+	CellPinner      // How to pin root cells
+
+	// Atomically issues a new and unique ID that will remain globally unique for the duration of this session.
+	// An ID may still expire, go out of scope, or otherwise become meaningless.
+	IssueCellID() CellID
+
+	// Unique state scope ID for this app instance -- defaults to the app's UID.
+	StateScope() []byte
+
+	// Uses reflection to build and register (as necessary) an AttrSchema for a given a ptr to a struct.
+	GetSchemaForType(typ reflect.Type) (*AttrSchema, error)
+
+	// Starts a child process
+	// StartChild(task *process.Task) (process.Context, error)
+
+	// Loads the data stored at the given key, appends it to the given buffer, and returns the result (or an error).
+	// The given subKey is scoped by both the app and the user so key collision with other users or apps is not possible.
+	// Typically used by apps for holding high-level state or settings.
+	GetAppValue(subKey string) (val []byte, err error)
+
+	// Write analog for GetAppValue()
+	PutAppValue(subKey string, val []byte) error
 }
 
 // AppRuntime is a runtime-furnished container context for an AppModule instance.
 type AppRuntime interface {
-	CellContext
+	CellPinner
 
 	// Pre: msg.Op == MsgOp_MetaMsg
 	HandleMetaMsg(msg *Msg) (handled bool, err error)
 
-	// Called exactly once when an app is signaled to close.
+	// Called exactly once if / when an app is signaled to close.
 	OnClosing()
 }
 
@@ -47,6 +88,24 @@ type TypeRegistry interface {
 	GetSchemaByID(schemaID int32) (*AttrSchema, error)
 }
 
+// CellContext?
+// CellInvoker? 
+// CellInvoker is a runtime-furnished container context for a pinned Cell.
+type CellClient interface {
+	process.Context
+	
+	// Returns params given by the client for the request bei
+	Params() CellReq 
+	
+	// Fetches the args given by the client when pinning this cell. 
+	KwArgs(name string) []*KwArg
+	
+	// Sets msg.ReqID and pushes the given msg to client, blocking until "complete" (queued) or canceled.
+	// This msg is reclaimed downstream from here, so it should be considered released / inaccessible after this call.
+	PushMsg(msg *Msg) error
+}
+
+// CellContext?
 // PinReq?
 // See api.support.go for CellReq helper methods such as PushMsg.
 type CellReq struct {
@@ -58,11 +117,9 @@ type CellReq struct {
 	ChildSchemas  []*AttrSchema // Client-set schema(s) specifying which child cells (and attrs) should be pushed to the client.
 }
 
-// See AttrSchema.ScopeID in arc.proto
-const ImpliedScopeForDataModel = "."
-
 // type DataModel map[string]*Attr
 type DataModel struct {
+	// TODO
 }
 
 type DataModelMap struct {

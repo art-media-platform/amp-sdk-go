@@ -3,7 +3,6 @@ package arc
 import (
 	"reflect"
 	"sync"
-	"time"
 
 	"github.com/arcspace/go-arc-sdk/stdlib/symbol"
 )
@@ -115,7 +114,7 @@ func (msg *Msg) Reclaim() {
 }
 
 func (msg *Msg) SetValInt(valType ValType, valInt int64) {
-	msg.ValType = valType
+	msg.ValType = int32(valType)
 	msg.ValInt = valInt
 	msg.ValBuf = msg.ValBuf[:0]
 }
@@ -123,7 +122,7 @@ func (msg *Msg) SetValInt(valType ValType, valInt int64) {
 // Sets ValType to the given type and resizes ValBuf to the given size in preparation to receive value data.
 func (msg *Msg) SetupValBuf(valType ValType, sz int) {
 	msg.ValInt = int64(sz)
-	msg.ValType = valType
+	msg.ValType = int32(valType)
 	if sz > cap(msg.ValBuf) {
 		msg.ValBuf = make([]byte, sz, (sz+0x3FF)&^0x3FF)
 	} else {
@@ -137,7 +136,7 @@ func (msg *Msg) SetValBuf(valType ValType, valSrc []byte) {
 	copy(msg.ValBuf, valSrc)
 }
 
-func (msg *Msg) SetVal(val interface{}) {
+func (msg *Msg) setVal(val interface{}) {
 	var err error
 
 	switch v := val.(type) {
@@ -150,16 +149,6 @@ func (msg *Msg) SetVal(val interface{}) {
 
 	case []byte:
 		msg.SetValBuf(ValType_bytes, v)
-
-	case time.Time:
-		msg.SetValInt(ValType_DateTime, int64(ConvertToTimeFS(v)))
-
-	case *AssetRef:
-		msg.SetupValBuf(ValType_AssetRef, v.Size())
-		_, err = v.MarshalToSizedBuffer(msg.ValBuf)
-
-	case TimeFS:
-		msg.SetValInt(ValType_DateTime, int64(v))
 
 	case *Defs:
 		msg.SetupValBuf(ValType_Defs, v.Size())
@@ -199,7 +188,7 @@ func (msg *Msg) LoadVal(dst interface{}) error {
 
 	ok := false
 
-	switch msg.ValType {
+	switch ValType(msg.ValType) {
 
 	case ValType_int:
 		ok = true
@@ -283,7 +272,7 @@ func loadNil(dst interface{}) {
 	case *TID:
 		*v = nil
 	case *PinReq:
-	    *v = PinReq{}
+		*v = PinReq{}
 	case *Defs:
 		*v = Defs{}
 	case *int:
@@ -315,8 +304,45 @@ var gMsgBatchPool = sync.Pool{
 	},
 }
 
-func NewMsgWithValue(value interface{}) *Msg {
-	msg := NewMsg()
-	msg.SetVal(value)
-	return msg
+type AttrStr string
+
+func (v AttrStr) MarshalToMsg(msg *Msg) error {
+	msg.SetValBuf(ValType_bytes, []byte(v))
+	return nil
+}
+
+type AttrBuf []byte
+
+func (v AttrBuf) MarshalToMsg(msg *Msg) error {
+	msg.SetValBuf(ValType_bytes, v)
+	return nil
+}
+
+func (v *AssetRef) MarshalToMsg(msg *Msg) error {
+	msg.SetupValBuf(ValType_AssetRef, v.Size())
+	_, err := v.MarshalToSizedBuffer(msg.ValBuf)
+	return err
+}
+
+func (v TimeFS) MarshalToMsg(msg *Msg) error {
+	msg.SetValInt(ValType_DateTime, int64(v))
+	return nil
+}
+
+func (v *Err) MarshalToMsg(msg *Msg) error {
+	msg.SetupValBuf(ValType_Err, v.Size())
+	_, err := v.MarshalToSizedBuffer(msg.ValBuf)
+	return err
+}
+
+func ErrorToValue(v error) Value {
+	if v == nil {
+		return nil
+	}
+	arcErr, _ := v.(*Err)
+	if arcErr == nil {
+		wrapped := ErrCode_UnnamedErr.Wrap(v)
+		arcErr = wrapped.(*Err)
+	}
+	return arcErr
 }

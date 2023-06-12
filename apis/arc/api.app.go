@@ -146,3 +146,9 @@ type Registry interface {
 func NewRegistry() Registry {
 	return newRegistry()
 }
+
+type Value interface {
+	MarshalToMsg(dst *Msg) error
+}
+
+

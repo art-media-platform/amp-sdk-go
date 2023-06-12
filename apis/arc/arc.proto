@@ -279,8 +279,8 @@ message Msg {
     int64               SI              = 16;    
 
     // ValType specifies how to interpret ValBuf / ValInt
-    ValType             ValType         = 20;
-    
+    int32               ValType         = 20;
+
     // ValBuf and/or ValInt are interpreted according to ValType 
     bytes               ValBuf          = 21;
     int64               ValInt          = 22;
@@ -350,6 +350,10 @@ message LoginReq {
     // A byte string identifying user who is logging in (lot limited to UTF8)
     // This is typically a username or a persistent UID issued by the device OS when the app is (re)installed. 
     string              UserUID         = 1;
+    
+    // HostAddr is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
+    // Archost uses this to as the host name when serving URLs for the client to consume.
+    string              HostAddr        = 2;
     
     string              DeviceLabel     = 8;
     string              DeviceUID       = 9; 
@@ -437,7 +441,7 @@ message AttrSpec {
     
     // ValTypeID is either a standard ValType (enum) or a client-generated ID that is bound to the given ValTypeURI.
     // This enum is placed in Msg.ValType in a MsgOp_PushAttr msg.
-    ValType             ValTypeID = 13;
+    int32               ValTypeID = 13;
     
 }
 

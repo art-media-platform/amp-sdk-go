@@ -50,6 +50,21 @@ func ConvertToTimeFS(t time.Time) TimeFS {
 	return TimeFS(timeFS | int64(frac))
 }
 
+// Converts milliseconds to TimeFS.
+func ConvertMsToTimeFS(ms int64) TimeFS {
+	return TimeFS((ms << 16) / 1000)
+}
+
+// Converts TimeFS to a time.Time.
+func (t TimeFS) ToTime() time.Time {
+	return time.Unix(int64(t>>16), int64(t&0xFFFF)*15259)
+}
+
+// Converts TimeFS to milliseconds.
+func (t TimeFS) ToMs() int64 {
+	return (int64(t >> 8) * 1000) >> 8;
+}
+
 // TID is a convenience function that returns the TID contained within this TIDBuf.
 func (tid *TIDBuf) TID() TID {
 	return tid[:]
@@ -252,14 +267,14 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 		attrKind := attrType.Kind()
 		switch attrKind {
 		case reflect.Int32, reflect.Uint32, reflect.Int64, reflect.Uint64:
-			attr.ValTypeID = ValType_int
+			attr.ValTypeID = int32(ValType_int)
 		case reflect.String:
-			attr.ValTypeID = ValType_string
+			attr.ValTypeID = int32(ValType_string)
 		case reflect.Slice:
 			elementType := attrType.Elem().Kind()
 			switch elementType {
 			case reflect.Uint8, reflect.Int8:
-				attr.ValTypeID = ValType_bytes
+				attr.ValTypeID = int32(ValType_bytes)
 			}
 		}
 
@@ -335,7 +350,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 		tx := NewMsgBatch()
 		msg := tx.AddMsg()
 		msg.Op = MsgOp_UpsertCell
-		msg.ValType = ValType_SchemaID
+		msg.ValType = int32(ValType_SchemaID)
 		msg.ValInt = int64(schema.SchemaID)
 		msg.ValBuf = append(append(msg.ValBuf[:0], []byte(ctx.StateScope())...), []byte(subKey)...)
 
@@ -348,11 +363,11 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 			msg.AttrID = attr.AttrID
 			for i := 0; i < numFields; i++ {
 				if valType.Field(i).Name == attr.AttrURI {
-					msg.SetVal(src.Field(i).Interface())
+					msg.setVal(src.Field(i).Interface())
 					break
 				}
 			}
-			if msg.ValType == ValType_nil {
+			if msg.ValType == int32(ValType_nil) {
 				panic("missing field")
 			}
 		}
@@ -401,14 +416,14 @@ func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
 		m := NewMsg()
 		m.CellID = target.U64()
 		m.Op = MsgOp_InsertChildCell
-		m.ValType = ValType_SchemaID
+		m.ValType = int32(ValType_SchemaID)
 		m.ValInt = int64(schema.SchemaID)
 		req.PushMsg(m)
 	}
 }
 
 // Pushes the given attr to the client
-func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, attrVal interface{}) {
+func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, val Value) {
 	attr := schema.LookupAttr(attrURI)
 	if attr == nil {
 		return
@@ -421,9 +436,9 @@ func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, 
 	if attr.SeriesType == SeriesType_Fixed {
 		m.SI = attr.BoundSI
 	}
-	m.SetVal(attrVal)
-	if attr.ValTypeID != 0 {
-		m.ValType = attr.ValTypeID
+	val.MarshalToMsg(m)
+	if attr.ValTypeID != 0 { // what is this for!?
+		m.ValType = int32(attr.ValTypeID)
 	}
 	req.PushMsg(m)
 }
@@ -433,7 +448,7 @@ func (req *CellReq) PushCheckpoint(err error) {
 	m.Op = MsgOp_Commit
 	m.CellID = req.PinCell.U64()
 	if err != nil {
-		m.SetVal(err)
+		m.setVal(err)
 	}
 	req.PushMsg(m)
 }

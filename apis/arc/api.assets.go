@@ -38,7 +38,11 @@ type MediaAsset interface {
 
 // AssetReader provides read and seek access to its parent MediaAsset.
 //
-// Close() should be called when an AssetReader is no longer needed (external) or when its parent MediaAsset becomes unavailable (internal)..
+// Close() is called when:
+//   - the AssetReader is no longer needed (called externally), or
+//   - the AssetReader's parent MediaAsset becomes unavailable.
+//
+// Close() could be called at any time from a goroutine outside of a Read() or Seek() call.
 type AssetReader interface {
 	io.ReadSeekCloser
 }

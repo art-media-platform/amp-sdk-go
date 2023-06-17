@@ -1,4 +1,4 @@
-package process
+package task
 
 import (
 	"context"
@@ -143,7 +143,7 @@ func (p *ctx) ChildCount() int {
 	return len(p.subs)
 }
 
-// StartChild starts the given child Context as a "sub" process.
+// StartChild starts the given child Context as a "sub" task.
 func (p *ctx) StartChild(task *Task) (Context, error) {
 	child := &ctx{
 		state:     Running,

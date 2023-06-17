@@ -1,4 +1,4 @@
-package process_test
+package task_test
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/process"
 	"github.com/arcspace/go-arc-sdk/stdlib/testutils"
+	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
 func makeItems() (item [5]*workItem) {
@@ -26,7 +26,7 @@ type workItem struct {
 	block     chan struct{}
 }
 
-func (i workItem) ID() process.PoolUniqueID { return i.id[:1] }
+func (i workItem) ID() task.PoolUniqueID { return i.id[:1] }
 
 func (i *workItem) Work(ctx context.Context) (retry bool) {
 	i.processed.ItHappened()

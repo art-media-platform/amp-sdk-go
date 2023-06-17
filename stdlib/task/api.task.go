@@ -1,4 +1,4 @@
-package process
+package task
 
 import (
 	"context"
@@ -10,11 +10,12 @@ import (
 // NilContext is used to start Contexts with no parent Context.
 var NilContext = Context((*ctx)(nil))
 
-// Start starts the given context as its own process root.
+// Start starts the given context as its own task root.
 func Start(task *Task) (Context, error) {
 	return NilContext.StartChild(task)
 }
 
+// Go starts a new root Context with the given label and function.
 func Go(parent Context, label string, fn func(ctx Context)) (Context, error) {
 	return parent.StartChild(&Task{
 		Label: label,
@@ -40,7 +41,7 @@ type Task struct {
 type Context interface {
 	log.Logger
 
-	// A process.Context is an extension of context.Context.
+	// A task.Context is an extension of context.Context.
 	context.Context
 
 	// Returns Task.Ref passed into StartChild()
@@ -69,7 +70,7 @@ type Context interface {
 	// Context implementations wishing to remain lightweight may opt to not retain a list of children (and just return the given slice as-is).
 	GetChildren(in []Context) []Context
 
-	// Async call that initiates process shutdown and causes all children's Close() to be called.
+	// Async call that initiates task shutdown and causes all children's Close() to be called.
 	// Close can be called multiple times but calls after the first are in effect ignored.
 	// First, child processes get Close() in breath-first order.
 	// After all children are done closing, OnClosing(), then OnClosed() are executed.

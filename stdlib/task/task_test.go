@@ -1,4 +1,4 @@
-package process_test
+package task_test
 
 import (
 	"fmt"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/process"
 	"github.com/arcspace/go-arc-sdk/stdlib/testutils"
+	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
-func spawnN(p process.Context, numGoroutines int, delay time.Duration) {
+func spawnN(p task.Context, numGoroutines int, delay time.Duration) {
 	for i := 0; i < numGoroutines; i++ {
 		name := fmt.Sprintf("#%d", i+1)
-		p.Go(name, func(ctx process.Context) {
+		p.Go(name, func(ctx task.Context) {
 			time.Sleep(delay)
 			yoyo := delay
 			fmt.Print(yoyo)
@@ -24,7 +24,7 @@ func spawnN(p process.Context, numGoroutines int, delay time.Duration) {
 
 func TestCore(t *testing.T) {
 	t.Run("basic idle close", func(t *testing.T) {
-		p, _ := process.Start(&process.Task{
+		p, _ := task.Start(&task.Task{
 			Label:     "root",
 			IdleClose: time.Nanosecond,
 		})
@@ -41,12 +41,12 @@ func TestCore(t *testing.T) {
 
 func TestNestedIdleClose(t *testing.T) {
 	t.Run("nested idle close", func(t *testing.T) {
-		p, _ := process.Start(&process.Task{
+		p, _ := task.Start(&task.Task{
 			Label:     "root",
 			IdleClose: time.Nanosecond,
 		})
 
-		child, _ := p.StartChild(&process.Task{
+		child, _ := p.StartChild(&task.Task{
 			Label:     "child",
 			IdleClose: time.Nanosecond,
 		})
@@ -62,7 +62,7 @@ func TestNestedIdleClose(t *testing.T) {
 
 func TestIdleCloseWithDelay(t *testing.T) {
 	t.Run("idle close with delay", func(t *testing.T) {
-		p, _ := process.Start(&process.Task{
+		p, _ := task.Start(&task.Task{
 			Label:     "root with idle close delay",
 			IdleClose: 2 * time.Second,
 		})
@@ -88,18 +88,18 @@ func TestIdleCloseWithDelay(t *testing.T) {
 func Test6(t *testing.T) {
 
 	t.Run("close cancels children", func(t *testing.T) {
-		p, _ := process.Start(&process.Task{
+		p, _ := task.Start(&task.Task{
 			Label: "close tester",
 		})
 
-		child, _ := p.StartChild(&process.Task{
+		child, _ := p.StartChild(&task.Task{
 			Label: "child",
 		})
 
 		canceled1 := testutils.NewAwaiter()
 		canceled2 := testutils.NewAwaiter()
 
-		foo1, _ := p.Go("foo1", func(ctx process.Context) {
+		foo1, _ := p.Go("foo1", func(ctx task.Context) {
 			select {
 			case <-ctx.Closing():
 				canceled1.ItHappened()
@@ -108,7 +108,7 @@ func Test6(t *testing.T) {
 			}
 		})
 
-		foo2, _ := child.Go("foo2", func(ctx process.Context) {
+		foo2, _ := child.Go("foo2", func(ctx task.Context) {
 			select {
 			case <-ctx.Closing():
 				canceled2.ItHappened()

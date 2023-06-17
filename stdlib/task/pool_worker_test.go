@@ -1,13 +1,12 @@
-package process_test
+package task_test
 
 import (
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/arcspace/go-arc-sdk/stdlib/task"
 	"github.com/stretchr/testify/require"
-
-	"github.com/arcspace/go-arc-sdk/stdlib/process"
 )
 
 func TestPoolWorker(t *testing.T) {
@@ -19,7 +18,7 @@ func TestPoolWorker(t *testing.T) {
 		item[1].block = make(chan struct{})
 		item[1].retry = true
 
-		w, err := process.StartNewPoolWorker("", 2, process.NewStaticScheduler(100*time.Millisecond, 2*time.Second))
+		w, err := task.StartNewPoolWorker("", 2, task.NewStaticScheduler(100*time.Millisecond, 2*time.Second))
 
 		require.NoError(t, err)
 		defer w.Close()

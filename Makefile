@@ -3,16 +3,15 @@ SHELL = /bin/bash -o nounset -o errexit -o pipefail
 BUILD_PATH  := $(patsubst %/,%,$(abspath $(dir $(lastword $(MAKEFILE_LIST)))))
 PARENT_PATH := $(patsubst %/,%,$(dir $(BUILD_PATH)))
 UNITY_PROJ := ${PARENT_PATH}/arcspace.unity-app
-ARC_LIBS = ${UNITY_PROJ}/Assets/Plugins/Arcspace/Plugins
+UNITY_PATH := $(shell python3 ${UNITY_PROJ}/arc-utils.py UNITY_PATH "${UNITY_PROJ}")
 ARC_UNITY_PATH = ${UNITY_PROJ}/Assets/Arcspace
 grpc_csharp_exe="${GOPATH}/bin/grpc_csharp_plugin"
-LIB_PROJ := ${BUILD_PATH}/cmd/libarchost
-
-#UNITY_PATH = "${HOME}/Applications/2021.3.16f1"
-UNITY_PATH := $(shell python3 ${UNITY_PROJ}/arc-utils.py UNITY_PATH "${UNITY_PROJ}")
-
 
 CAPNP_DIST := "capnproto-c++-0.10.4"
+#CAPNP_INCLUDE := "${GOPATH}/pkg/mod/capnproto.org/go/capnp/v3@v3.0.0-alpha-29/std"
+CAPNP_INCLUDE := "${BUILD_PATH}/apis/capnp/include" # made from capnproto.org/go/capnp/std + csharp.capnp
+
+
 
 ## display this help message
 help:
@@ -21,7 +20,6 @@ help:
 	@echo "  PARENT_PATH:     ${PARENT_PATH}"
 	@echo "  BUILD_PATH:      ${BUILD_PATH}"
 	@echo "  UNITY_PROJ:      ${UNITY_PROJ}"
-	@echo "  ARC_LIBS:        ${ARC_LIBS}"
 	@echo "  UNITY_PATH:      ${UNITY_PATH}"
 	@echo
 	@awk '/^##.*$$/,/[a-zA-Z_-]+:/' $(MAKEFILE_LIST) | awk '!(NR%2){print $$0p}{p=$$0}' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-32s\033[0m %s\n", $$1, $$2}' | sort
@@ -31,7 +29,7 @@ help:
 
 GOFILES = $(shell find . -type f -name '*.go')
 	
-.PHONY: build protos tools
+.PHONY: tools generate build
 
 ## build archost and libarchost
 build:  arc-sdk
@@ -54,17 +52,20 @@ tools-capnp-nix:
 	&& cd ..  \
 	&& rm -rf ${CAPNP_DIST}
 
+## install cap'n proto tools -- https://capnproto.org/install.html
+tools-capnp-csharp:
+#   https://github.com/c80k/capnproto-dotnetcore#code-generator-back-end-dotnet-tool
+	dotnet tool install capnpc-csharp --global 
+
 ## install protobufs tools needed to turn a .proto file into Go and C# files
 tools-proto:
 	go install github.com/gogo/protobuf/protoc-gen-gogoslick
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 	go get -d  github.com/gogo/protobuf/proto
 
-capnp:
-	capnp compile -I capnproto.org/go/capnp/v3/std -ogo apis/arc/arc.capnp
 
-## generate .cs and .go from proto files
-protos:
+## generate .cs and .go from .proto and .capnp files
+generate:
 #   GrpcTools (2.49.1)
 #   Install protoc & grpc_csharp_plugin:
 #      - Download latest Grpc.Tools from https://nuget.org/packages/Grpc.Tools
@@ -85,5 +86,9 @@ protos:
 	    --proto_path=. \
 		apis/crates/crates.proto
 
+	capnp compile -I${CAPNP_INCLUDE} -ogo     apis/arc/arc.capnp
+
+	capnp compile -I${CAPNP_INCLUDE} -ocsharp apis/arc/arc.capnp \
+		&& mv apis/arc/arc.capnp.cs ${ARC_UNITY_PATH}/Arc/Arc.capnp.cs
 
 

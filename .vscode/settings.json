@@ -1,0 +1,10 @@
+{
+    "VsCodeTaskButtons.showCounter": true,
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "⚒️ make generate",
+            "task": "make generate",
+            "tooltip": "⚒️ make .proto & .capnp"
+        }
+    ]
+}

@@ -1,9 +1,7 @@
 package arc
 
 import (
-	"reflect"
-
-	"github.com/arcspace/go-arc-sdk/stdlib/process"
+	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
 // AppModule declares a 3rd-party module this is registered with an archost.
@@ -13,142 +11,98 @@ import (
 //   - a client or other app invoking its UID or URI directly
 type AppModule struct {
 
-	// URI identifies this app using the form "{PublisherID}/{FamilyID}/{AppNameID}/v{MajorVers}" -- e.g. "arcspace.systems/amp/filesys/v1"
-	//   - PublisherID: typically a publicly registered domain name of the publisher of this app
-	//   - FamilyID:    encompassing namespace ID used to group related apps and content
-	//   - AppNameID:   uniquely identifies this app within its parent family and domain.
+	// AppID identifies this app with form "v{MajorVers}.{AppNameID}.{FamilyID}.{PublisherID}" -- e.g. "v1.filesys.amp.arcspace.systems"
+	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "arcspace.systems"
+	//   - FamilyID:    encompassing namespace ID used to group related apps and content (no spaces or punctuation)
+	//   - AppNameID:   uniquely identifies this app within its parent family and domain (no spaces or punctuation)
 	//   - MajorVers:   an integer starting with 1 that is incremented when a breaking change is made to the app's API.
-	URI          string
-	UID          UID          // Universally unique and persistent ID for this module
-	Desc         string       // Human-readable description of this app
-	Version      string       // "v{MajorVers}.{MinorID}.{RevID}"
-	Dependencies []UID        // Module UIDs this app may access via GetAppContext()
-	DataModels   DataModelMap // Data models that this app defines and handles.
+	//
+	// AppID form is consistent of a URL domain name (and subdomains).
+	AppID        string
+	UID          UID      // Universally unique and persistent ID for this module (and the module's "home" planet if present)
+	Desc         string   // Human-readable description of this app
+	Version      string   // "v{MajorVers}.{MinorID}.{RevID}"
+	Dependencies []UID    // Module UIDs this app may access via GetAppContext()
+	Invocations  []string // Additional aliases that invoke this app
+	AttrDecl     []string // Attrs to be resolved and registered with the HostSession -- get the registered
 
 	// Called when an App is invoked on an active User session and is not yet running.
-	NewAppInstance func(ctx AppContext) (AppRuntime, error)
+	NewAppInstance func() AppInstance
 }
 
-// AppContext encapsulates execution of an AppRuntime.
+// AppContext encapsulates execution of an AppInstance and is provided by the archost runtime.
 //
 // An AppModule retains the AppContext it is given via NewAppInstance() for:
 //   - archost operations (e.g. resolve type schemas, publish assets for client consumption -- see AppContext)
 //   - having a context to select{} against (for graceful shutdown)
 type AppContext interface {
-	process.Context // Each app instance has a process.Context
-	AssetPublisher  // Allows an app to publish assets for client consumption
-	User() User     // Access to user operations and io
-	CellPinner      // How to pin root cells
+	task.Context          // Each app instance has a task.Context and is a child of the user's session
+	AssetPublisher        // Allows an app to publish assets for client consumption
+	CellResolver          // How to resolve App cells by URI
+	SessionRegistry       // How to resolve Attrs by name and type
+	Session() HostSession // Access to host & user ops
+
+	// Returns the absolute fs path of the app's local state directory.
+	// This directory is scoped by the app's UID and is unique to this app instance.
+	LocalDataPath() string
 
 	// Atomically issues a new and unique ID that will remain globally unique for the duration of this session.
 	// An ID may still expire, go out of scope, or otherwise become meaningless.
 	IssueCellID() CellID
 
-	// Unique state scope ID for this app instance -- defaults to the app's UID.
-	StateScope() []byte
+	// Allows an app resolve attrs by name, etc
 
-	// Uses reflection to build and register (as necessary) an AttrSchema for a given a ptr to a struct.
-	GetSchemaForType(typ reflect.Type) (*AttrSchema, error)
+	// Gets the named cell and attribute from the user's home planet -- used high-level app settings.
+	// The attr is scoped by both the app UID so key collision with other users or apps is not possible.
+	GetAppCellAttr(attrSpec string, dst ElemVal) error
 
-	// Starts a child process
-	// StartChild(task *process.Task) (process.Context, error)
-
-	// Loads the data stored at the given key, appends it to the given buffer, and returns the result (or an error).
-	// The given subKey is scoped by both the app and the user so key collision with other users or apps is not possible.
-	// Typically used by apps for holding high-level state or settings.
-	GetAppValue(subKey string) (val []byte, err error)
-
-	// Write analog for GetAppValue()
-	PutAppValue(subKey string, val []byte) error
+	// Write analog for GetAppCellAttr()
+	PutAppCellAttr(attrSpec string, src ElemVal) error
 }
 
-// AppRuntime is a runtime-furnished container context for an AppModule instance.
-type AppRuntime interface {
-	CellPinner
+// AppInstance is implemented by an arc app (AppModule)
+type AppInstance interface {
+	AppContext
 
-	// Pre: msg.Op == MsgOp_MetaMsg
-	HandleMetaMsg(msg *Msg) (handled bool, err error)
+	// Callback made immediately after AppModule.NewAppInstance() -- typically resolves app-specific type specs.
+	OnNew(ctx AppContext) error
+
+	// Handles a meta message sent to this app, which could be any attr type.
+	HandleMetaAttr(attr AttrElem) (handled bool)
 
 	// Called exactly once if / when an app is signaled to close.
 	OnClosing()
 }
 
-type TypeRegistry interface {
+// PinnedCell is how your app encapsulates a pinned cell to the archost runtime and thus clients.
+type PinnedCell interface {
 
-	// Resolves and then registers each given def, returning the resolved defs in-place if successful.
-	//
-	// Resolving a AttrSchema means:
-	//    1) all name identifiers have been resolved to their corresponding host-dependent symbol IDs.
-	//    2) all "InheritsFrom" types and fields have been "flattened" into the form
-	//
-	// See MsgOp_ResolveAndRegister
-	ResolveAndRegister(defs *Defs) error
+	// Apps spawn a PinnedCell as a child task.Context of arc.AppContext.Context or as a child of another PinnedCell.
+	// This means an AppContext contains all its PinnedCells and thus Close() will close all PinnedCells.
+	Context() task.Context
 
-	// Returns the resolved AttrSchema for the given cell type ID.
-	GetSchemaByID(schemaID int32) (*AttrSchema, error)
+	// A PinnedCell is a closure / context for incoming ResolveCell requests.
+	CellResolver
+
+	// Pushes this cell and child cells to the client state is called.
+	// Exits when any of the following occur:
+	//   - ctx.Closing() is signaled,
+	//   - a fatal error is encountered, or
+	//   - state has been pushed to the client AND ctx.MaintainSync() == false
+	PushState(ctx PinContext) error
 }
 
-// CellContext?
-// CellInvoker? 
-// CellInvoker is a runtime-furnished container context for a pinned Cell.
-type CellClient interface {
-	process.Context
-	
-	// Returns params given by the client for the request bei
-	Params() CellReq 
-	
-	// Fetches the args given by the client when pinning this cell. 
-	KwArgs(name string) []*KwArg
-	
-	// Sets msg.ReqID and pushes the given msg to client, blocking until "complete" (queued) or canceled.
-	// This msg is reclaimed downstream from here, so it should be considered released / inaccessible after this call.
-	PushMsg(msg *Msg) error
+// PinContext wraps a client request to receive a cell's state / updates.
+type PinContext interface {
+	task.Context // Started as a CHILD of the arc.PinnedCell returned by App.PinCell()
+
+	// If true:   PinnedCell.PushState() should block until PinContext.Closing() is signaled.
+	// If false:  PinnedCell.PushState() should exit once state has been pushed.
+	MaintainSync() bool
+
+	// Low-level push of a Msg to the client, returning true if the msg was sent (false if the client has been closed).
+	PushMsg(msg *Msg) bool
+
+	// Parent app of the cell associated with this context
+	App() AppContext
 }
-
-// CellContext?
-// PinReq?
-// See api.support.go for CellReq helper methods such as PushMsg.
-type CellReq struct {
-	CellSub
-
-	Args          []*KwArg      // Client-set args (typically used when pinning a root where CellID is not known)
-	PinCell       CellID        // Client-set cell ID to pin (or 0 if Args sufficient).  Use req.Cell.ID() for the resolved CellID.
-	ContentSchema *AttrSchema   // Client-set schema specifying the cell attr model for the cell being pinned.
-	ChildSchemas  []*AttrSchema // Client-set schema(s) specifying which child cells (and attrs) should be pushed to the client.
-}
-
-// type DataModel map[string]*Attr
-type DataModel struct {
-	// TODO
-}
-
-type DataModelMap struct {
-	ModelsByID map[string]DataModel // Maps a data model ID to a data model definition
-}
-
-// Registry maps an app ID to an AppModule.    It is safe to access from multiple goroutines.
-type Registry interface {
-
-	// Registers an app by its UUID, URI, and schemas it supports.
-	RegisterApp(app *AppModule) error
-
-	// Looks-up an app by UUID
-	GetAppByUID(appUID UID) (*AppModule, error)
-
-	// Looks-up an app by URI
-	GetAppByURI(appURI string) (*AppModule, error)
-
-	// Selects the app that best handles the given schema
-	GetAppForSchema(schema *AttrSchema) (*AppModule, error)
-}
-
-// NewRegistry returns a new Registry
-func NewRegistry() Registry {
-	return newRegistry()
-}
-
-type Value interface {
-	MarshalToMsg(dst *Msg) error
-}
-
-

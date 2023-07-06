@@ -38,11 +38,6 @@ type Const int32
 
 const (
 	Const_Defs Const = 0
-	// HostSessionCellID is a hard-coded cell ID for the user's session
-	// This is the first cell pinned as it allows the host and client to exchange MsgOp_ResolveAndRegister msgs.
-	Const_HostSessionCellID Const = 3
-	// RootCellID is a hard-coded cell ID used to pin the root cell for a user.
-	Const_RootCellID Const = 6
 	// TIDBinaryLen is the byte size of a Tx ID ("TID"), a hash with a leading big endian binary time index.
 	//
 	// This allows TIDs to be naturally sorted chronologically naturally.
@@ -52,11 +47,11 @@ const (
 	// Byte layout is designed so that TIDs are sortable by their embedded timestamp:
 	//    0:6   - Standard UTC timestamp in unix seconds (big endian)
 	//    6:8   - Timestamp fraction (big endian)
-	//    8:30  - Signature/hash
-	Const_TIDBinaryLen Const = 30
+	//    8:32  - Signature/hash
+	Const_TIDBinaryLen Const = 32
 	// TIDStringLen is the ASCII-compatible string length of a (binary) TID encoded into its base32 form.
 	// The encoding used is the geohash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
-	Const_TIDStringLen Const = 48
+	Const_TIDStringLen Const = 52
 	// TIDTimestampSz is the number of left-hand bytes in a TID reserved for a time index value.
 	Const_TIDTimestampSz Const = 8
 	// DefaultGrpcServicePort is the TCP port the service HostGrpc should run on by default.
@@ -65,20 +60,16 @@ const (
 
 var Const_name = map[int32]string{
 	0:    "Const_Defs",
-	3:    "Const_HostSessionCellID",
-	6:    "Const_RootCellID",
-	30:   "Const_TIDBinaryLen",
-	48:   "Const_TIDStringLen",
+	32:   "Const_TIDBinaryLen",
+	52:   "Const_TIDStringLen",
 	8:    "Const_TIDTimestampSz",
 	5192: "Const_DefaultGrpcServicePort",
 }
 
 var Const_value = map[string]int32{
 	"Const_Defs":                   0,
-	"Const_HostSessionCellID":      3,
-	"Const_RootCellID":             6,
-	"Const_TIDBinaryLen":           30,
-	"Const_TIDStringLen":           48,
+	"Const_TIDBinaryLen":           32,
+	"Const_TIDStringLen":           52,
 	"Const_TIDTimestampSz":         8,
 	"Const_DefaultGrpcServicePort": 5192,
 }
@@ -87,101 +78,46 @@ func (Const) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{0}
 }
 
-// ValType describes the type of a Cell, an Attr literal, or Attr set collection element type.
-type ValType int32
+// These are hard-wired symbol IDs are required to bootstrap a new connection.
+// After bootstrapping, the client uses RegisterDefs to register its symbols.
+type ConstSymbol int32
 
 const (
-	ValType_nil            ValType = 0
-	ValType_int            ValType = 4
-	ValType_bytes          ValType = 6
-	ValType_string         ValType = 7
-	ValType_TID            ValType = 16
-	ValType_SchemaID       ValType = 18
-	ValType_Blob           ValType = 22
-	ValType_DateTime       ValType = 23
-	ValType_Duration       ValType = 24
-	ValType_URL            ValType = 26
-	ValType_HandleURI      ValType = 27
-	ValType_Err            ValType = 50
-	ValType_AssetRef       ValType = 51
-	ValType_DataSegment    ValType = 52
-	ValType_MetaMsg        ValType = 53
-	ValType_Content        ValType = 54
-	ValType_CryptoKey      ValType = 56
-	ValType_Txn            ValType = 58
-	ValType_LoginReq       ValType = 60
-	ValType_Defs           ValType = 62
-	ValType_PinReq         ValType = 64
-	ValType_CreateCellsReq ValType = 65
-	ValType_AttrRange      ValType = 66
-	ValType_Link           ValType = 80
-	ValType_GeoFix         ValType = 82
-	ValType_TRS            ValType = 84
-	// Clients have above this value to bind their own ValTypeIDs
-	ValType_BuiltinMax ValType = 999
+	ConstSymbol_nil            ConstSymbol = 0
+	ConstSymbol_Err            ConstSymbol = 6
+	ConstSymbol_RegisterDefs   ConstSymbol = 10
+	ConstSymbol_HandleURI      ConstSymbol = 11
+	ConstSymbol_Login          ConstSymbol = 20
+	ConstSymbol_LoginChallenge ConstSymbol = 21
+	ConstSymbol_LoginResponse  ConstSymbol = 22
+	// Minimum symbol ID that a client is allowed to issue
+	// This value sets a ceiling for the above hard-wired symbol IDs.
+	ConstSymbol_IssuerInitsAt ConstSymbol = 256
 )
 
-var ValType_name = map[int32]string{
-	0:   "ValType_nil",
-	4:   "ValType_int",
-	6:   "ValType_bytes",
-	7:   "ValType_string",
-	16:  "ValType_TID",
-	18:  "ValType_SchemaID",
-	22:  "ValType_Blob",
-	23:  "ValType_DateTime",
-	24:  "ValType_Duration",
-	26:  "ValType_URL",
-	27:  "ValType_HandleURI",
-	50:  "ValType_Err",
-	51:  "ValType_AssetRef",
-	52:  "ValType_DataSegment",
-	53:  "ValType_MetaMsg",
-	54:  "ValType_Content",
-	56:  "ValType_CryptoKey",
-	58:  "ValType_Txn",
-	60:  "ValType_LoginReq",
-	62:  "ValType_Defs",
-	64:  "ValType_PinReq",
-	65:  "ValType_CreateCellsReq",
-	66:  "ValType_AttrRange",
-	80:  "ValType_Link",
-	82:  "ValType_GeoFix",
-	84:  "ValType_TRS",
-	999: "ValType_BuiltinMax",
+var ConstSymbol_name = map[int32]string{
+	0:   "ConstSymbol_nil",
+	6:   "ConstSymbol_Err",
+	10:  "ConstSymbol_RegisterDefs",
+	11:  "ConstSymbol_HandleURI",
+	20:  "ConstSymbol_Login",
+	21:  "ConstSymbol_LoginChallenge",
+	22:  "ConstSymbol_LoginResponse",
+	256: "ConstSymbol_IssuerInitsAt",
 }
 
-var ValType_value = map[string]int32{
-	"ValType_nil":            0,
-	"ValType_int":            4,
-	"ValType_bytes":          6,
-	"ValType_string":         7,
-	"ValType_TID":            16,
-	"ValType_SchemaID":       18,
-	"ValType_Blob":           22,
-	"ValType_DateTime":       23,
-	"ValType_Duration":       24,
-	"ValType_URL":            26,
-	"ValType_HandleURI":      27,
-	"ValType_Err":            50,
-	"ValType_AssetRef":       51,
-	"ValType_DataSegment":    52,
-	"ValType_MetaMsg":        53,
-	"ValType_Content":        54,
-	"ValType_CryptoKey":      56,
-	"ValType_Txn":            58,
-	"ValType_LoginReq":       60,
-	"ValType_Defs":           62,
-	"ValType_PinReq":         64,
-	"ValType_CreateCellsReq": 65,
-	"ValType_AttrRange":      66,
-	"ValType_Link":           80,
-	"ValType_GeoFix":         82,
-	"ValType_TRS":            84,
-	"ValType_BuiltinMax":     999,
+var ConstSymbol_value = map[string]int32{
+	"ConstSymbol_nil":            0,
+	"ConstSymbol_Err":            6,
+	"ConstSymbol_RegisterDefs":   10,
+	"ConstSymbol_HandleURI":      11,
+	"ConstSymbol_Login":          20,
+	"ConstSymbol_LoginChallenge": 21,
+	"ConstSymbol_LoginResponse":  22,
+	"ConstSymbol_IssuerInitsAt":  256,
 }
 
-func (ValType) EnumDescriptor() ([]byte, []int) {
+func (ConstSymbol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{1}
 }
 
@@ -190,103 +126,69 @@ type MsgOp int32
 
 const (
 	MsgOp_NoOp MsgOp = 0
-	// From the client to host, this requests to login to the host.
-	// From the host to client, this is a reply with a challenge.
+	// MsgOp_Login is used to initiate a session and is a multi-step process:
 	//
 	// Params:
-	//      Msg.ReqID:        client-generated (unique) request ID
-	//      Msg.ValType:      ValType_LoginReq
-	//      Msg.ValBuf:       req params
+	//      Msg.ReqID:        client-generated request ID
+	//      Msg.ValBuf:       Login           (client -> host)
+	//                        LoginChallenge  (client <- host)
+	//                        LoginResponse   (client -> host)
 	MsgOp_Login MsgOp = 1
-	// MsgOp_MetaMsg posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
-	MsgOp_MetaMsg MsgOp = 4
-	// MsgOp_ResolveAndRegister allows a client to send the host a set of Defs to the Host, defining all session CellTypes and identifiers.
+	// MsgOp_MetaAttr posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
 	//
 	// Params:
-	//      Msg.ReqID:      client-generated (unique) request ID
-	//      Msg.ValType:    ValType_Defs
-	//      Msg.ValBuf:     Defs (serialized)
-	MsgOp_ResolveAndRegister MsgOp = 5
+	//      Msg.ReqID:      originating request ID
+	//      Msg.ValBuf:     IAW with AttrID
+	MsgOp_MetaAttr MsgOp = 4
 	// From client to host, this requests a given cell be pinned.
-	// From host to client, this is precedes a push of the pinned cell's attributes.
-	// Note that the same cell pinned multiple times may not have child cells with matching cell IDs.
 	//
 	// Params:
 	//      Msg.ReqID:      client-generated (unique) request ID
 	//      Msg.CellID:     CellID being pinned     (host to client, otherwise 0)
-	//      Msg.ValType:    ValType_PinReq          (client to host, otherwise nil)
 	//      Msg.ValBuf:     PinReq                  (client to host, otherwise nil)
 	MsgOp_PinCell MsgOp = 6
-	// Used to push attr values.
-	// A cell attr item us specified by the host via ReqID+AttrID+SI and its value type via ValType.
+	// Used to push attr element values.
 	//
 	// Params:
 	//      Msg.ReqID:      originating MsgOp_PinCell request ID
 	//      Msg.CellID:     which cell is being updated
 	//      Msg.AttrID:     which attr is being updated
-	//      Msg.ValType:    format of Msg.ValInt / .ValBuf
-	//      Msg.Val*:       attr value
-	MsgOp_PushAttr MsgOp = 10
-	// Signals the insertion of a new child cell into the pinned (parent) cell.
-	// After this message, zero or more MsgOp_PushAttr msgs follow.
-	//
-	// Params:
-	//      Msg.ReqID:      originating MsgOp_PinCell request ID
-	//      Msg.CellID:     new cell being added
-	//      Msg.ValType:    ValType_SchemaID
-	//      Msg.ValInt:     cell schema ID being pushed (specifies which Cell attribs are expected to follow)
-	//      Msg.ValStr:     cell local ID (if present)
-	MsgOp_InsertChildCell MsgOp = 14
-	// Similar to InsertCell, except this auto-creates a new cell if it doesn't exist.
-	//
-	// Params:
-	//      Msg.ReqID:      originating MsgOp_PinCell request ID (client to host)
-	//      Msg.CellID:     new cell that was added (set on host reply)
-	//      Msg.ValType:    ValType_SchemaID
-	//      Msg.ValInt:     cell schema ID to be attached to the new cell
-	//      Msg.ValStr:     cell local ID (optional)
-	MsgOp_UpsertCell MsgOp = 15
+	//      Msg.ValBuf:     IAW with AttrID
+	MsgOp_PushAttrElem MsgOp = 10
 	// Used by the sender to signal that the given cell's state push is up to date and can be processed by the recipient.
 	// This msg is typically used to drive UI updates or other aggregate cell dependencies.
 	//
 	// Params:
 	//      Msg.ReqID:      originating request ID
 	//      Msg.CellID:     which cell is an an updated state
-	MsgOp_Commit MsgOp = 24
+	MsgOp_Checkpoint MsgOp = 24
 	// From the client to host, this signals to cancel the operation(s) associated with the given request ID (PinID).
 	// From the host to client, this signals that the given request ID has been canceled / discarded (and is now closed).
-	// if Msg.ValType == ValType_Err, amplifying info in included as to why the request was closed.
+	// if len(Msg.ValBuf) > 0, then an Err is serialized, offering amplifying info on why the request was closed.
 	//
 	// Params:
 	//      Msg.ReqID:      parent request ID
-	//      Msg.ValType:    ValType_Err (or 0)
-	MsgOp_CloseReq MsgOp = 255
+	MsgOp_Close MsgOp = 127
 )
 
 var MsgOp_name = map[int32]string{
 	0:   "MsgOp_NoOp",
 	1:   "MsgOp_Login",
-	4:   "MsgOp_MetaMsg",
-	5:   "MsgOp_ResolveAndRegister",
+	4:   "MsgOp_MetaAttr",
 	6:   "MsgOp_PinCell",
-	10:  "MsgOp_PushAttr",
-	14:  "MsgOp_InsertChildCell",
-	15:  "MsgOp_UpsertCell",
-	24:  "MsgOp_Commit",
-	255: "MsgOp_CloseReq",
+	10:  "MsgOp_PushAttrElem",
+	24:  "MsgOp_Checkpoint",
+	127: "MsgOp_Close",
 }
 
 var MsgOp_value = map[string]int32{
-	"MsgOp_NoOp":               0,
-	"MsgOp_Login":              1,
-	"MsgOp_MetaMsg":            4,
-	"MsgOp_ResolveAndRegister": 5,
-	"MsgOp_PinCell":            6,
-	"MsgOp_PushAttr":           10,
-	"MsgOp_InsertChildCell":    14,
-	"MsgOp_UpsertCell":         15,
-	"MsgOp_Commit":             24,
-	"MsgOp_CloseReq":           255,
+	"MsgOp_NoOp":         0,
+	"MsgOp_Login":        1,
+	"MsgOp_MetaAttr":     4,
+	"MsgOp_PinCell":      6,
+	"MsgOp_PushAttrElem": 10,
+	"MsgOp_Checkpoint":   24,
+	"MsgOp_Close":        127,
 }
 
 func (MsgOp) EnumDescriptor() ([]byte, []int) {
@@ -297,6 +199,8 @@ type MsgFlags int32
 
 const (
 	MsgFlags_None MsgFlags = 0
+	// Used to signal that Msg.CelID has been deleted
+	MsgFlags_CellDeleted MsgFlags = 2
 	// ValBufShared signals that this Msg's ValBuf referenced elsewhere and is therefore READ ONLY.
 	// This used internally to support Msg pooling / recycling.
 	// When marshaling, this flag is always cleared!
@@ -305,49 +209,18 @@ const (
 
 var MsgFlags_name = map[int32]string{
 	0:   "MsgFlags_None",
+	2:   "MsgFlags_CellDeleted",
 	256: "MsgFlags_ValBufShared",
 }
 
 var MsgFlags_value = map[string]int32{
 	"MsgFlags_None":         0,
+	"MsgFlags_CellDeleted":  2,
 	"MsgFlags_ValBufShared": 256,
 }
 
 func (MsgFlags) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{3}
-}
-
-// Note that element domain uniqueness always implies an SI *and* a FromID.
-type SeriesType int32
-
-const (
-	// SeriesType_Fixed denotes that a given data model attr URI is bound to a given AttrID and SeriesIndex assignment.
-	// AttrSpec.Fixed_SI is used in conjunction with this, allowing the client to wire multiple data model attrs to the same AttrID.
-	SeriesType_Fixed SeriesType = 0
-	// SeriesType_I64 denotes that SI values are int64
-	SeriesType_I64 SeriesType = 2
-	// SeriesType_Time16 denotes that SI values are signed 48.16 bit time offsets (1 second == 2^16 ticks).
-	SeriesType_Time16 SeriesType = 5
-	// SeriesType_UTC16 denotes that SI values are signed 48.16 bit UTC values (1 second == 2^16 ticks).
-	SeriesType_UTC16 SeriesType = 6
-)
-
-var SeriesType_name = map[int32]string{
-	0: "SeriesType_Fixed",
-	2: "SeriesType_I64",
-	5: "SeriesType_Time16",
-	6: "SeriesType_UTC16",
-}
-
-var SeriesType_value = map[string]int32{
-	"SeriesType_Fixed":  0,
-	"SeriesType_I64":    2,
-	"SeriesType_Time16": 5,
-	"SeriesType_UTC16":  6,
-}
-
-func (SeriesType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{4}
 }
 
 type GeoModel int32
@@ -365,7 +238,7 @@ var GeoModel_value = map[string]int32{
 }
 
 func (GeoModel) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{5}
+	return fileDescriptor_e4a0eb974cf54c93, []int{4}
 }
 
 // URIScheme is used to accompany a URI to specify a URI scheme without it being being a prefix of the URI .
@@ -376,6 +249,7 @@ const (
 	URIScheme_Data       URIScheme = 1
 	URIScheme_HTTP       URIScheme = 2
 	URIScheme_File       URIScheme = 5
+	URIScheme_Arc        URIScheme = 6
 	URIScheme_CrateAsset URIScheme = 2701
 	URIScheme_CellSchema URIScheme = 2702
 )
@@ -385,6 +259,7 @@ var URIScheme_name = map[int32]string{
 	1:    "URIScheme_Data",
 	2:    "URIScheme_HTTP",
 	5:    "URIScheme_File",
+	6:    "URIScheme_Arc",
 	2701: "URIScheme_CrateAsset",
 	2702: "URIScheme_CellSchema",
 }
@@ -394,12 +269,13 @@ var URIScheme_value = map[string]int32{
 	"URIScheme_Data":       1,
 	"URIScheme_HTTP":       2,
 	"URIScheme_File":       5,
+	"URIScheme_Arc":        6,
 	"URIScheme_CrateAsset": 2701,
 	"URIScheme_CellSchema": 2702,
 }
 
 func (URIScheme) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{6}
+	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 }
 
 // CryptoKitID identifies an encryption suite that implements ski.CryptoKit
@@ -430,7 +306,7 @@ var CryptoKitID_value = map[string]int32{
 }
 
 func (CryptoKitID) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{7}
+	return fileDescriptor_e4a0eb974cf54c93, []int{6}
 }
 
 // ErrCode expresses status and error codes.
@@ -442,7 +318,7 @@ const (
 	ErrCode_InternalErr             ErrCode = 5001
 	ErrCode_UnsupportedOp           ErrCode = 5002
 	ErrCode_Unimplemented           ErrCode = 5003
-	ErrCode_ReqCanceled             ErrCode = 5004
+	ErrCode_Timeout                 ErrCode = 5004
 	ErrCode_ShuttingDown            ErrCode = 5005
 	ErrCode_NotConnected            ErrCode = 5006
 	ErrCode_AuthFailed              ErrCode = 5007
@@ -457,18 +333,19 @@ const (
 	ErrCode_PlanetNotFound          ErrCode = 5032
 	ErrCode_PlanetFailure           ErrCode = 5033
 	ErrCode_AppNotFound             ErrCode = 5034
-	ErrCode_NoAttrsFound            ErrCode = 5036
+	ErrCode_DefNotFound             ErrCode = 5036
 	ErrCode_MalformedTx             ErrCode = 5040
 	ErrCode_TypeNotFound            ErrCode = 5050
 	ErrCode_TypeNotRegistered       ErrCode = 5051
 	ErrCode_BadSchema               ErrCode = 5052
 	ErrCode_DataFailure             ErrCode = 5053
 	ErrCode_ExportErr               ErrCode = 5054
+	ErrCode_PinFailed               ErrCode = 5055
+	ErrCode_PinContextClosed        ErrCode = 5056
 	ErrCode_CellNotFound            ErrCode = 5058
 	ErrCode_ProviderErr             ErrCode = 5059
 	ErrCode_ViolatesAppendOnly      ErrCode = 5100
 	ErrCode_InsufficientPermissions ErrCode = 5101
-	ErrCode_ChProtocolNotRecognized ErrCode = 5201
 )
 
 var ErrCode_name = map[int32]string{
@@ -477,7 +354,7 @@ var ErrCode_name = map[int32]string{
 	5001: "ErrCode_InternalErr",
 	5002: "ErrCode_UnsupportedOp",
 	5003: "ErrCode_Unimplemented",
-	5004: "ErrCode_ReqCanceled",
+	5004: "ErrCode_Timeout",
 	5005: "ErrCode_ShuttingDown",
 	5006: "ErrCode_NotConnected",
 	5007: "ErrCode_AuthFailed",
@@ -492,18 +369,19 @@ var ErrCode_name = map[int32]string{
 	5032: "ErrCode_PlanetNotFound",
 	5033: "ErrCode_PlanetFailure",
 	5034: "ErrCode_AppNotFound",
-	5036: "ErrCode_NoAttrsFound",
+	5036: "ErrCode_DefNotFound",
 	5040: "ErrCode_MalformedTx",
 	5050: "ErrCode_TypeNotFound",
 	5051: "ErrCode_TypeNotRegistered",
 	5052: "ErrCode_BadSchema",
 	5053: "ErrCode_DataFailure",
 	5054: "ErrCode_ExportErr",
+	5055: "ErrCode_PinFailed",
+	5056: "ErrCode_PinContextClosed",
 	5058: "ErrCode_CellNotFound",
 	5059: "ErrCode_ProviderErr",
 	5100: "ErrCode_ViolatesAppendOnly",
 	5101: "ErrCode_InsufficientPermissions",
-	5201: "ErrCode_ChProtocolNotRecognized",
 }
 
 var ErrCode_value = map[string]int32{
@@ -512,7 +390,7 @@ var ErrCode_value = map[string]int32{
 	"ErrCode_InternalErr":             5001,
 	"ErrCode_UnsupportedOp":           5002,
 	"ErrCode_Unimplemented":           5003,
-	"ErrCode_ReqCanceled":             5004,
+	"ErrCode_Timeout":                 5004,
 	"ErrCode_ShuttingDown":            5005,
 	"ErrCode_NotConnected":            5006,
 	"ErrCode_AuthFailed":              5007,
@@ -527,22 +405,23 @@ var ErrCode_value = map[string]int32{
 	"ErrCode_PlanetNotFound":          5032,
 	"ErrCode_PlanetFailure":           5033,
 	"ErrCode_AppNotFound":             5034,
-	"ErrCode_NoAttrsFound":            5036,
+	"ErrCode_DefNotFound":             5036,
 	"ErrCode_MalformedTx":             5040,
 	"ErrCode_TypeNotFound":            5050,
 	"ErrCode_TypeNotRegistered":       5051,
 	"ErrCode_BadSchema":               5052,
 	"ErrCode_DataFailure":             5053,
 	"ErrCode_ExportErr":               5054,
+	"ErrCode_PinFailed":               5055,
+	"ErrCode_PinContextClosed":        5056,
 	"ErrCode_CellNotFound":            5058,
 	"ErrCode_ProviderErr":             5059,
 	"ErrCode_ViolatesAppendOnly":      5100,
 	"ErrCode_InsufficientPermissions": 5101,
-	"ErrCode_ChProtocolNotRecognized": 5201,
 }
 
 func (ErrCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{8}
+	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 }
 
 type TRS_VisualScaleMode int32
@@ -563,7 +442,7 @@ var TRS_VisualScaleMode_value = map[string]int32{
 }
 
 func (TRS_VisualScaleMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{18, 0}
+	return fileDescriptor_e4a0eb974cf54c93, []int{20, 0}
 }
 
 type Msg struct {
@@ -571,26 +450,21 @@ type Msg struct {
 	Op MsgOp `protobuf:"varint,1,opt,name=Op,proto3,enum=arc.MsgOp" json:"Op,omitempty"`
 	// ReqID specifies a request context.
 	//
-	// When a client issues request-side MsgOp (e.g. PinCell, ResolveAndRegister), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
+	// When a client issues request-side MsgOp (e.g. PinCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
 	// If this msg is a reply to a request, ReqID identifies the originating request op.
-	ReqID uint64 `protobuf:"varint,3,opt,name=ReqID,proto3" json:"ReqID,omitempty"`
+	ReqID uint64 `protobuf:"varint,2,opt,name=ReqID,proto3" json:"ReqID,omitempty"`
 	// CellID identifies the cell associated with Msg.Op.
-	CellID uint64 `protobuf:"varint,6,opt,name=CellID,proto3" json:"CellID,omitempty"`
-	// AttrID names the attribute associated with this Msg (used for MsgOp_PushAttr)
-	AttrID int32 `protobuf:"varint,8,opt,name=AttrID,proto3" json:"AttrID,omitempty"`
-	// SI ("Series Index") associates and binds a value to and int64 key.
-	// By convention, this is 48.16 fixed signed fractional seconds (one second == 0x10000 ticks), naming a time duration or timestamp.
-	// When naming an absolute timestamp, unix UTC is assumed (0x10000 corresponds to 00:00:01, Jan 1 1970 GMT)
-	SI int64 `protobuf:"varint,16,opt,name=SI,proto3" json:"SI,omitempty"`
-	// ValType specifies how to interpret ValBuf / ValInt
-	ValType int32 `protobuf:"varint,20,opt,name=ValType,proto3" json:"ValType,omitempty"`
-	// ValBuf and/or ValInt are interpreted according to ValType
-	ValBuf []byte `protobuf:"bytes,21,opt,name=ValBuf,proto3" json:"ValBuf,omitempty"`
-	ValInt int64  `protobuf:"varint,22,opt,name=ValInt,proto3" json:"ValInt,omitempty"`
+	CellID int64 `protobuf:"varint,4,opt,name=CellID,proto3" json:"CellID,omitempty"`
+	// AttrID names the attribute associated with this Msg (used for MsgOp_PushAttr).
+	// This value corresponds to AttrSpec.DefID
+	AttrID uint32 `protobuf:"varint,6,opt,name=AttrID,proto3" json:"AttrID,omitempty"`
+	// SI ("Series Index") specifies how an int64 is interpreted as an attr element index value.
+	// See AttrSpec.SeriesType
+	SI int64 `protobuf:"varint,8,opt,name=SI,proto3" json:"SI,omitempty"`
+	// ValBuf is interpreted according to AttrID
+	ValBuf []byte `protobuf:"bytes,10,opt,name=ValBuf,proto3" json:"ValBuf,omitempty"`
 	// Flags contains MsgFlags
-	Flags MsgFlags `protobuf:"varint,24,opt,name=Flags,proto3,enum=arc.MsgFlags" json:"Flags,omitempty"`
-	// Allows a sequence of Msgs to be chained together.
-	Next *Msg `protobuf:"bytes,32,opt,name=Next,proto3" json:"Next,omitempty"`
+	Flags MsgFlags `protobuf:"varint,12,opt,name=Flags,proto3,enum=arc.MsgFlags" json:"Flags,omitempty"`
 }
 
 func (m *Msg) Reset()      { *m = Msg{} }
@@ -639,14 +513,14 @@ func (m *Msg) GetReqID() uint64 {
 	return 0
 }
 
-func (m *Msg) GetCellID() uint64 {
+func (m *Msg) GetCellID() int64 {
 	if m != nil {
 		return m.CellID
 	}
 	return 0
 }
 
-func (m *Msg) GetAttrID() int32 {
+func (m *Msg) GetAttrID() uint32 {
 	if m != nil {
 		return m.AttrID
 	}
@@ -660,13 +534,6 @@ func (m *Msg) GetSI() int64 {
 	return 0
 }
 
-func (m *Msg) GetValType() int32 {
-	if m != nil {
-		return m.ValType
-	}
-	return 0
-}
-
 func (m *Msg) GetValBuf() []byte {
 	if m != nil {
 		return m.ValBuf
@@ -674,25 +541,11 @@ func (m *Msg) GetValBuf() []byte {
 	return nil
 }
 
-func (m *Msg) GetValInt() int64 {
-	if m != nil {
-		return m.ValInt
-	}
-	return 0
-}
-
 func (m *Msg) GetFlags() MsgFlags {
 	if m != nil {
 		return m.Flags
 	}
 	return MsgFlags_None
-}
-
-func (m *Msg) GetNext() *Msg {
-	if m != nil {
-		return m.Next
-	}
-	return nil
 }
 
 type PlanetEpoch struct {
@@ -757,58 +610,7 @@ func (m *PlanetEpoch) GetCommonName() string {
 	return ""
 }
 
-type UserSeat struct {
-	UserID       uint64 `protobuf:"varint,2,opt,name=UserID,proto3" json:"UserID,omitempty"`
-	HomePlanetID uint64 `protobuf:"varint,4,opt,name=HomePlanetID,proto3" json:"HomePlanetID,omitempty"`
-}
-
-func (m *UserSeat) Reset()      { *m = UserSeat{} }
-func (*UserSeat) ProtoMessage() {}
-func (*UserSeat) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{2}
-}
-func (m *UserSeat) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *UserSeat) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_UserSeat.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *UserSeat) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UserSeat.Merge(m, src)
-}
-func (m *UserSeat) XXX_Size() int {
-	return m.Size()
-}
-func (m *UserSeat) XXX_DiscardUnknown() {
-	xxx_messageInfo_UserSeat.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UserSeat proto.InternalMessageInfo
-
-func (m *UserSeat) GetUserID() uint64 {
-	if m != nil {
-		return m.UserID
-	}
-	return 0
-}
-
-func (m *UserSeat) GetHomePlanetID() uint64 {
-	if m != nil {
-		return m.HomePlanetID
-	}
-	return 0
-}
-
-type LoginReq struct {
+type Login struct {
 	// A byte string identifying user who is logging in (lot limited to UTF8)
 	// This is typically a username or a persistent UID issued by the device OS when the app is (re)installed.
 	UserUID string `protobuf:"bytes,1,opt,name=UserUID,proto3" json:"UserUID,omitempty"`
@@ -819,17 +621,17 @@ type LoginReq struct {
 	DeviceUID   string `protobuf:"bytes,9,opt,name=DeviceUID,proto3" json:"DeviceUID,omitempty"`
 }
 
-func (m *LoginReq) Reset()      { *m = LoginReq{} }
-func (*LoginReq) ProtoMessage() {}
-func (*LoginReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{3}
+func (m *Login) Reset()      { *m = Login{} }
+func (*Login) ProtoMessage() {}
+func (*Login) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{2}
 }
-func (m *LoginReq) XXX_Unmarshal(b []byte) error {
+func (m *Login) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *LoginReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Login) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_LoginReq.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Login.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -839,55 +641,128 @@ func (m *LoginReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *LoginReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LoginReq.Merge(m, src)
+func (m *Login) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Login.Merge(m, src)
 }
-func (m *LoginReq) XXX_Size() int {
+func (m *Login) XXX_Size() int {
 	return m.Size()
 }
-func (m *LoginReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_LoginReq.DiscardUnknown(m)
+func (m *Login) XXX_DiscardUnknown() {
+	xxx_messageInfo_Login.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_LoginReq proto.InternalMessageInfo
+var xxx_messageInfo_Login proto.InternalMessageInfo
 
-func (m *LoginReq) GetUserUID() string {
+func (m *Login) GetUserUID() string {
 	if m != nil {
 		return m.UserUID
 	}
 	return ""
 }
 
-func (m *LoginReq) GetHostAddr() string {
+func (m *Login) GetHostAddr() string {
 	if m != nil {
 		return m.HostAddr
 	}
 	return ""
 }
 
-func (m *LoginReq) GetDeviceLabel() string {
+func (m *Login) GetDeviceLabel() string {
 	if m != nil {
 		return m.DeviceLabel
 	}
 	return ""
 }
 
-func (m *LoginReq) GetDeviceUID() string {
+func (m *Login) GetDeviceUID() string {
 	if m != nil {
 		return m.DeviceUID
 	}
 	return ""
 }
 
+// LoginChallenge is sent from host to client in response to a Login message
+type LoginChallenge struct {
+}
+
+func (m *LoginChallenge) Reset()      { *m = LoginChallenge{} }
+func (*LoginChallenge) ProtoMessage() {}
+func (*LoginChallenge) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{3}
+}
+func (m *LoginChallenge) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LoginChallenge) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LoginChallenge.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LoginChallenge) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoginChallenge.Merge(m, src)
+}
+func (m *LoginChallenge) XXX_Size() int {
+	return m.Size()
+}
+func (m *LoginChallenge) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoginChallenge.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoginChallenge proto.InternalMessageInfo
+
+// LoginChallenge is sent from client to host in response to a LoginChallenge message
+type LoginResponse struct {
+}
+
+func (m *LoginResponse) Reset()      { *m = LoginResponse{} }
+func (*LoginResponse) ProtoMessage() {}
+func (*LoginResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{4}
+}
+func (m *LoginResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LoginResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LoginResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LoginResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoginResponse.Merge(m, src)
+}
+func (m *LoginResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *LoginResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoginResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoginResponse proto.InternalMessageInfo
+
 type Symbol struct {
-	ID    uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	Value []byte `protobuf:"bytes,2,opt,name=Value,proto3" json:"Value,omitempty"`
+	// A symbol ID is intentionally 32 bits as it corresponds to real-world const byte strings (and so which 2^32 is plenty as it is)
+	ID   uint32 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	Name []byte `protobuf:"bytes,2,opt,name=Name,proto3" json:"Name,omitempty"`
 }
 
 func (m *Symbol) Reset()      { *m = Symbol{} }
 func (*Symbol) ProtoMessage() {}
 func (*Symbol) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{4}
+	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 }
 func (m *Symbol) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -916,36 +791,38 @@ func (m *Symbol) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Symbol proto.InternalMessageInfo
 
-func (m *Symbol) GetID() uint64 {
+func (m *Symbol) GetID() uint32 {
 	if m != nil {
 		return m.ID
 	}
 	return 0
 }
 
-func (m *Symbol) GetValue() []byte {
+func (m *Symbol) GetName() []byte {
 	if m != nil {
-		return m.Value
+		return m.Name
 	}
 	return nil
 }
 
-type Defs struct {
-	Symbols []*Symbol     `protobuf:"bytes,1,rep,name=Symbols,proto3" json:"Symbols,omitempty"`
-	Schemas []*AttrSchema `protobuf:"bytes,2,rep,name=Schemas,proto3" json:"Schemas,omitempty"`
+type RegisterDefs struct {
+	Symbols   []*Symbol       `protobuf:"bytes,1,rep,name=Symbols,proto3" json:"Symbols,omitempty"`
+	Attrs     []*AttrSpec     `protobuf:"bytes,2,rep,name=Attrs,proto3" json:"Attrs,omitempty"`
+	Cells     []*CellSpec     `protobuf:"bytes,3,rep,name=Cells,proto3" json:"Cells,omitempty"`
+	Selectors []*ItemSelector `protobuf:"bytes,4,rep,name=Selectors,proto3" json:"Selectors,omitempty"`
 }
 
-func (m *Defs) Reset()      { *m = Defs{} }
-func (*Defs) ProtoMessage() {}
-func (*Defs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{5}
+func (m *RegisterDefs) Reset()      { *m = RegisterDefs{} }
+func (*RegisterDefs) ProtoMessage() {}
+func (*RegisterDefs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{6}
 }
-func (m *Defs) XXX_Unmarshal(b []byte) error {
+func (m *RegisterDefs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Defs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *RegisterDefs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Defs.Marshal(b, m, deterministic)
+		return xxx_messageInfo_RegisterDefs.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -955,140 +832,79 @@ func (m *Defs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Defs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Defs.Merge(m, src)
+func (m *RegisterDefs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterDefs.Merge(m, src)
 }
-func (m *Defs) XXX_Size() int {
+func (m *RegisterDefs) XXX_Size() int {
 	return m.Size()
 }
-func (m *Defs) XXX_DiscardUnknown() {
-	xxx_messageInfo_Defs.DiscardUnknown(m)
+func (m *RegisterDefs) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterDefs.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Defs proto.InternalMessageInfo
+var xxx_messageInfo_RegisterDefs proto.InternalMessageInfo
 
-func (m *Defs) GetSymbols() []*Symbol {
+func (m *RegisterDefs) GetSymbols() []*Symbol {
 	if m != nil {
 		return m.Symbols
 	}
 	return nil
 }
 
-func (m *Defs) GetSchemas() []*AttrSchema {
-	if m != nil {
-		return m.Schemas
-	}
-	return nil
-}
-
-// AttrSchema is a Cell protocol specifier as well as a data packaging schema.
-//
-// A client forms a CellAttr tree structure, informing how sub cells should be auto-loaded and updated.
-//
-// Like a protobuf message, once a AttrSchema is published, its fields ("attributes") cannot change type.
-// Otherwise, data corruption is possible.
-type AttrSchema struct {
-	// CellDataModel identifies a data model this schema conforms to, in effect it specifies a scope for the attached Attrs.
-	// This URI names a complete data protocol / specification that this collection of AttrSpecs conforms to (and is a subset of).
-	// To an implementing app on the Go side, this URI implies a family of valid possible AttrSpecs to choose from.
-	CellDataModel string `protobuf:"bytes,3,opt,name=CellDataModel,proto3" json:"CellDataModel,omitempty"`
-	// This describes this *particular* AttrSchema, a particular collection of AttrSpecs (and is implicitly scoped within CellDataModel).
-	// The host (and its apps) generally don't even look at this field since "{CellDataModel}/{Attrs[i].AttrURI}" fully specifies each attr's data model URI.
-	// The can use this for internal identification, usually to link this schema to particular cell view binding.
-	SchemaName string `protobuf:"bytes,4,opt,name=SchemaName,proto3" json:"SchemaName,omitempty"`
-	// SchemaID is a non-zero, unique, client-generated ID that is bound to this AttrSchema (and registered during RegisterAndResolve).
-	// This ID is used in PinReq to specify this particular AttrSchema and persists for the duration of the host session.
-	SchemaID int32 `protobuf:"varint,6,opt,name=SchemaID,proto3" json:"SchemaID,omitempty"`
-	// Attrs binds a set of AttrSpecs to this SchemaURI.
-	Attrs []*AttrSpec `protobuf:"bytes,8,rep,name=Attrs,proto3" json:"Attrs,omitempty"`
-}
-
-func (m *AttrSchema) Reset()      { *m = AttrSchema{} }
-func (*AttrSchema) ProtoMessage() {}
-func (*AttrSchema) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{6}
-}
-func (m *AttrSchema) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AttrSchema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AttrSchema.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AttrSchema) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AttrSchema.Merge(m, src)
-}
-func (m *AttrSchema) XXX_Size() int {
-	return m.Size()
-}
-func (m *AttrSchema) XXX_DiscardUnknown() {
-	xxx_messageInfo_AttrSchema.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AttrSchema proto.InternalMessageInfo
-
-func (m *AttrSchema) GetCellDataModel() string {
-	if m != nil {
-		return m.CellDataModel
-	}
-	return ""
-}
-
-func (m *AttrSchema) GetSchemaName() string {
-	if m != nil {
-		return m.SchemaName
-	}
-	return ""
-}
-
-func (m *AttrSchema) GetSchemaID() int32 {
-	if m != nil {
-		return m.SchemaID
-	}
-	return 0
-}
-
-func (m *AttrSchema) GetAttrs() []*AttrSpec {
+func (m *RegisterDefs) GetAttrs() []*AttrSpec {
 	if m != nil {
 		return m.Attrs
 	}
 	return nil
 }
 
-// AttrSpec binds an app data model attr URI to a client-provided AttrID, corresponding to a handler on the client side (typically a UI element).
+func (m *RegisterDefs) GetCells() []*CellSpec {
+	if m != nil {
+		return m.Cells
+	}
+	return nil
+}
+
+func (m *RegisterDefs) GetSelectors() []*ItemSelector {
+	if m != nil {
+		return m.Selectors
+	}
+	return nil
+}
+
+// AttrSpec fully describes a cell attribute, specifying a name, element type, and series element type.
 type AttrSpec struct {
-	// AttrURI is a self-describing URI scoped within the parent's CellDataModel.
-	// It communicates a purpose or role, for a particular usage context of the attr.
-	// It originates from an app data model spec and allows the host to associate an app attr to a client-provided AttrID (and SI when SeriesType == Fixed).
-	// e.g. for AttrSchema.CellDataModel == "hfs1/directory"
-	//      "v1/creation-time"
-	//      "v1/thumbnail.glyph"
-	//      "v1/detailed.glyph"
-	//      "v1/name"
-	//      "v1/status"
-	//      "v1/item-count"
-	AttrURI string `protobuf:"bytes,2,opt,name=AttrURI,proto3" json:"AttrURI,omitempty"`
-	// AttrID is a non-zero, client-generated ID that is bound to the given AttrURI during RegisterAndResolve.
-	// This identifies which attr is being updated in a PushAttr Msg and can be thought of as a binding to a given UI entity.
-	// Multiple AttrURIs can be bound to the same AttrID and is useful when funneling multiple data model attrs to a single UI element for unified handling.
-	AttrID int32 `protobuf:"varint,4,opt,name=AttrID,proto3" json:"AttrID,omitempty"`
-	// SeriesType specifies how the client interprets the attr domain SeriesIndex ("SI") integer.
-	// Scalar (non-array-like) attrs are typically SeriesType_Fixed since a particular SI value is fixed or "hard-wired" to the given AttrURI.
-	SeriesType SeriesType `protobuf:"varint,6,opt,name=SeriesType,proto3,enum=arc.SeriesType" json:"SeriesType,omitempty"`
-	// BoundSI specifies which SI value this fixed attr is "hard-wired" to, meaning that a PushAttr Msg has its SI field set to this value.
-	// Only used / applicable when SeriesType == SeriesType_Fixed.
-	BoundSI int64 `protobuf:"varint,7,opt,name=BoundSI,proto3" json:"BoundSI,omitempty"`
-	// ValTypeID is either a standard ValType (enum) or a client-generated ID that is bound to the given ValTypeURI.
-	// This enum is placed in Msg.ValType in a MsgOp_PushAttr msg.
-	ValTypeID int32 `protobuf:"varint,13,opt,name=ValTypeID,proto3" json:"ValTypeID,omitempty"`
+	// Composite expression / invocation of this AttrSpec in the form:
+	//      "[{SeriesType}]{ElemType}:{AttrName}"
+	//
+	// This the value is used for Msg.AttrID -- it references an AttrSpec.
+	// e.g. "AssetRef", "AssetRef:promo", "[GeoFix]AssetRef:promo-shoots",
+	DefID uint32 `protobuf:"varint,1,opt,name=DefID,proto3" json:"DefID,omitempty"`
+	// ElemType identifies this attr's element type and has a form like a subdomain:
+	//    "({subTypeName}.)*<typeName>"
+	//
+	// A particular ElemType corresponds to a serializable data type (typically a protobuf or capnp message)
+	// Valid chars are [A-Za-z0-9_-] in addition to '.' that separates identifiers..
+	//
+	// e.g.
+	//    "AssetRef",
+	//    "GreetingAttr.tutorial_06.hello-world.learn.arcspace.systems",
+	ElemType uint32 `protobuf:"varint,3,opt,name=ElemType,proto3" json:"ElemType,omitempty"`
+	// SeriesType specifies how to interpret an attr's SeriesIndex ("SI") int64 value associated with each attr element value.
+	// If "", this attr is a scalar value (and SI is 0 and ignored).
+	//
+	// UTC16 and Secs16 are 48.16 fixed signed fractional seconds (one second == 0x10000 ticks), naming a time duration or timestamp.
+	// When naming an absolute timestamp, unix UTC is assumed (0x10000 corresponds to 00:00:01, Jan 1 1970 GMT)
+	//
+	// e.g. "", "UTC16", "Secs16", "Int64", "GeoHash", "NodeID", "TID"
+	SeriesType uint32 `protobuf:"varint,5,opt,name=SeriesType,proto3" json:"SeriesType,omitempty"`
+	// AttrLabel?  Label?
+	//
+	// AttrName identifies this attribute, consisting of [A-Za-z0-9_-]
+	// Unnamed attrs are common and typically are used to denote a characterizing cell attribute.
+	//
+	// e.g. "", "en-us", "es-co", "mini", "1440p"
+	AttrName uint32 `protobuf:"varint,6,opt,name=AttrName,proto3" json:"AttrName,omitempty"`
 }
 
 func (m *AttrSpec) Reset()      { *m = AttrSpec{} }
@@ -1123,39 +939,164 @@ func (m *AttrSpec) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AttrSpec proto.InternalMessageInfo
 
-func (m *AttrSpec) GetAttrURI() string {
+func (m *AttrSpec) GetDefID() uint32 {
 	if m != nil {
-		return m.AttrURI
-	}
-	return ""
-}
-
-func (m *AttrSpec) GetAttrID() int32 {
-	if m != nil {
-		return m.AttrID
+		return m.DefID
 	}
 	return 0
 }
 
-func (m *AttrSpec) GetSeriesType() SeriesType {
+func (m *AttrSpec) GetElemType() uint32 {
+	if m != nil {
+		return m.ElemType
+	}
+	return 0
+}
+
+func (m *AttrSpec) GetSeriesType() uint32 {
 	if m != nil {
 		return m.SeriesType
 	}
-	return SeriesType_Fixed
+	return 0
 }
 
-func (m *AttrSpec) GetBoundSI() int64 {
+func (m *AttrSpec) GetAttrName() uint32 {
 	if m != nil {
-		return m.BoundSI
+		return m.AttrName
 	}
 	return 0
 }
 
-func (m *AttrSpec) GetValTypeID() int32 {
+// A CellSpec describes this cell's attrs as a child and when this cell is pinned.
+// Two cells with matching CellSpec descriptor are the same "type" of cell.
+type CellSpec struct {
+	// Composite expression / invocation of this CellSpec in the form:
+	//      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)"
+	//
+	// e.g. "(CellInfo,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:locations)"
+	DefID uint32 `protobuf:"varint,1,opt,name=DefID,proto3" json:"DefID,omitempty"`
+	// A sequence of attr IDs (attr descriptors) that are this Cell has as both a child and parent.
+	CommonAttrs []uint32 `protobuf:"varint,4,rep,packed,name=CommonAttrs,proto3" json:"CommonAttrs,omitempty"`
+	// A sequence of attr IDs cells specifying *additional* attrs this Cell has when pinned.
+	PinnedAttrs []uint32 `protobuf:"varint,5,rep,packed,name=PinnedAttrs,proto3" json:"PinnedAttrs,omitempty"`
+}
+
+func (m *CellSpec) Reset()      { *m = CellSpec{} }
+func (*CellSpec) ProtoMessage() {}
+func (*CellSpec) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{8}
+}
+func (m *CellSpec) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CellSpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CellSpec.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CellSpec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CellSpec.Merge(m, src)
+}
+func (m *CellSpec) XXX_Size() int {
+	return m.Size()
+}
+func (m *CellSpec) XXX_DiscardUnknown() {
+	xxx_messageInfo_CellSpec.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CellSpec proto.InternalMessageInfo
+
+func (m *CellSpec) GetDefID() uint32 {
 	if m != nil {
-		return m.ValTypeID
+		return m.DefID
 	}
 	return 0
+}
+
+func (m *CellSpec) GetCommonAttrs() []uint32 {
+	if m != nil {
+		return m.CommonAttrs
+	}
+	return nil
+}
+
+func (m *CellSpec) GetPinnedAttrs() []uint32 {
+	if m != nil {
+		return m.PinnedAttrs
+	}
+	return nil
+}
+
+// ItemSelector selects / filters a srt of items (e.g. CellSpec or AttrSpec descriptors)
+type ItemSelector struct {
+	// Composite expression of this ItemSelector in the form:
+	//      "(Include[0],Include[1],..)~(Exclude[0],Exclude[1],..)"
+	//
+	DefID uint32 `protobuf:"varint,1,opt,name=DefID,proto3" json:"DefID,omitempty"`
+	// A set of descriptor IDs explicitly included
+	Include []uint32 `protobuf:"varint,4,rep,packed,name=Include,proto3" json:"Include,omitempty"`
+	// A set of descriptor IDs explicitly excluded
+	Exclude []uint32 `protobuf:"varint,5,rep,packed,name=Exclude,proto3" json:"Exclude,omitempty"`
+}
+
+func (m *ItemSelector) Reset()      { *m = ItemSelector{} }
+func (*ItemSelector) ProtoMessage() {}
+func (*ItemSelector) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{9}
+}
+func (m *ItemSelector) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ItemSelector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ItemSelector.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ItemSelector) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ItemSelector.Merge(m, src)
+}
+func (m *ItemSelector) XXX_Size() int {
+	return m.Size()
+}
+func (m *ItemSelector) XXX_DiscardUnknown() {
+	xxx_messageInfo_ItemSelector.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ItemSelector proto.InternalMessageInfo
+
+func (m *ItemSelector) GetDefID() uint32 {
+	if m != nil {
+		return m.DefID
+	}
+	return 0
+}
+
+func (m *ItemSelector) GetInclude() []uint32 {
+	if m != nil {
+		return m.Include
+	}
+	return nil
+}
+
+func (m *ItemSelector) GetExclude() []uint32 {
+	if m != nil {
+		return m.Exclude
+	}
+	return nil
 }
 
 type KwArg struct {
@@ -1167,7 +1108,7 @@ type KwArg struct {
 func (m *KwArg) Reset()      { *m = KwArg{} }
 func (*KwArg) ProtoMessage() {}
 func (*KwArg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{8}
+	return fileDescriptor_e4a0eb974cf54c93, []int{10}
 }
 func (m *KwArg) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1224,7 +1165,7 @@ type HandleURI struct {
 func (m *HandleURI) Reset()      { *m = HandleURI{} }
 func (*HandleURI) ProtoMessage() {}
 func (*HandleURI) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{9}
+	return fileDescriptor_e4a0eb974cf54c93, []int{11}
 }
 func (m *HandleURI) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1265,21 +1206,23 @@ type PinReq struct {
 	// ParentReqID specifies the request ID that pushed PinCell (as a child), providing context.
 	// Set to 0 if PinCell and/or PinURI implies that no parent req exists.
 	ParentReqID uint64 `protobuf:"varint,1,opt,name=ParentReqID,proto3" json:"ParentReqID,omitempty"`
-	// App-definable params can specify additional context.
-	Args []*KwArg `protobuf:"bytes,4,rep,name=Args,proto3" json:"Args,omitempty"`
+	// URI specifying the cell to be pinned and whose child cells are to be pushed.
+	// Typically: [[arc://]arc-app-uri/]cell-uri..
+	PinURI string `protobuf:"bytes,2,opt,name=PinURI,proto3" json:"PinURI,omitempty"`
 	// Cell ID to be pinned (or 0 if PinURI does not require a cell ID)
-	PinCell uint64 `protobuf:"varint,5,opt,name=PinCell,proto3" json:"PinCell,omitempty"`
-	// AttrSchema ID to apply on the cell being pinned, specifying which attrs of the target cell will be pushed to the client.
-	ContentSchemaID int32 `protobuf:"varint,7,opt,name=ContentSchemaID,proto3" json:"ContentSchemaID,omitempty"`
-	// Specifies which child cell types should be pushed (and which attr schema they should be pushed with).
-	// If empty, no child cells are pushed.
-	ChildSchemas []int32 `protobuf:"varint,9,rep,packed,name=ChildSchemas,proto3" json:"ChildSchemas,omitempty"`
+	PinCell int64 `protobuf:"varint,3,opt,name=PinCell,proto3" json:"PinCell,omitempty"`
+	// If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
+	ParentAttrSelector uint32 `protobuf:"varint,5,opt,name=ParentAttrSelector,proto3" json:"ParentAttrSelector,omitempty"`
+	// If set, specifies an ItemSelector that filters which child cells are pushed to the client.
+	ChildCellSelector uint32 `protobuf:"varint,6,opt,name=ChildCellSelector,proto3" json:"ChildCellSelector,omitempty"`
+	// MaintainSync is set if the request should remain open after initial state is pushed so as to receive state updates.
+	MaintainSync bool `protobuf:"varint,8,opt,name=MaintainSync,proto3" json:"MaintainSync,omitempty"`
 }
 
 func (m *PinReq) Reset()      { *m = PinReq{} }
 func (*PinReq) ProtoMessage() {}
 func (*PinReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{10}
+	return fileDescriptor_e4a0eb974cf54c93, []int{12}
 }
 func (m *PinReq) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1315,32 +1258,39 @@ func (m *PinReq) GetParentReqID() uint64 {
 	return 0
 }
 
-func (m *PinReq) GetArgs() []*KwArg {
+func (m *PinReq) GetPinURI() string {
 	if m != nil {
-		return m.Args
+		return m.PinURI
 	}
-	return nil
+	return ""
 }
 
-func (m *PinReq) GetPinCell() uint64 {
+func (m *PinReq) GetPinCell() int64 {
 	if m != nil {
 		return m.PinCell
 	}
 	return 0
 }
 
-func (m *PinReq) GetContentSchemaID() int32 {
+func (m *PinReq) GetParentAttrSelector() uint32 {
 	if m != nil {
-		return m.ContentSchemaID
+		return m.ParentAttrSelector
 	}
 	return 0
 }
 
-func (m *PinReq) GetChildSchemas() []int32 {
+func (m *PinReq) GetChildCellSelector() uint32 {
 	if m != nil {
-		return m.ChildSchemas
+		return m.ChildCellSelector
 	}
-	return nil
+	return 0
+}
+
+func (m *PinReq) GetMaintainSync() bool {
+	if m != nil {
+		return m.MaintainSync
+	}
+	return false
 }
 
 type AttrRange struct {
@@ -1354,7 +1304,7 @@ type AttrRange struct {
 func (m *AttrRange) Reset()      { *m = AttrRange{} }
 func (*AttrRange) ProtoMessage() {}
 func (*AttrRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{11}
+	return fileDescriptor_e4a0eb974cf54c93, []int{13}
 }
 func (m *AttrRange) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1412,7 +1362,7 @@ type Txn struct {
 func (m *Txn) Reset()      { *m = Txn{} }
 func (*Txn) ProtoMessage() {}
 func (*Txn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{12}
+	return fileDescriptor_e4a0eb974cf54c93, []int{14}
 }
 func (m *Txn) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1460,7 +1410,7 @@ type GeoFix struct {
 func (m *GeoFix) Reset()      { *m = GeoFix{} }
 func (*GeoFix) ProtoMessage() {}
 func (*GeoFix) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{13}
+	return fileDescriptor_e4a0eb974cf54c93, []int{15}
 }
 func (m *GeoFix) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1545,7 +1495,7 @@ type AssetRef struct {
 func (m *AssetRef) Reset()      { *m = AssetRef{} }
 func (*AssetRef) ProtoMessage() {}
 func (*AssetRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{14}
+	return fileDescriptor_e4a0eb974cf54c93, []int{16}
 }
 func (m *AssetRef) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1642,7 +1592,7 @@ type Content struct {
 func (m *Content) Reset()      { *m = Content{} }
 func (*Content) ProtoMessage() {}
 func (*Content) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{15}
+	return fileDescriptor_e4a0eb974cf54c93, []int{17}
 }
 func (m *Content) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1714,7 +1664,7 @@ type CryptoKey struct {
 func (m *CryptoKey) Reset()      { *m = CryptoKey{} }
 func (*CryptoKey) ProtoMessage() {}
 func (*CryptoKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{16}
+	return fileDescriptor_e4a0eb974cf54c93, []int{18}
 }
 func (m *CryptoKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1757,26 +1707,33 @@ func (m *CryptoKey) GetKeyBytes() []byte {
 	return nil
 }
 
-type Link struct {
-	ShapeURI string `protobuf:"bytes,1,opt,name=ShapeURI,proto3" json:"ShapeURI,omitempty"`
-	SkinURI  string `protobuf:"bytes,2,opt,name=SkinURI,proto3" json:"SkinURI,omitempty"`
-	URL      string `protobuf:"bytes,5,opt,name=URL,proto3" json:"URL,omitempty"`
-	Label    string `protobuf:"bytes,7,opt,name=Label,proto3" json:"Label,omitempty"`
-	Desc     string `protobuf:"bytes,10,opt,name=Desc,proto3" json:"Desc,omitempty"`
-	Tags     string `protobuf:"bytes,12,opt,name=Tags,proto3" json:"Tags,omitempty"`
+// CellInfo is the standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
+type CellInfo struct {
+	// CellDefID references a CellSpec definition, fully describing this cell's common and pinned attrs.
+	// This typically corresponds 1:1 to a cell's purpose / function.
+	// See message CellSpec
+	CellDefID  uint32    `protobuf:"varint,1,opt,name=CellDefID,proto3" json:"CellDefID,omitempty"`
+	Title      string    `protobuf:"bytes,4,opt,name=Title,proto3" json:"Title,omitempty"`
+	Subtitle   string    `protobuf:"bytes,5,opt,name=Subtitle,proto3" json:"Subtitle,omitempty"`
+	About      string    `protobuf:"bytes,6,opt,name=About,proto3" json:"About,omitempty"`
+	Glyph      *AssetRef `protobuf:"bytes,10,opt,name=Glyph,proto3" json:"Glyph,omitempty"`
+	GlyphLarge *AssetRef `protobuf:"bytes,12,opt,name=GlyphLarge,proto3" json:"GlyphLarge,omitempty"`
+	Link       *AssetRef `protobuf:"bytes,14,opt,name=Link,proto3" json:"Link,omitempty"`
+	Created    int64     `protobuf:"varint,20,opt,name=Created,proto3" json:"Created,omitempty"`
+	Modified   int64     `protobuf:"varint,21,opt,name=Modified,proto3" json:"Modified,omitempty"`
 }
 
-func (m *Link) Reset()      { *m = Link{} }
-func (*Link) ProtoMessage() {}
-func (*Link) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{17}
+func (m *CellInfo) Reset()      { *m = CellInfo{} }
+func (*CellInfo) ProtoMessage() {}
+func (*CellInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{19}
 }
-func (m *Link) XXX_Unmarshal(b []byte) error {
+func (m *CellInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Link) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *CellInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Link.Marshal(b, m, deterministic)
+		return xxx_messageInfo_CellInfo.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1786,58 +1743,79 @@ func (m *Link) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Link) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Link.Merge(m, src)
+func (m *CellInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CellInfo.Merge(m, src)
 }
-func (m *Link) XXX_Size() int {
+func (m *CellInfo) XXX_Size() int {
 	return m.Size()
 }
-func (m *Link) XXX_DiscardUnknown() {
-	xxx_messageInfo_Link.DiscardUnknown(m)
+func (m *CellInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_CellInfo.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Link proto.InternalMessageInfo
+var xxx_messageInfo_CellInfo proto.InternalMessageInfo
 
-func (m *Link) GetShapeURI() string {
+func (m *CellInfo) GetCellDefID() uint32 {
 	if m != nil {
-		return m.ShapeURI
+		return m.CellDefID
+	}
+	return 0
+}
+
+func (m *CellInfo) GetTitle() string {
+	if m != nil {
+		return m.Title
 	}
 	return ""
 }
 
-func (m *Link) GetSkinURI() string {
+func (m *CellInfo) GetSubtitle() string {
 	if m != nil {
-		return m.SkinURI
+		return m.Subtitle
 	}
 	return ""
 }
 
-func (m *Link) GetURL() string {
+func (m *CellInfo) GetAbout() string {
 	if m != nil {
-		return m.URL
+		return m.About
 	}
 	return ""
 }
 
-func (m *Link) GetLabel() string {
+func (m *CellInfo) GetGlyph() *AssetRef {
 	if m != nil {
-		return m.Label
+		return m.Glyph
 	}
-	return ""
+	return nil
 }
 
-func (m *Link) GetDesc() string {
+func (m *CellInfo) GetGlyphLarge() *AssetRef {
 	if m != nil {
-		return m.Desc
+		return m.GlyphLarge
 	}
-	return ""
+	return nil
 }
 
-func (m *Link) GetTags() string {
+func (m *CellInfo) GetLink() *AssetRef {
 	if m != nil {
-		return m.Tags
+		return m.Link
 	}
-	return ""
+	return nil
+}
+
+func (m *CellInfo) GetCreated() int64 {
+	if m != nil {
+		return m.Created
+	}
+	return 0
+}
+
+func (m *CellInfo) GetModified() int64 {
+	if m != nil {
+		return m.Modified
+	}
+	return 0
 }
 
 type TRS struct {
@@ -1865,7 +1843,7 @@ type TRS struct {
 func (m *TRS) Reset()      { *m = TRS{} }
 func (*TRS) ProtoMessage() {}
 func (*TRS) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{18}
+	return fileDescriptor_e4a0eb974cf54c93, []int{20}
 }
 func (m *TRS) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1972,7 +1950,7 @@ type FeedParams struct {
 func (m *FeedParams) Reset()      { *m = FeedParams{} }
 func (*FeedParams) ProtoMessage() {}
 func (*FeedParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{19}
+	return fileDescriptor_e4a0eb974cf54c93, []int{21}
 }
 func (m *FeedParams) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2026,7 +2004,7 @@ type DataSegment struct {
 func (m *DataSegment) Reset()      { *m = DataSegment{} }
 func (*DataSegment) ProtoMessage() {}
 func (*DataSegment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{20}
+	return fileDescriptor_e4a0eb974cf54c93, []int{22}
 }
 func (m *DataSegment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2101,7 +2079,7 @@ type Err struct {
 func (m *Err) Reset()      { *m = Err{} }
 func (*Err) ProtoMessage() {}
 func (*Err) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{21}
+	return fileDescriptor_e4a0eb974cf54c93, []int{23}
 }
 func (m *Err) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2146,10 +2124,9 @@ func (m *Err) GetMsg() string {
 
 func init() {
 	proto.RegisterEnum("arc.Const", Const_name, Const_value)
-	proto.RegisterEnum("arc.ValType", ValType_name, ValType_value)
+	proto.RegisterEnum("arc.ConstSymbol", ConstSymbol_name, ConstSymbol_value)
 	proto.RegisterEnum("arc.MsgOp", MsgOp_name, MsgOp_value)
 	proto.RegisterEnum("arc.MsgFlags", MsgFlags_name, MsgFlags_value)
-	proto.RegisterEnum("arc.SeriesType", SeriesType_name, SeriesType_value)
 	proto.RegisterEnum("arc.GeoModel", GeoModel_name, GeoModel_value)
 	proto.RegisterEnum("arc.URIScheme", URIScheme_name, URIScheme_value)
 	proto.RegisterEnum("arc.CryptoKitID", CryptoKitID_name, CryptoKitID_value)
@@ -2157,12 +2134,14 @@ func init() {
 	proto.RegisterEnum("arc.TRS_VisualScaleMode", TRS_VisualScaleMode_name, TRS_VisualScaleMode_value)
 	proto.RegisterType((*Msg)(nil), "arc.Msg")
 	proto.RegisterType((*PlanetEpoch)(nil), "arc.PlanetEpoch")
-	proto.RegisterType((*UserSeat)(nil), "arc.UserSeat")
-	proto.RegisterType((*LoginReq)(nil), "arc.LoginReq")
+	proto.RegisterType((*Login)(nil), "arc.Login")
+	proto.RegisterType((*LoginChallenge)(nil), "arc.LoginChallenge")
+	proto.RegisterType((*LoginResponse)(nil), "arc.LoginResponse")
 	proto.RegisterType((*Symbol)(nil), "arc.Symbol")
-	proto.RegisterType((*Defs)(nil), "arc.Defs")
-	proto.RegisterType((*AttrSchema)(nil), "arc.AttrSchema")
+	proto.RegisterType((*RegisterDefs)(nil), "arc.RegisterDefs")
 	proto.RegisterType((*AttrSpec)(nil), "arc.AttrSpec")
+	proto.RegisterType((*CellSpec)(nil), "arc.CellSpec")
+	proto.RegisterType((*ItemSelector)(nil), "arc.ItemSelector")
 	proto.RegisterType((*KwArg)(nil), "arc.KwArg")
 	proto.RegisterType((*HandleURI)(nil), "arc.HandleURI")
 	proto.RegisterType((*PinReq)(nil), "arc.PinReq")
@@ -2172,7 +2151,7 @@ func init() {
 	proto.RegisterType((*AssetRef)(nil), "arc.AssetRef")
 	proto.RegisterType((*Content)(nil), "arc.Content")
 	proto.RegisterType((*CryptoKey)(nil), "arc.CryptoKey")
-	proto.RegisterType((*Link)(nil), "arc.Link")
+	proto.RegisterType((*CellInfo)(nil), "arc.CellInfo")
 	proto.RegisterType((*TRS)(nil), "arc.TRS")
 	proto.RegisterType((*FeedParams)(nil), "arc.FeedParams")
 	proto.RegisterType((*DataSegment)(nil), "arc.DataSegment")
@@ -2182,166 +2161,158 @@ func init() {
 func init() { proto.RegisterFile("apis/arc/arc.proto", fileDescriptor_e4a0eb974cf54c93) }
 
 var fileDescriptor_e4a0eb974cf54c93 = []byte{
-	// 2544 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x58, 0xcb, 0x6f, 0x24, 0x47,
-	0x19, 0x77, 0xcf, 0xcb, 0x9e, 0xf2, 0x63, 0x6b, 0x6b, 0x77, 0xbd, 0xbd, 0xde, 0x65, 0x62, 0x26,
-	0x09, 0x76, 0x4c, 0xb4, 0x89, 0xc7, 0xd9, 0x15, 0x41, 0x90, 0x30, 0x9e, 0xb1, 0xb3, 0xad, 0xf8,
-	0x31, 0xaa, 0x1e, 0x9b, 0x48, 0x1c, 0xac, 0xda, 0xe9, 0xf2, 0x4c, 0x93, 0x9e, 0xea, 0x4e, 0x77,
-	0xcd, 0x66, 0x9c, 0x53, 0x0e, 0x1c, 0x78, 0x24, 0x21, 0x80, 0xe0, 0x04, 0xdc, 0x80, 0x10, 0x71,
-	0x88, 0x90, 0x10, 0x12, 0x8f, 0x1c, 0xe0, 0x12, 0x71, 0x0a, 0xb7, 0x1c, 0x89, 0x73, 0x80, 0x03,
-	0x48, 0x11, 0xff, 0x00, 0xe8, 0xab, 0xea, 0xa7, 0x37, 0x07, 0x4b, 0xf5, 0xfd, 0x7e, 0xf5, 0xf8,
-	0xea, 0xfb, 0x7e, 0xdf, 0xd7, 0x35, 0x46, 0x84, 0x05, 0x6e, 0xf4, 0x14, 0x0b, 0x07, 0xf0, 0x77,
-	0x3b, 0x08, 0x7d, 0xe9, 0x93, 0x32, 0x0b, 0x07, 0xcd, 0x6f, 0x95, 0x50, 0x79, 0x3f, 0x1a, 0x92,
-	0x15, 0x54, 0x3a, 0x0c, 0x4c, 0x63, 0xd5, 0x58, 0x5f, 0x6a, 0xa1, 0xdb, 0x30, 0x69, 0x3f, 0x1a,
-	0x1e, 0x06, 0xb4, 0x74, 0x18, 0x90, 0xab, 0xa8, 0x4a, 0xf9, 0x2b, 0x56, 0xd7, 0x2c, 0xaf, 0x1a,
-	0xeb, 0x15, 0xaa, 0x0d, 0xb2, 0x8c, 0x6a, 0x1d, 0xee, 0x79, 0x56, 0xd7, 0xac, 0x29, 0x38, 0xb6,
-	0x00, 0x6f, 0x4b, 0x19, 0x5a, 0x5d, 0x73, 0x6e, 0xd5, 0x58, 0xaf, 0xd2, 0xd8, 0x22, 0x4b, 0xa8,
-	0x64, 0x5b, 0x26, 0x5e, 0x35, 0xd6, 0xcb, 0xb4, 0x64, 0x5b, 0xc4, 0x44, 0xb3, 0xc7, 0xcc, 0xeb,
-	0x9f, 0x05, 0xdc, 0xbc, 0xaa, 0x26, 0x26, 0x26, 0xec, 0x70, 0xcc, 0xbc, 0xed, 0xc9, 0xa9, 0x79,
-	0x6d, 0xd5, 0x58, 0x5f, 0xa0, 0xb1, 0x15, 0xe3, 0x96, 0x90, 0xe6, 0xb2, 0xda, 0x25, 0xb6, 0xc8,
-	0xa3, 0xa8, 0xba, 0xeb, 0xb1, 0x61, 0x64, 0x9a, 0xca, 0xfd, 0xc5, 0xc4, 0x7d, 0x05, 0x52, 0xcd,
-	0x91, 0x5b, 0xa8, 0x72, 0xc0, 0xa7, 0xd2, 0x5c, 0x5d, 0x35, 0xd6, 0xe7, 0x5b, 0x73, 0xc9, 0x1c,
-	0xaa, 0xd0, 0xe6, 0xab, 0x68, 0xbe, 0xe7, 0x31, 0xc1, 0xe5, 0x4e, 0xe0, 0x0f, 0x46, 0x64, 0x05,
-	0xcd, 0xa9, 0x41, 0xdf, 0xea, 0xaa, 0x98, 0x2c, 0xd0, 0xd4, 0x26, 0x4f, 0xa2, 0x05, 0x35, 0xde,
-	0x11, 0x32, 0x74, 0x79, 0x64, 0x96, 0x56, 0xcb, 0x85, 0x0d, 0x0b, 0x2c, 0x69, 0x20, 0xd4, 0xf1,
-	0xc7, 0x63, 0x5f, 0x1c, 0xb0, 0x31, 0x57, 0x01, 0xac, 0xd3, 0x1c, 0xd2, 0xdc, 0x45, 0x73, 0x47,
-	0x11, 0x0f, 0x6d, 0xce, 0x24, 0xdc, 0x0f, 0xc6, 0x56, 0xd7, 0x2c, 0xe9, 0x88, 0x6a, 0x8b, 0x34,
-	0xd1, 0xc2, 0x3d, 0x7f, 0xcc, 0xb5, 0x83, 0x56, 0xd7, 0xac, 0x28, 0xb6, 0x80, 0x35, 0x5f, 0x37,
-	0xd0, 0xdc, 0x9e, 0x3f, 0x74, 0x05, 0xe5, 0xaf, 0x40, 0x68, 0x61, 0xe9, 0x51, 0xec, 0x7d, 0x9d,
-	0x26, 0x26, 0x5c, 0xec, 0x9e, 0x1f, 0xc9, 0xb6, 0xe3, 0x84, 0xea, 0x90, 0x3a, 0x4d, 0x6d, 0xb2,
-	0x8a, 0xe6, 0xbb, 0xfc, 0x81, 0x3b, 0xe0, 0x7b, 0xec, 0x3e, 0xf7, 0x54, 0xf6, 0xea, 0x34, 0x0f,
-	0x91, 0x5b, 0xa8, 0xae, 0x4d, 0xd8, 0xb9, 0xae, 0xf8, 0x0c, 0x68, 0xde, 0x46, 0x35, 0xfb, 0x6c,
-	0x7c, 0xdf, 0xf7, 0x20, 0xd5, 0xf1, 0xd1, 0x15, 0x5a, 0xb2, 0xba, 0x20, 0xa0, 0x63, 0xe6, 0x4d,
-	0xb8, 0x3a, 0x72, 0x81, 0x6a, 0xa3, 0xf9, 0x12, 0xaa, 0x74, 0xf9, 0x69, 0x44, 0x1e, 0x47, 0xb3,
-	0x7a, 0x5d, 0x64, 0x1a, 0x2a, 0x96, 0xf3, 0x2a, 0x96, 0x1a, 0xa3, 0x09, 0x47, 0x9e, 0x40, 0xb3,
-	0xf6, 0x60, 0xc4, 0xc7, 0x2c, 0x09, 0xf9, 0x25, 0x35, 0x0d, 0xd4, 0xa5, 0x71, 0x9a, 0xf0, 0xcd,
-	0x1f, 0x19, 0x08, 0x65, 0x38, 0x79, 0x0c, 0x2d, 0x82, 0x36, 0xbb, 0x4c, 0xb2, 0x7d, 0xdf, 0xe1,
-	0x5e, 0x9c, 0x86, 0x22, 0x08, 0x99, 0xd2, 0xf3, 0x55, 0xa6, 0x2a, 0x3a, 0x53, 0x19, 0x02, 0xa1,
-	0xd3, 0x56, 0xac, 0xf8, 0x2a, 0x4d, 0x6d, 0x50, 0x20, 0x9c, 0x17, 0x99, 0x73, 0xca, 0xb3, 0xc5,
-	0xcc, 0xb3, 0x80, 0x0f, 0xa8, 0xe6, 0x9a, 0xbf, 0x30, 0xd0, 0x5c, 0x82, 0x41, 0x8a, 0x60, 0x7c,
-	0x44, 0xad, 0x38, 0x0f, 0x89, 0x99, 0xab, 0x9f, 0x4a, 0xa1, 0x7e, 0x9e, 0x42, 0xc8, 0xe6, 0xa0,
-	0x29, 0x55, 0x32, 0x35, 0x25, 0x75, 0x1d, 0x82, 0x0c, 0xa6, 0xb9, 0x29, 0x70, 0xc4, 0xb6, 0x3f,
-	0x11, 0x8e, 0x6d, 0x99, 0xb3, 0xaa, 0x5e, 0x12, 0x13, 0xf2, 0x18, 0xd7, 0x9a, 0xd5, 0x35, 0x17,
-	0xd5, 0x29, 0x19, 0xd0, 0xec, 0xa0, 0xea, 0x8b, 0xaf, 0xb6, 0xc3, 0x21, 0xc1, 0xa8, 0xfc, 0x22,
-	0x3f, 0x8b, 0x25, 0x04, 0x43, 0x40, 0x8e, 0x99, 0x67, 0x56, 0x35, 0x72, 0xcc, 0xbc, 0x5c, 0xad,
-	0xd6, 0xf2, 0xb5, 0xda, 0xfc, 0x1c, 0xaa, 0xdf, 0x63, 0xc2, 0xf1, 0x38, 0x5c, 0x09, 0xa3, 0x32,
-	0x5c, 0x34, 0xde, 0xe8, 0x88, 0x5a, 0xcd, 0xdf, 0x1a, 0xa8, 0xd6, 0xd3, 0x62, 0x5d, 0x45, 0xf3,
-	0x3d, 0x16, 0x72, 0x21, 0x75, 0x8f, 0xd1, 0xaa, 0xc9, 0x43, 0xa4, 0x81, 0x2a, 0xed, 0x70, 0x18,
-	0x99, 0x15, 0x15, 0x5c, 0xdd, 0x9d, 0x94, 0x87, 0x54, 0xe1, 0x70, 0xd1, 0x9e, 0x2b, 0x20, 0x9b,
-	0xca, 0xb3, 0x0a, 0x4d, 0x4c, 0xb2, 0x8e, 0x2e, 0x75, 0x7c, 0x21, 0xb9, 0x90, 0x69, 0xea, 0x66,
-	0xd5, 0x75, 0x2f, 0xc2, 0x50, 0x63, 0x9d, 0x91, 0xeb, 0x39, 0x89, 0xc4, 0xea, 0xab, 0xe5, 0xf5,
-	0x2a, 0x2d, 0x60, 0xcd, 0x6f, 0xa2, 0x3a, 0xe4, 0x82, 0x32, 0x31, 0xe4, 0xe4, 0x26, 0xaa, 0xdb,
-	0xd6, 0x89, 0xcd, 0xf9, 0xcb, 0x7d, 0x5f, 0x35, 0x9e, 0x0a, 0x9d, 0xb3, 0x2d, 0x6d, 0x27, 0xa4,
-	0xf4, 0x83, 0xb6, 0x34, 0x6f, 0xa4, 0xa4, 0xb2, 0xc9, 0xa3, 0x68, 0xd1, 0xb6, 0x4e, 0xb6, 0x99,
-	0x1c, 0x8c, 0xf6, 0xdc, 0xb1, 0x2b, 0xcd, 0x9b, 0xba, 0x9e, 0x6d, 0x2b, 0xc3, 0x9a, 0x8f, 0xa2,
-	0x72, 0x7f, 0x2a, 0xa0, 0x6b, 0xed, 0x47, 0xc3, 0xa4, 0x30, 0x72, 0x5d, 0x0b, 0x50, 0xd0, 0x79,
-	0xed, 0x05, 0xee, 0xef, 0xba, 0x53, 0x50, 0xa0, 0xd6, 0xb6, 0x91, 0xeb, 0x81, 0x2f, 0x70, 0x5f,
-	0x81, 0x54, 0x73, 0x90, 0x87, 0x3d, 0x26, 0x95, 0xae, 0x0c, 0x0a, 0x43, 0x85, 0x88, 0xa1, 0x0a,
-	0x1b, 0x20, 0x42, 0x25, 0xbd, 0xed, 0x49, 0x95, 0x4d, 0x83, 0xc2, 0x50, 0x09, 0xd2, 0x93, 0xf4,
-	0xf0, 0xc8, 0x44, 0xab, 0xc6, 0x7a, 0x89, 0xc6, 0x16, 0xe0, 0x3d, 0x3f, 0x02, 0x7c, 0x5e, 0xe3,
-	0xda, 0x6a, 0x7e, 0x0a, 0x3a, 0x8f, 0x22, 0x2e, 0x29, 0x3f, 0x85, 0xd2, 0xd7, 0xed, 0x44, 0x27,
-	0xbf, 0x9a, 0x36, 0x92, 0x7d, 0xee, 0xb8, 0x4c, 0x49, 0x59, 0x57, 0x63, 0x06, 0x90, 0x2f, 0xa0,
-	0x9a, 0x0a, 0x39, 0x57, 0x7e, 0x2d, 0xb5, 0x96, 0xd4, 0x65, 0x8e, 0xa8, 0xa5, 0x51, 0x1a, 0xb3,
-	0x89, 0xac, 0x6a, 0xa9, 0xac, 0xa0, 0x46, 0x7b, 0xee, 0xf4, 0xeb, 0xae, 0x23, 0x47, 0xca, 0xd9,
-	0x2a, 0x4d, 0x6d, 0x38, 0xb3, 0xe7, 0x4e, 0xef, 0x71, 0x77, 0x38, 0x92, 0xca, 0xe3, 0x2a, 0xcd,
-	0x00, 0xc5, 0x8e, 0xce, 0x22, 0xbd, 0x74, 0x41, 0xdd, 0x27, 0x03, 0xa0, 0x37, 0x80, 0x11, 0x2f,
-	0x5e, 0x54, 0x74, 0x0e, 0x69, 0xbe, 0x6f, 0xa0, 0xd9, 0x58, 0x51, 0xa0, 0xe7, 0x78, 0x08, 0xbd,
-	0x45, 0xdd, 0x6e, 0x81, 0xe6, 0xa1, 0xdc, 0x0c, 0x75, 0x7f, 0xdd, 0x6a, 0xf2, 0x90, 0xea, 0x58,
-	0x99, 0x69, 0x75, 0x55, 0x20, 0xca, 0xb4, 0x08, 0xc2, 0x3e, 0x7b, 0xae, 0x78, 0x39, 0x8a, 0x3f,
-	0xc3, 0x48, 0xcd, 0xc9, 0x43, 0x64, 0x0d, 0x3e, 0x0a, 0x03, 0x26, 0x5d, 0x5f, 0xa8, 0x2b, 0x27,
-	0xbd, 0x55, 0x8b, 0x86, 0xa6, 0x64, 0xf3, 0x1b, 0xa8, 0xde, 0x09, 0xcf, 0x02, 0xe9, 0x43, 0x95,
-	0xb7, 0xd0, 0x7c, 0x6c, 0xb8, 0x32, 0xae, 0xc8, 0xa5, 0x16, 0x56, 0x0b, 0x73, 0x38, 0xcd, 0x4f,
-	0x82, 0xc8, 0xbf, 0xc8, 0xcf, 0xb6, 0xcf, 0x24, 0x8f, 0xd4, 0x85, 0x16, 0x68, 0x6a, 0x37, 0xdf,
-	0x30, 0x50, 0x05, 0xbc, 0x52, 0x2d, 0x74, 0xc4, 0x02, 0x9e, 0x35, 0x83, 0xd4, 0x86, 0x22, 0xb6,
-	0x5f, 0x76, 0x45, 0xae, 0x21, 0xc6, 0xa6, 0x4e, 0xf3, 0x5e, 0xd2, 0x74, 0x8e, 0xe8, 0x5e, 0x26,
-	0xaa, 0xd9, 0xbc, 0xa8, 0x08, 0x7c, 0x4f, 0xa2, 0x81, 0x8a, 0x43, 0x9d, 0xaa, 0x31, 0x60, 0x7d,
-	0x78, 0x19, 0x2c, 0x68, 0x0c, 0xc6, 0xcd, 0xdf, 0x95, 0x50, 0xb9, 0x4f, 0x6d, 0xf8, 0x4a, 0xbd,
-	0xb4, 0x69, 0x3e, 0xa1, 0x84, 0x5e, 0x7a, 0x69, 0x53, 0xd9, 0x2d, 0x73, 0x23, 0xb6, 0x5b, 0xca,
-	0xde, 0x32, 0xbf, 0x18, 0xdb, 0x5b, 0xe4, 0x2e, 0xaa, 0xdb, 0x03, 0xe6, 0x71, 0xa8, 0x25, 0xb3,
-	0xa5, 0x82, 0x62, 0xaa, 0xa0, 0xf4, 0xa9, 0x7d, 0xfb, 0xd8, 0x8d, 0x26, 0xcc, 0x4b, 0x79, 0x9a,
-	0x4d, 0x85, 0x3a, 0x51, 0xc6, 0xa6, 0xb9, 0xa5, 0xeb, 0x44, 0x5b, 0x29, 0xde, 0x32, 0x9f, 0xc9,
-	0xe1, 0xad, 0x14, 0xdf, 0x32, 0xef, 0xe4, 0xf0, 0x2d, 0x88, 0x10, 0xf5, 0x25, 0x93, 0x7c, 0xd3,
-	0xfc, 0xaa, 0x22, 0x12, 0x33, 0x63, 0x5a, 0xe6, 0x73, 0x79, 0xa6, 0x95, 0x31, 0x5b, 0xe6, 0xf3,
-	0x79, 0x66, 0xab, 0xf9, 0x34, 0xba, 0x74, 0xc1, 0x67, 0xb2, 0x88, 0xea, 0xed, 0x89, 0xf4, 0x15,
-	0x80, 0x67, 0xc8, 0x12, 0x42, 0xbb, 0xee, 0x94, 0x3b, 0xda, 0x36, 0x9a, 0x23, 0x84, 0x76, 0x39,
-	0x77, 0x7a, 0x2c, 0x64, 0xe3, 0x88, 0x3c, 0x89, 0x2e, 0x1f, 0x05, 0x0e, 0x93, 0xdc, 0x12, 0x92,
-	0x87, 0x0f, 0x98, 0xb7, 0xef, 0x0a, 0x95, 0xb9, 0x12, 0x7d, 0x98, 0xf8, 0x8c, 0xd9, 0x6c, 0xaa,
-	0x4a, 0xe3, 0xe1, 0xd9, 0x6c, 0xda, 0xfc, 0xb1, 0x81, 0xe6, 0xa1, 0x52, 0x6c, 0x3e, 0x1c, 0x43,
-	0x49, 0xc1, 0x97, 0xec, 0x4c, 0xf2, 0xc3, 0xd3, 0x28, 0x69, 0xf0, 0xb1, 0x09, 0xb1, 0x82, 0xa1,
-	0xfd, 0x5a, 0xf2, 0x08, 0xd5, 0x16, 0x14, 0xac, 0x25, 0x3c, 0x57, 0x70, 0x55, 0x83, 0xb3, 0x4a,
-	0x90, 0x39, 0x04, 0xca, 0xdd, 0x96, 0x21, 0x67, 0x63, 0xd0, 0x5b, 0xfc, 0x92, 0x49, 0x01, 0xb5,
-	0xab, 0xe7, 0xdf, 0x4f, 0x6b, 0x2a, 0xb6, 0x9a, 0xcf, 0xa2, 0xf2, 0x4e, 0x08, 0x0f, 0xa5, 0x4a,
-	0x07, 0x34, 0xa0, 0x0b, 0x63, 0x41, 0x69, 0x60, 0x27, 0x0c, 0x01, 0xa3, 0x8a, 0x01, 0xc9, 0xee,
-	0x47, 0xc3, 0x58, 0xc8, 0x30, 0xdc, 0xf8, 0xbd, 0x81, 0xaa, 0x1d, 0x5f, 0x44, 0x12, 0xc2, 0xaa,
-	0x06, 0x27, 0xf0, 0xf8, 0xc1, 0x33, 0xe4, 0x26, 0xba, 0xae, 0x6d, 0x78, 0x88, 0xd9, 0x3c, 0x8a,
-	0x5c, 0x5f, 0xe8, 0xf2, 0xc5, 0x65, 0x72, 0x15, 0x61, 0x4d, 0x52, 0xdf, 0x97, 0x31, 0x5a, 0x23,
-	0xcb, 0x88, 0x68, 0xb4, 0x6f, 0x75, 0xb7, 0x5d, 0xc1, 0xc2, 0xb3, 0x3d, 0x2e, 0x70, 0xa3, 0x80,
-	0xdb, 0x32, 0x74, 0xc5, 0x10, 0xf0, 0xa7, 0x89, 0x89, 0xae, 0xa6, 0x78, 0xdf, 0x1d, 0xf3, 0x48,
-	0xb2, 0x71, 0x60, 0xbf, 0x86, 0xe7, 0xc8, 0xe7, 0xd1, 0xad, 0xd4, 0x19, 0x36, 0xf1, 0xe4, 0x0b,
-	0x61, 0x30, 0xb0, 0x79, 0x08, 0x4f, 0xba, 0x9e, 0x1f, 0x4a, 0xfc, 0xc1, 0xfa, 0xc6, 0x7b, 0x95,
-	0xf4, 0xa1, 0x4e, 0x2e, 0xa1, 0xf9, 0x78, 0x78, 0x22, 0x5c, 0x0f, 0xcf, 0xe4, 0x01, 0x57, 0x48,
-	0x5c, 0x21, 0x97, 0xd1, 0x62, 0x02, 0xdc, 0x87, 0xe2, 0xc7, 0x35, 0x42, 0xd0, 0x52, 0x02, 0x45,
-	0xca, 0x29, 0x3c, 0x9b, 0x5f, 0xd7, 0xb7, 0xba, 0x18, 0xc3, 0x45, 0x13, 0x20, 0xf9, 0x26, 0x63,
-	0x42, 0x30, 0x5a, 0x48, 0x50, 0x48, 0x01, 0x5e, 0xce, 0xcf, 0xeb, 0x32, 0xc9, 0xe1, 0x36, 0xf8,
-	0x7a, 0x01, 0x9d, 0x84, 0xaa, 0xa5, 0x61, 0x33, 0x7f, 0xc8, 0x11, 0xdd, 0xc3, 0x2b, 0xe4, 0x1a,
-	0xba, 0x9c, 0x00, 0xe9, 0xe3, 0x04, 0xdf, 0xcc, 0xcf, 0xdb, 0x09, 0x43, 0xdc, 0xca, 0x6f, 0x97,
-	0x7c, 0xc8, 0xf0, 0x16, 0xb9, 0x8e, 0xae, 0xe4, 0x8e, 0x4e, 0xc4, 0x89, 0x9f, 0x21, 0x57, 0xd0,
-	0xa5, 0x84, 0xd8, 0xe7, 0x92, 0xed, 0x47, 0x43, 0x7c, 0x27, 0x0f, 0xc6, 0x5d, 0x1b, 0xdf, 0xcd,
-	0x3b, 0x90, 0xb6, 0x5b, 0xfc, 0xa5, 0x42, 0x34, 0xa6, 0x02, 0x7f, 0x39, 0xef, 0x40, 0xf2, 0xa8,
-	0xc7, 0x5f, 0xc9, 0x47, 0x43, 0x69, 0xe7, 0xb9, 0x7c, 0x68, 0xf5, 0x6b, 0x0a, 0x7f, 0x8d, 0xac,
-	0xa0, 0xe5, 0xec, 0x0c, 0xce, 0x24, 0x07, 0xd9, 0x44, 0xc0, 0xb5, 0xf3, 0xe7, 0xa7, 0x2f, 0x19,
-	0xbc, 0x9d, 0xdf, 0x18, 0xfa, 0x34, 0xee, 0xe5, 0x37, 0xd6, 0xdf, 0x0a, 0x4c, 0x0b, 0x5e, 0x52,
-	0x1b, 0xf7, 0xc9, 0x75, 0x44, 0xd2, 0xec, 0x4c, 0x5c, 0x4f, 0xba, 0x62, 0x9f, 0x4d, 0xf1, 0x3f,
-	0x67, 0x37, 0x3e, 0x32, 0x50, 0x55, 0xfd, 0x7c, 0x04, 0xb1, 0xab, 0xc1, 0xc9, 0x81, 0x7f, 0x18,
-	0x68, 0xbd, 0x68, 0x5b, 0x5d, 0x0b, 0x1b, 0xa0, 0x17, 0x0d, 0x24, 0x91, 0xab, 0x90, 0x5b, 0xc8,
-	0xd4, 0x10, 0xe5, 0x91, 0xef, 0x3d, 0xe0, 0x6d, 0xe1, 0x50, 0x3e, 0x74, 0x23, 0xc9, 0x43, 0x5c,
-	0xcd, 0x16, 0xc4, 0x6f, 0x3c, 0x2d, 0xb0, 0x18, 0x9a, 0x44, 0x23, 0xb8, 0x17, 0x46, 0xe4, 0x06,
-	0xba, 0xa6, 0x31, 0x4b, 0x44, 0x3c, 0x94, 0xea, 0x1d, 0xa7, 0xa6, 0x2f, 0x41, 0x70, 0x35, 0x75,
-	0x14, 0x28, 0x0a, 0xd0, 0x4b, 0x10, 0x03, 0x8d, 0xc2, 0x8f, 0x33, 0x57, 0x62, 0x93, 0x5c, 0x49,
-	0xb6, 0xed, 0x78, 0x7e, 0xc4, 0x21, 0x80, 0xff, 0x33, 0x36, 0x9e, 0x45, 0x73, 0xc9, 0x2f, 0xcb,
-	0xd8, 0x15, 0x35, 0x3e, 0x39, 0xf0, 0x05, 0xf4, 0xcc, 0x15, 0x75, 0xac, 0x86, 0xf4, 0x4b, 0xd8,
-	0x1e, 0xb1, 0x90, 0x3b, 0xf8, 0xf5, 0xd2, 0xc6, 0x20, 0xff, 0x80, 0x07, 0x2f, 0x32, 0xeb, 0x44,
-	0x35, 0x5a, 0x3c, 0x03, 0x57, 0xc9, 0xa1, 0xd6, 0xdd, 0x67, 0x70, 0x09, 0x92, 0x96, 0xc3, 0x40,
-	0xf1, 0x9b, 0x77, 0x71, 0xf5, 0xc2, 0x06, 0x47, 0xfd, 0xce, 0xe6, 0x5d, 0x5c, 0xdb, 0x78, 0x04,
-	0xcd, 0x25, 0xaf, 0x3e, 0x90, 0x60, 0x32, 0x3e, 0xb1, 0x83, 0x11, 0x0f, 0x39, 0x9e, 0xd9, 0x78,
-	0xdb, 0x40, 0xf5, 0xf4, 0x29, 0x05, 0x57, 0x48, 0x8d, 0x93, 0xb6, 0x38, 0xd3, 0x2e, 0x64, 0x10,
-	0x08, 0x1d, 0x1b, 0x45, 0xec, 0x5e, 0xbf, 0xdf, 0xc3, 0xa5, 0x22, 0xb6, 0xeb, 0x7a, 0x1c, 0x57,
-	0xc9, 0x0d, 0x74, 0x35, 0xc3, 0x3a, 0x21, 0x93, 0x5c, 0xd5, 0x0f, 0x7e, 0xf3, 0xda, 0x05, 0x8a,
-	0x7b, 0x9e, 0x2e, 0x73, 0xfc, 0xd6, 0xb5, 0x8d, 0x9f, 0x18, 0x85, 0x07, 0x07, 0x38, 0x95, 0x9a,
-	0x27, 0x07, 0xaa, 0xcf, 0xdc, 0x42, 0x66, 0x06, 0xd9, 0x7c, 0x10, 0x72, 0xb9, 0xed, 0x4f, 0x4f,
-	0x0e, 0x58, 0xc7, 0xc3, 0x0e, 0x48, 0x3e, 0x63, 0xdb, 0xd1, 0xd9, 0x78, 0x3f, 0x1a, 0x6a, 0x8e,
-	0x17, 0x39, 0xdb, 0x1d, 0x0a, 0x57, 0xc4, 0xdc, 0x29, 0x69, 0xa0, 0x1b, 0x0f, 0x73, 0x3b, 0xdd,
-	0xd6, 0x9d, 0x3b, 0x9b, 0xcf, 0xe2, 0xbf, 0x19, 0x1b, 0xff, 0xad, 0xa1, 0xd9, 0xb8, 0xb1, 0x83,
-	0x53, 0xf1, 0xf0, 0xe4, 0xc0, 0x87, 0x36, 0x31, 0x03, 0xfa, 0x4f, 0xa0, 0x23, 0x21, 0xd8, 0x98,
-	0x3b, 0x80, 0x7f, 0x7b, 0x8d, 0x98, 0xe8, 0x4a, 0x42, 0xa8, 0xcf, 0x9a, 0x60, 0x1e, 0x30, 0xdf,
-	0x59, 0x03, 0x7d, 0x64, 0x4b, 0xa2, 0x49, 0x10, 0xf8, 0xa1, 0xe4, 0xce, 0x61, 0x80, 0xbf, 0x7b,
-	0x81, 0x73, 0xc7, 0x81, 0xc7, 0xa1, 0xbf, 0x70, 0x07, 0x7f, 0xaf, 0xb0, 0x23, 0xe5, 0xaf, 0x74,
-	0x98, 0x18, 0x70, 0x8f, 0x3b, 0xf8, 0x8d, 0x35, 0x88, 0x6b, 0xc2, 0xd8, 0xa3, 0x89, 0x94, 0xae,
-	0x18, 0x76, 0xfd, 0x57, 0x05, 0x7e, 0xb3, 0x40, 0x1d, 0xf8, 0xb2, 0xe3, 0x0b, 0xc1, 0x07, 0xb0,
-	0xdf, 0x5b, 0x6b, 0x79, 0xd7, 0xdb, 0x13, 0x39, 0xda, 0x65, 0x2e, 0x6c, 0xf7, 0xfd, 0xc2, 0x41,
-	0xaa, 0x44, 0x63, 0xe6, 0xed, 0x35, 0x72, 0x13, 0x2d, 0xa7, 0x07, 0xe9, 0xaf, 0xd4, 0xce, 0x34,
-	0x70, 0x41, 0xdb, 0x3f, 0xb8, 0xe8, 0xdf, 0x81, 0x2f, 0x77, 0xe1, 0xa7, 0x26, 0xfe, 0x61, 0xe1,
-	0x24, 0x4b, 0x3c, 0x60, 0x9e, 0xeb, 0x40, 0x25, 0xfd, 0xf4, 0xb3, 0x08, 0xe8, 0xc6, 0x3f, 0x5b,
-	0x23, 0xd7, 0x10, 0x4e, 0x88, 0x6d, 0xe6, 0xa8, 0xff, 0x15, 0xe0, 0x9f, 0xaf, 0x91, 0x5b, 0xe8,
-	0x7a, 0xee, 0x36, 0x23, 0x57, 0x0c, 0xfb, 0x7e, 0x5c, 0xab, 0xbf, 0x2c, 0xdc, 0x55, 0x83, 0xb1,
-	0xe3, 0xbf, 0x2a, 0x38, 0xae, 0xff, 0x5d, 0x92, 0xba, 0xf7, 0x4e, 0x21, 0xe8, 0x9a, 0x84, 0x75,
-	0x93, 0x90, 0xe3, 0x5f, 0x17, 0x2e, 0xd5, 0x0e, 0x82, 0x74, 0xd5, 0xbb, 0x17, 0x22, 0xab, 0x7e,
-	0xdd, 0x6b, 0xea, 0x37, 0x85, 0x45, 0xfb, 0xcc, 0x3b, 0xf5, 0xc3, 0x31, 0x77, 0xfa, 0x53, 0xfc,
-	0x5e, 0x61, 0x11, 0x94, 0x6c, 0xba, 0xdf, 0x1f, 0xd6, 0x40, 0x88, 0x17, 0xa8, 0xa4, 0xe3, 0x71,
-	0x07, 0xff, 0x71, 0x8d, 0x2c, 0xa3, 0xcb, 0xb9, 0x90, 0xc4, 0x95, 0xf3, 0xa7, 0xc2, 0x61, 0x50,
-	0xa9, 0x89, 0xef, 0x7f, 0x2e, 0xac, 0xd8, 0x99, 0x82, 0xca, 0x40, 0x80, 0xef, 0x17, 0xe3, 0xc4,
-	0x3d, 0x2f, 0x75, 0xe2, 0x2f, 0x85, 0xcd, 0x7a, 0xa1, 0xff, 0xc0, 0x75, 0x78, 0x08, 0x8b, 0xfe,
-	0xba, 0x46, 0x1e, 0x41, 0x2b, 0x09, 0x73, 0xec, 0xfa, 0x1e, 0x93, 0x3c, 0x6a, 0x07, 0x01, 0x17,
-	0xce, 0xa1, 0xf0, 0xce, 0xf0, 0xbf, 0xd7, 0xc8, 0x63, 0xe8, 0x91, 0x2c, 0x97, 0xd1, 0xe4, 0xf4,
-	0xd4, 0x1d, 0xb8, 0x5c, 0xc8, 0x1e, 0x0f, 0xc7, 0xae, 0x92, 0x4a, 0x84, 0xff, 0x53, 0x98, 0xd5,
-	0x19, 0xf5, 0x42, 0x5f, 0xfa, 0x03, 0xdf, 0x53, 0x77, 0x1d, 0xf8, 0x43, 0xe1, 0xbe, 0xc6, 0x1d,
-	0xfc, 0xf7, 0xf5, 0xd6, 0xa6, 0xfe, 0x17, 0x15, 0xbc, 0x44, 0xc8, 0xe3, 0x68, 0x3e, 0xf7, 0x2a,
-	0x22, 0xe9, 0xef, 0xdf, 0x95, 0x74, 0xb4, 0x6e, 0x3c, 0x6d, 0x6c, 0x3f, 0xff, 0xe1, 0xc7, 0x8d,
-	0x99, 0x8f, 0x3e, 0x6e, 0xcc, 0x7c, 0xfa, 0x71, 0xc3, 0x78, 0xfd, 0xbc, 0x61, 0xbc, 0x73, 0xde,
-	0x30, 0x3e, 0x38, 0x6f, 0x18, 0x1f, 0x9e, 0x37, 0x8c, 0x7f, 0x9c, 0x37, 0x8c, 0x7f, 0x9d, 0x37,
-	0x66, 0x3e, 0x3d, 0x6f, 0x18, 0x6f, 0x7f, 0xd2, 0x98, 0xf9, 0xf0, 0x93, 0xc6, 0xcc, 0x47, 0x9f,
-	0x34, 0x66, 0xde, 0x2d, 0xcd, 0xb5, 0xc3, 0x41, 0x14, 0xb0, 0x01, 0xbf, 0x5f, 0x53, 0xff, 0x11,
-	0xdd, 0xfa, 0x7f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x4b, 0xaf, 0x0c, 0x34, 0x27, 0x15, 0x00, 0x00,
+	// 2410 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x58, 0xcd, 0x8f, 0x23, 0x47,
+	0x15, 0x77, 0x7b, 0x66, 0x3c, 0xf6, 0x9b, 0x8f, 0xed, 0xad, 0xcc, 0x6c, 0x7a, 0x37, 0x1b, 0x67,
+	0xd2, 0x49, 0xf0, 0x30, 0x84, 0x4d, 0xd6, 0x93, 0x20, 0xe5, 0x00, 0x91, 0xc7, 0x9e, 0xd9, 0xb5,
+	0x32, 0x1f, 0x56, 0xb5, 0x67, 0x89, 0xc4, 0x61, 0x54, 0xeb, 0xae, 0xb1, 0x9b, 0xb4, 0xab, 0x7b,
+	0xbb, 0xcb, 0x1b, 0x3b, 0x12, 0x22, 0x07, 0x0e, 0x7c, 0x25, 0x04, 0x10, 0x9c, 0x08, 0x17, 0x24,
+	0x08, 0x11, 0x87, 0x1c, 0xe0, 0xc2, 0x47, 0x40, 0x70, 0x89, 0x38, 0xe5, 0x98, 0x13, 0x22, 0x13,
+	0x09, 0x71, 0x00, 0x29, 0x7f, 0x01, 0x42, 0xaf, 0xaa, 0xbb, 0xdd, 0x9e, 0xd9, 0x1c, 0x46, 0xaa,
+	0xdf, 0xef, 0xf7, 0xea, 0xe3, 0xbd, 0x7a, 0xef, 0x75, 0x79, 0x80, 0xb0, 0xd0, 0x8b, 0x9f, 0x61,
+	0x51, 0x0f, 0xff, 0x6e, 0x84, 0x51, 0x20, 0x03, 0x32, 0xc7, 0xa2, 0x9e, 0xfd, 0x5b, 0x03, 0xe6,
+	0x0e, 0xe2, 0x3e, 0xb9, 0x06, 0xc5, 0xa3, 0xd0, 0x32, 0x36, 0x8c, 0xcd, 0xd5, 0x3a, 0xdc, 0x40,
+	0xa3, 0x83, 0xb8, 0x7f, 0x14, 0xd2, 0xe2, 0x51, 0x48, 0xd6, 0x60, 0x81, 0xf2, 0x7b, 0xed, 0x96,
+	0x55, 0xdc, 0x30, 0x36, 0xe7, 0xa9, 0x06, 0xe4, 0x0a, 0x94, 0x9a, 0xdc, 0xf7, 0xdb, 0x2d, 0x6b,
+	0x7e, 0xc3, 0xd8, 0x9c, 0xa3, 0x09, 0x42, 0xbe, 0x21, 0x65, 0xd4, 0x6e, 0x59, 0xa5, 0x0d, 0x63,
+	0x73, 0x85, 0x26, 0x88, 0xac, 0x42, 0xd1, 0x69, 0x5b, 0x65, 0x65, 0x5b, 0x74, 0xda, 0x68, 0x77,
+	0x87, 0xf9, 0x3b, 0xa3, 0x53, 0x0b, 0x36, 0x8c, 0xcd, 0x65, 0x9a, 0x20, 0xf2, 0x04, 0x2c, 0xec,
+	0xf9, 0xac, 0x1f, 0x5b, 0xcb, 0xea, 0x30, 0x2b, 0xe9, 0x61, 0x14, 0x49, 0xb5, 0x66, 0xbf, 0x0a,
+	0x4b, 0x1d, 0x9f, 0x09, 0x2e, 0x77, 0xc3, 0xa0, 0x37, 0x20, 0xd7, 0xa0, 0xac, 0x06, 0xdd, 0x76,
+	0x4b, 0xf9, 0xb0, 0x4c, 0x33, 0x4c, 0x9e, 0x86, 0x65, 0x35, 0xde, 0x15, 0x32, 0xf2, 0x78, 0x6c,
+	0x15, 0x37, 0xe6, 0x36, 0x97, 0xea, 0xe5, 0x74, 0x59, 0x3a, 0xa3, 0x92, 0x2a, 0x40, 0x33, 0x18,
+	0x0e, 0x03, 0x71, 0xc8, 0x86, 0xdc, 0x9a, 0xdb, 0x30, 0x36, 0x2b, 0x34, 0xc7, 0xd8, 0xdf, 0x80,
+	0x85, 0xfd, 0xa0, 0xef, 0x09, 0x62, 0xc1, 0xe2, 0x71, 0xcc, 0xa3, 0xe3, 0x64, 0xc7, 0x0a, 0x4d,
+	0x21, 0x1e, 0xe6, 0x76, 0x10, 0xcb, 0x86, 0xeb, 0x46, 0x2a, 0x62, 0x15, 0x9a, 0x61, 0xb2, 0x01,
+	0x4b, 0x2d, 0x7e, 0xdf, 0xeb, 0xf1, 0x7d, 0x76, 0x97, 0xfb, 0x2a, 0x1a, 0x15, 0x9a, 0xa7, 0xc8,
+	0x75, 0xa8, 0x68, 0x88, 0x2b, 0x57, 0x94, 0x3e, 0x25, 0x6c, 0x13, 0x56, 0xd5, 0xf6, 0xcd, 0x01,
+	0xf3, 0x7d, 0x2e, 0xfa, 0xdc, 0xbe, 0x04, 0x2b, 0x8a, 0xa1, 0x3c, 0x0e, 0x03, 0x11, 0x73, 0xfb,
+	0x69, 0x28, 0x39, 0x93, 0xe1, 0xdd, 0xc0, 0xc7, 0x88, 0x27, 0xa7, 0x5b, 0xa1, 0xc5, 0x76, 0x8b,
+	0x10, 0x98, 0x57, 0x5e, 0x15, 0x55, 0x84, 0xd4, 0xd8, 0x7e, 0xcf, 0x80, 0x65, 0xca, 0xfb, 0x5e,
+	0x2c, 0x79, 0xd4, 0xe2, 0xa7, 0x31, 0x79, 0x0a, 0x16, 0xf5, 0xf4, 0xd8, 0x32, 0x54, 0xa4, 0x96,
+	0x54, 0xa4, 0x34, 0x47, 0x53, 0x0d, 0x6f, 0x09, 0xef, 0x35, 0x0d, 0xa7, 0xbe, 0x25, 0x64, 0x9c,
+	0x90, 0xf7, 0xa8, 0xd6, 0xd0, 0x08, 0x93, 0x22, 0xb6, 0xe6, 0x72, 0x46, 0xc8, 0x68, 0x23, 0xa5,
+	0x91, 0x67, 0xa0, 0xe2, 0x70, 0x9f, 0xf7, 0x64, 0x10, 0xc5, 0xd6, 0xbc, 0x32, 0xbc, 0xac, 0x0c,
+	0xdb, 0x92, 0x0f, 0x53, 0x85, 0x4e, 0x6d, 0xec, 0x31, 0x94, 0xd3, 0x8d, 0x30, 0x35, 0x5b, 0xfc,
+	0x34, 0xf3, 0x52, 0x03, 0x95, 0x0e, 0x3e, 0x1f, 0x76, 0x27, 0xa1, 0xbe, 0xc2, 0x15, 0x9a, 0x61,
+	0xbc, 0x60, 0x87, 0xe3, 0x55, 0x2b, 0x75, 0x41, 0xa9, 0x39, 0x06, 0xe7, 0xe2, 0xea, 0x2a, 0x50,
+	0x3a, 0x81, 0x33, 0x6c, 0xbb, 0x50, 0x4e, 0x4f, 0xff, 0x19, 0x3b, 0x6f, 0xc0, 0x92, 0x4e, 0x16,
+	0x1d, 0x1c, 0x74, 0x67, 0x85, 0xe6, 0x29, 0xb4, 0xe8, 0x78, 0x42, 0x70, 0x57, 0x5b, 0x2c, 0x68,
+	0x8b, 0x1c, 0x65, 0xbf, 0x0c, 0xcb, 0x79, 0xd7, 0x3f, 0x63, 0x27, 0x0b, 0x16, 0xdb, 0xa2, 0xe7,
+	0x8f, 0x5c, 0x9e, 0xec, 0x92, 0x42, 0x54, 0x76, 0xc7, 0x5a, 0xd1, 0xab, 0xa7, 0xd0, 0x6e, 0xc2,
+	0xc2, 0x4b, 0xaf, 0x36, 0xa2, 0x3e, 0x31, 0x61, 0xee, 0x25, 0x3e, 0x49, 0x12, 0x17, 0x87, 0xc8,
+	0xdc, 0x61, 0xbe, 0x8a, 0x47, 0x85, 0xe2, 0x30, 0x57, 0x9f, 0xa5, 0x7c, 0x7d, 0xda, 0x8f, 0x42,
+	0xe5, 0x36, 0x13, 0xae, 0xcf, 0x8f, 0x69, 0x1b, 0xa7, 0x1d, 0xd3, 0x76, 0xba, 0xd0, 0x31, 0x6d,
+	0xdb, 0xff, 0x30, 0xa0, 0xd4, 0xc1, 0x74, 0xbc, 0xa7, 0x5c, 0x65, 0x11, 0x17, 0x52, 0x77, 0x0f,
+	0x43, 0x75, 0x8f, 0x3c, 0x85, 0x7b, 0x74, 0x3c, 0x81, 0x2b, 0xe8, 0x42, 0x49, 0x10, 0xba, 0xd0,
+	0xf1, 0x04, 0xc6, 0x5a, 0xdd, 0xdf, 0x1c, 0x4d, 0x21, 0xb9, 0x01, 0x44, 0x2f, 0xa0, 0x52, 0x20,
+	0x09, 0x51, 0x72, 0x8d, 0x0f, 0x50, 0xc8, 0xd3, 0x70, 0xb9, 0x39, 0xf0, 0x7c, 0x57, 0xdd, 0x5b,
+	0x6a, 0xae, 0xef, 0xf5, 0xa2, 0x40, 0x6c, 0x58, 0x3e, 0x60, 0x9e, 0x90, 0xcc, 0x13, 0xce, 0x44,
+	0xf4, 0x54, 0x7d, 0x96, 0xe9, 0x0c, 0x67, 0x7f, 0x1d, 0x2a, 0xb8, 0x03, 0x65, 0xa2, 0xcf, 0xc9,
+	0x23, 0x50, 0x71, 0xda, 0x27, 0x0e, 0xe7, 0xaf, 0x74, 0x03, 0xcb, 0x52, 0x0e, 0x96, 0x9d, 0xb6,
+	0xc6, 0xa9, 0x28, 0x83, 0xb0, 0x21, 0xad, 0xab, 0x99, 0xa8, 0x30, 0x79, 0x02, 0x56, 0x9c, 0xf6,
+	0xc9, 0x0e, 0x93, 0xbd, 0xc1, 0xbe, 0x37, 0xf4, 0xa4, 0xf5, 0x88, 0x32, 0x58, 0x76, 0xda, 0x53,
+	0xce, 0x7e, 0x02, 0xe6, 0xba, 0x63, 0x41, 0xae, 0xc3, 0xfc, 0x41, 0xdc, 0x4f, 0x0b, 0x72, 0xda,
+	0xba, 0x14, 0x6b, 0xff, 0xd8, 0x80, 0xd2, 0x2d, 0x1e, 0xec, 0x79, 0x63, 0x2c, 0xb8, 0x83, 0xc0,
+	0xe5, 0x7e, 0xd2, 0xc8, 0x75, 0xc1, 0xdd, 0xe2, 0x81, 0x22, 0xa9, 0xd6, 0xf0, 0xce, 0xf6, 0x99,
+	0x54, 0x5d, 0xdb, 0xa0, 0x38, 0x54, 0x8c, 0xe8, 0xab, 0x28, 0x22, 0x23, 0x54, 0x82, 0x34, 0x7c,
+	0xa9, 0x02, 0x65, 0x50, 0x1c, 0xaa, 0xb6, 0xee, 0x4b, 0x7a, 0x74, 0xac, 0xda, 0x75, 0x91, 0x26,
+	0x48, 0x5d, 0x61, 0x10, 0x23, 0xbf, 0xa4, 0x79, 0x8d, 0xec, 0x4f, 0x0d, 0x28, 0x37, 0xe2, 0x98,
+	0x4b, 0xca, 0x4f, 0x31, 0x85, 0x75, 0xc3, 0xd3, 0x89, 0xb2, 0x90, 0xb5, 0xba, 0x03, 0xee, 0x7a,
+	0x2c, 0xab, 0xd3, 0x0a, 0x9d, 0x12, 0xe4, 0x73, 0x50, 0x72, 0x7a, 0x03, 0x3e, 0xd4, 0x45, 0xba,
+	0x5a, 0x5f, 0x55, 0xce, 0x1c, 0xd3, 0xb6, 0x66, 0x69, 0xa2, 0xa6, 0x29, 0x58, 0xca, 0x52, 0x10,
+	0x4b, 0xb8, 0xe3, 0x8d, 0xbf, 0xea, 0xb9, 0x72, 0xa0, 0x0e, 0xbb, 0x40, 0x33, 0x8c, 0x7b, 0x76,
+	0xbc, 0xf1, 0x6d, 0xee, 0xf5, 0x07, 0x52, 0x9d, 0x78, 0x81, 0x4e, 0x09, 0xa5, 0x0e, 0x26, 0xb1,
+	0x9e, 0xba, 0xac, 0xfc, 0x99, 0x12, 0xd8, 0x3a, 0x10, 0x24, 0x93, 0x57, 0x94, 0x9c, 0x63, 0xec,
+	0xf7, 0x0d, 0x58, 0x6c, 0x06, 0x42, 0x72, 0x21, 0x75, 0x23, 0x50, 0xc3, 0x16, 0x93, 0x4c, 0x79,
+	0xb7, 0x4c, 0xf3, 0x54, 0xce, 0x42, 0xf9, 0x3f, 0xaf, 0x3f, 0x05, 0x39, 0x8a, 0x3c, 0x09, 0x2b,
+	0x39, 0xd8, 0x6e, 0xa9, 0x40, 0xcc, 0xd1, 0x59, 0x12, 0xd7, 0xd9, 0xf7, 0xc4, 0x2b, 0x71, 0xf2,
+	0x31, 0x06, 0x65, 0x93, 0xa7, 0x48, 0x0d, 0xca, 0xfb, 0x41, 0x8f, 0x49, 0x2f, 0x10, 0xca, 0xe5,
+	0xb4, 0xa7, 0xeb, 0xa4, 0xa1, 0x99, 0x68, 0x7f, 0x0d, 0x2a, 0xcd, 0x68, 0x12, 0xca, 0x00, 0x3b,
+	0x42, 0x1d, 0x96, 0x12, 0xe0, 0xc9, 0xa4, 0x7a, 0x57, 0xeb, 0xa6, 0x6e, 0xe1, 0x53, 0x9e, 0xe6,
+	0x8d, 0x30, 0xf2, 0x2f, 0xf1, 0xc9, 0xce, 0x44, 0xf2, 0x58, 0x39, 0xb4, 0x4c, 0x33, 0x6c, 0xbf,
+	0x5d, 0xd4, 0xdd, 0xb3, 0x2d, 0x4e, 0x03, 0x0c, 0x34, 0x8e, 0xf3, 0x7d, 0x6d, 0x4a, 0x60, 0xba,
+	0x74, 0x3d, 0xe9, 0xa7, 0x41, 0xd1, 0x00, 0x17, 0x77, 0x46, 0x77, 0xa5, 0x12, 0x74, 0x9f, 0xca,
+	0x30, 0xce, 0x68, 0xdc, 0x0d, 0x46, 0x32, 0x49, 0x03, 0x0d, 0xb0, 0x1c, 0x6e, 0xf9, 0x93, 0x50,
+	0x67, 0x41, 0xf6, 0x91, 0x4a, 0x92, 0x92, 0x6a, 0x8d, 0x7c, 0x11, 0x40, 0x0d, 0xf6, 0x59, 0xd4,
+	0xe7, 0xea, 0xd2, 0x2f, 0x58, 0xe6, 0x0c, 0xc8, 0xe3, 0x30, 0x8f, 0xb1, 0xb5, 0x56, 0x1f, 0x64,
+	0xa8, 0x24, 0xec, 0x5e, 0xcd, 0x88, 0x33, 0xc9, 0x5d, 0x6b, 0x4d, 0x77, 0xaf, 0x04, 0xa2, 0x0b,
+	0x07, 0x81, 0xeb, 0x9d, 0x7a, 0xdc, 0xb5, 0xd6, 0x95, 0x94, 0x61, 0xfb, 0x77, 0x45, 0x98, 0xeb,
+	0x52, 0x07, 0xbf, 0xda, 0x2f, 0xdf, 0xb4, 0x3e, 0xaf, 0x2a, 0xaf, 0xf8, 0xf2, 0x4d, 0x85, 0xeb,
+	0xd6, 0x56, 0x82, 0xeb, 0x0a, 0x6f, 0x5b, 0x5f, 0x48, 0xf0, 0x36, 0xf9, 0x12, 0x54, 0x9c, 0x1e,
+	0xf3, 0x39, 0x16, 0xb7, 0x55, 0x57, 0xb7, 0x64, 0xa9, 0x53, 0x75, 0xa9, 0x73, 0xe3, 0x8e, 0x17,
+	0x8f, 0x98, 0x9f, 0xe9, 0x74, 0x6a, 0x8a, 0x85, 0xab, 0xc0, 0x4d, 0x6b, 0x5b, 0x17, 0xae, 0x46,
+	0x19, 0x5f, 0xb7, 0x9e, 0xcb, 0xf1, 0xf5, 0x8c, 0xdf, 0xb6, 0x9e, 0xcf, 0xf1, 0xdb, 0xe8, 0x2d,
+	0x0d, 0x24, 0x93, 0xfc, 0xa6, 0xf5, 0x65, 0x25, 0xa4, 0x70, 0xaa, 0xd4, 0xad, 0xaf, 0xe4, 0x95,
+	0xfa, 0x54, 0xd9, 0xb6, 0x5e, 0xcc, 0x2b, 0xdb, 0xf6, 0xb3, 0x70, 0xe9, 0xdc, 0x99, 0xc9, 0x0a,
+	0x54, 0x1a, 0x23, 0x19, 0x28, 0xc2, 0x2c, 0x90, 0x55, 0x80, 0x3d, 0x6f, 0xcc, 0x5d, 0x8d, 0x0d,
+	0x7b, 0x00, 0xb0, 0xc7, 0xb9, 0xdb, 0x61, 0x11, 0x1b, 0xc6, 0xd8, 0xef, 0x8f, 0x43, 0x97, 0x49,
+	0xde, 0x16, 0x92, 0x47, 0xf7, 0x99, 0x7f, 0xe0, 0x09, 0xf5, 0x71, 0x29, 0xd2, 0x8b, 0xc2, 0x03,
+	0xac, 0xd9, 0x58, 0xd5, 0xea, 0x45, 0x6b, 0x36, 0xb6, 0x7f, 0x62, 0xc0, 0x12, 0x96, 0xae, 0xc3,
+	0xfb, 0x43, 0xac, 0x71, 0x0b, 0x16, 0x31, 0xb5, 0x8f, 0x4e, 0x63, 0x95, 0x8f, 0xf3, 0x34, 0x85,
+	0x18, 0x2b, 0x1c, 0x3a, 0xaf, 0xa9, 0x7c, 0x9c, 0xa7, 0x09, 0xc2, 0x0e, 0xd2, 0x16, 0xbe, 0x27,
+	0xb8, 0x6a, 0x0a, 0x8b, 0xaa, 0x42, 0x72, 0x0c, 0x96, 0x85, 0x23, 0x23, 0xce, 0x86, 0xd8, 0xd1,
+	0x92, 0xc7, 0x5f, 0x46, 0xa8, 0x55, 0xfd, 0xe0, 0x6e, 0x56, 0xe4, 0x09, 0xb2, 0x5f, 0x80, 0xb9,
+	0xdd, 0x08, 0xdf, 0x96, 0xf3, 0x4d, 0xcc, 0x01, 0x5d, 0xa9, 0xcb, 0x2a, 0x07, 0x76, 0xa3, 0x08,
+	0x39, 0xaa, 0x14, 0x6c, 0x95, 0x07, 0x71, 0x3f, 0xf9, 0xd6, 0xe2, 0x70, 0xeb, 0x5b, 0x06, 0x2c,
+	0x34, 0x03, 0x11, 0x4b, 0x0c, 0xab, 0x1a, 0x9c, 0xe0, 0x2b, 0xd0, 0x2c, 0x90, 0x2b, 0x40, 0x34,
+	0xee, 0xb6, 0x5b, 0x3b, 0x9e, 0x60, 0xd1, 0x64, 0x9f, 0x0b, 0x73, 0x63, 0x86, 0x77, 0x64, 0xe4,
+	0x89, 0x3e, 0xf2, 0xcf, 0x11, 0x0b, 0xd6, 0x32, 0xbe, 0xeb, 0x0d, 0x79, 0x2c, 0xd9, 0x30, 0x74,
+	0x5e, 0x33, 0xcb, 0xe4, 0x71, 0xb8, 0x9e, 0xad, 0xcc, 0x46, 0xbe, 0xbc, 0x15, 0x85, 0x3d, 0x87,
+	0x47, 0xf8, 0xa4, 0xed, 0x04, 0x91, 0x34, 0x3f, 0xd8, 0xdc, 0xfa, 0x97, 0xa1, 0x9a, 0x61, 0x2c,
+	0x93, 0x97, 0xeb, 0x43, 0x70, 0x29, 0x07, 0x4f, 0x84, 0xe7, 0x9b, 0x85, 0xf3, 0xe4, 0x6e, 0x14,
+	0x99, 0x25, 0x72, 0x1d, 0xac, 0x3c, 0x99, 0x7f, 0xca, 0x9a, 0x40, 0xae, 0xc2, 0x7a, 0x5e, 0xcd,
+	0xde, 0x2d, 0xe6, 0x12, 0x59, 0x87, 0xcb, 0x79, 0x49, 0xbd, 0xa1, 0xcd, 0x35, 0x52, 0x85, 0x6b,
+	0x17, 0xe8, 0xec, 0xb1, 0x6d, 0xae, 0x93, 0x47, 0xe1, 0xea, 0x05, 0x3d, 0x7d, 0x7a, 0x9b, 0x57,
+	0x48, 0x75, 0x56, 0x6e, 0xc7, 0xf1, 0x88, 0x47, 0x6d, 0xe1, 0xc9, 0xb8, 0x21, 0xcd, 0xd7, 0x8b,
+	0x5b, 0x6f, 0x1a, 0xb0, 0xa0, 0x7e, 0x58, 0x61, 0xbc, 0xd5, 0xe0, 0xe4, 0x30, 0x38, 0x0a, 0xcd,
+	0x02, 0xb9, 0x04, 0x4b, 0x1a, 0xeb, 0x93, 0x18, 0x84, 0xc0, 0xaa, 0x26, 0x0e, 0xb8, 0x64, 0xf8,
+	0xe2, 0x30, 0xe7, 0xc9, 0x65, 0x58, 0xd1, 0x5c, 0xf2, 0x1c, 0x32, 0x4b, 0x78, 0x1f, 0x09, 0x35,
+	0x8a, 0x07, 0x68, 0x86, 0x2f, 0x5d, 0x13, 0xc8, 0x1a, 0x98, 0x9a, 0x6f, 0x0e, 0x78, 0xef, 0x95,
+	0x30, 0xf0, 0x84, 0x34, 0xad, 0xe9, 0x2e, 0x4d, 0x3f, 0x88, 0xb9, 0xf9, 0xcd, 0x2d, 0x07, 0xca,
+	0xe9, 0x6f, 0xab, 0x64, 0x75, 0x35, 0x3e, 0x39, 0x0c, 0x04, 0x16, 0x9b, 0x05, 0x6b, 0x19, 0xa5,
+	0xfb, 0xb3, 0xcf, 0x25, 0x77, 0xcd, 0x22, 0xb9, 0x06, 0xeb, 0x99, 0xa2, 0x5f, 0x86, 0xce, 0x80,
+	0x45, 0xdc, 0x45, 0x2f, 0x1f, 0x83, 0x72, 0xfa, 0xe8, 0xc0, 0x5b, 0x4b, 0xc7, 0x27, 0x4e, 0x38,
+	0xe0, 0x11, 0x37, 0x0b, 0x5b, 0xbf, 0x30, 0xa0, 0x92, 0x7d, 0xc9, 0x71, 0xdf, 0x0c, 0x9c, 0x34,
+	0xc4, 0xc4, 0x2c, 0xa0, 0xf3, 0x53, 0x0a, 0x4b, 0x43, 0x07, 0x64, 0xca, 0xdd, 0xee, 0x76, 0x3b,
+	0x66, 0x71, 0x96, 0xdb, 0xf3, 0x7c, 0x6e, 0x2e, 0x9c, 0x5b, 0x2e, 0xea, 0x99, 0x25, 0x72, 0x15,
+	0xd6, 0xa6, 0x54, 0x33, 0x62, 0x92, 0xab, 0x96, 0x6d, 0xbe, 0xb1, 0x7e, 0x4e, 0xc2, 0xc7, 0x20,
+	0x0e, 0x99, 0xf9, 0xe6, 0xfa, 0xd6, 0x4f, 0x8d, 0x99, 0x4f, 0x20, 0x2e, 0x9c, 0xc1, 0x93, 0x43,
+	0x95, 0x93, 0x98, 0x7e, 0x19, 0xe5, 0xf0, 0x5e, 0xc4, 0xe5, 0x4e, 0x30, 0x3e, 0x39, 0x64, 0x4d,
+	0xdf, 0xc4, 0x76, 0x7f, 0x65, 0xaa, 0x36, 0xe2, 0xc9, 0xf0, 0x20, 0xee, 0x6b, 0x8d, 0xcf, 0x6a,
+	0x8e, 0xd7, 0x17, 0x9e, 0x48, 0xb4, 0x53, 0x95, 0x45, 0x17, 0xb4, 0xdd, 0x56, 0xfd, 0xf9, 0xe7,
+	0x6f, 0xbe, 0x60, 0xfe, 0xdd, 0xd8, 0xfa, 0x5f, 0x09, 0x16, 0x93, 0xca, 0xc6, 0x43, 0x25, 0xc3,
+	0x93, 0xc3, 0x00, 0x6b, 0xa2, 0x40, 0x1e, 0x06, 0x92, 0x52, 0xc7, 0x42, 0xb0, 0x21, 0x77, 0x91,
+	0xff, 0x76, 0x8d, 0x58, 0xf0, 0x50, 0x2a, 0xa8, 0xbe, 0x26, 0x98, 0x8f, 0xca, 0x77, 0x6a, 0x78,
+	0x9b, 0xd3, 0x29, 0xf1, 0x28, 0x0c, 0x83, 0x48, 0x72, 0xf7, 0x28, 0x34, 0xbf, 0x7b, 0x4e, 0xf3,
+	0x86, 0xa1, 0xcf, 0xb1, 0xfb, 0x71, 0xd7, 0xfc, 0x5e, 0x8d, 0xac, 0xc1, 0xa5, 0x54, 0xc3, 0xa2,
+	0x0f, 0x46, 0xd2, 0xfc, 0x7e, 0x0d, 0x63, 0x9a, 0xb2, 0xce, 0x60, 0x24, 0xa5, 0x27, 0xfa, 0xad,
+	0xe0, 0x55, 0x61, 0xbe, 0x31, 0x23, 0x1d, 0x06, 0xb2, 0x19, 0x08, 0xc1, 0x7b, 0xb8, 0xd6, 0x9b,
+	0xb5, 0xfc, 0xb1, 0x1b, 0x23, 0x39, 0xd8, 0x63, 0x9e, 0xcf, 0x5d, 0xf3, 0x07, 0x33, 0xc7, 0x56,
+	0xc5, 0x91, 0x28, 0x6f, 0xd5, 0xc8, 0x23, 0x70, 0x25, 0xdb, 0x88, 0xc7, 0xb1, 0x17, 0x88, 0xdd,
+	0x71, 0xe8, 0x61, 0x16, 0xfe, 0x70, 0x66, 0x1a, 0xe5, 0xf7, 0x0e, 0x03, 0xb9, 0x17, 0x8c, 0x84,
+	0x6b, 0xfe, 0x68, 0x66, 0xa7, 0xb6, 0xb8, 0xcf, 0x7c, 0xcf, 0xa5, 0xfc, 0x9e, 0xf9, 0xb3, 0x07,
+	0x09, 0xd8, 0x2c, 0xde, 0xae, 0x91, 0x75, 0x30, 0x53, 0x61, 0x87, 0xb9, 0x77, 0x98, 0x3f, 0xe2,
+	0xe6, 0xcf, 0x6b, 0xe4, 0x3a, 0x3c, 0x9c, 0xf3, 0x66, 0xe0, 0x89, 0x7e, 0x37, 0xc0, 0x1f, 0x7b,
+	0x9e, 0x34, 0x7f, 0x39, 0xe3, 0xab, 0x26, 0x93, 0x83, 0xff, 0x6a, 0xe6, 0xe0, 0xfa, 0xff, 0x18,
+	0xd9, 0xf1, 0xde, 0x99, 0x09, 0xb8, 0x16, 0x71, 0xde, 0x28, 0xe2, 0xe6, 0xaf, 0x67, 0x9c, 0x6a,
+	0x84, 0x61, 0x36, 0xeb, 0xdd, 0x19, 0xa5, 0xc5, 0x4f, 0x33, 0xe5, 0x37, 0x33, 0xca, 0x01, 0xf3,
+	0x4f, 0x83, 0x68, 0xc8, 0xdd, 0xee, 0xd8, 0x7c, 0x6f, 0xe6, 0x84, 0xf8, 0x9a, 0xcc, 0x26, 0xfd,
+	0xbe, 0x86, 0x39, 0x78, 0x4e, 0x4a, 0x7b, 0x2b, 0x77, 0xcd, 0x3f, 0xd4, 0xc8, 0x15, 0xb8, 0x9c,
+	0x8b, 0x48, 0x52, 0x34, 0x7f, 0x9c, 0x3d, 0x06, 0x93, 0x2c, 0x3d, 0xfa, 0x9f, 0x66, 0x66, 0xec,
+	0x8e, 0x31, 0xc1, 0x30, 0xf7, 0xde, 0x9f, 0xe1, 0x3b, 0xd9, 0xe5, 0xfe, 0xb9, 0x46, 0x1e, 0x05,
+	0x2b, 0xc7, 0xab, 0x47, 0xef, 0x58, 0xaa, 0xbe, 0xe5, 0x9a, 0x7f, 0x99, 0x8d, 0x2e, 0xf7, 0xfd,
+	0xec, 0xec, 0x7f, 0x9d, 0x39, 0x43, 0x27, 0x0a, 0xee, 0x7b, 0x2e, 0x8f, 0x70, 0xaf, 0xbf, 0xd5,
+	0xc8, 0x63, 0x70, 0x2d, 0x55, 0xee, 0x78, 0x81, 0xcf, 0x24, 0x8f, 0x1b, 0x61, 0xc8, 0x85, 0x7b,
+	0x24, 0xfc, 0x89, 0xf9, 0x9f, 0x1a, 0x79, 0x12, 0x1e, 0x9b, 0x66, 0x40, 0x3c, 0x3a, 0x3d, 0xf5,
+	0x7a, 0x1e, 0x17, 0xb2, 0xc3, 0xa3, 0xa1, 0xa7, 0x12, 0x2c, 0x36, 0xff, 0x5b, 0xab, 0xdf, 0xd4,
+	0xff, 0xe2, 0xc1, 0x2f, 0x19, 0x79, 0x0a, 0x96, 0x70, 0x9c, 0xe4, 0x1f, 0xc9, 0x7e, 0x9d, 0x5d,
+	0xcb, 0x46, 0x9b, 0xc6, 0xb3, 0xc6, 0xce, 0x8b, 0x1f, 0x7e, 0x5c, 0x2d, 0x7c, 0xf4, 0x71, 0xb5,
+	0xf0, 0xe9, 0xc7, 0x55, 0xe3, 0xf5, 0xb3, 0xaa, 0xf1, 0xce, 0x59, 0xd5, 0xf8, 0xe0, 0xac, 0x6a,
+	0x7c, 0x78, 0x56, 0x35, 0xfe, 0x79, 0x56, 0x35, 0xfe, 0x7d, 0x56, 0x2d, 0x7c, 0x7a, 0x56, 0x35,
+	0xde, 0xfa, 0xa4, 0x5a, 0xf8, 0xf0, 0x93, 0x6a, 0xe1, 0xa3, 0x4f, 0xaa, 0x85, 0x77, 0x8b, 0xe5,
+	0x46, 0xd4, 0x8b, 0x43, 0xd6, 0xe3, 0x77, 0x4b, 0xea, 0xbf, 0x76, 0xdb, 0xff, 0x0f, 0x00, 0x00,
+	0xff, 0xff, 0xde, 0xd2, 0xdc, 0xd6, 0xcb, 0x13, 0x00, 0x00,
 }
 
 func (x Const) String() string {
@@ -2351,8 +2322,8 @@ func (x Const) String() string {
 	}
 	return strconv.Itoa(int(x))
 }
-func (x ValType) String() string {
-	s, ok := ValType_name[int32(x)]
+func (x ConstSymbol) String() string {
+	s, ok := ConstSymbol_name[int32(x)]
 	if ok {
 		return s
 	}
@@ -2367,13 +2338,6 @@ func (x MsgOp) String() string {
 }
 func (x MsgFlags) String() string {
 	s, ok := MsgFlags_name[int32(x)]
-	if ok {
-		return s
-	}
-	return strconv.Itoa(int(x))
-}
-func (x SeriesType) String() string {
-	s, ok := SeriesType_name[int32(x)]
 	if ok {
 		return s
 	}
@@ -2448,19 +2412,10 @@ func (this *Msg) Equal(that interface{}) bool {
 	if this.SI != that1.SI {
 		return false
 	}
-	if this.ValType != that1.ValType {
-		return false
-	}
 	if !bytes.Equal(this.ValBuf, that1.ValBuf) {
 		return false
 	}
-	if this.ValInt != that1.ValInt {
-		return false
-	}
 	if this.Flags != that1.Flags {
-		return false
-	}
-	if !this.Next.Equal(that1.Next) {
 		return false
 	}
 	return true
@@ -2500,41 +2455,14 @@ func (this *PlanetEpoch) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *UserSeat) Equal(that interface{}) bool {
+func (this *Login) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*UserSeat)
+	that1, ok := that.(*Login)
 	if !ok {
-		that2, ok := that.(UserSeat)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.UserID != that1.UserID {
-		return false
-	}
-	if this.HomePlanetID != that1.HomePlanetID {
-		return false
-	}
-	return true
-}
-func (this *LoginReq) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*LoginReq)
-	if !ok {
-		that2, ok := that.(LoginReq)
+		that2, ok := that.(Login)
 		if ok {
 			that1 = &that2
 		} else {
@@ -2556,6 +2484,48 @@ func (this *LoginReq) Equal(that interface{}) bool {
 		return false
 	}
 	if this.DeviceUID != that1.DeviceUID {
+		return false
+	}
+	return true
+}
+func (this *LoginChallenge) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*LoginChallenge)
+	if !ok {
+		that2, ok := that.(LoginChallenge)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	return true
+}
+func (this *LoginResponse) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*LoginResponse)
+	if !ok {
+		that2, ok := that.(LoginResponse)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
 		return false
 	}
 	return true
@@ -2582,19 +2552,19 @@ func (this *Symbol) Equal(that interface{}) bool {
 	if this.ID != that1.ID {
 		return false
 	}
-	if !bytes.Equal(this.Value, that1.Value) {
+	if !bytes.Equal(this.Name, that1.Name) {
 		return false
 	}
 	return true
 }
-func (this *Defs) Equal(that interface{}) bool {
+func (this *RegisterDefs) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*Defs)
+	that1, ok := that.(*RegisterDefs)
 	if !ok {
-		that2, ok := that.(Defs)
+		that2, ok := that.(RegisterDefs)
 		if ok {
 			that1 = &that2
 		} else {
@@ -2614,49 +2584,27 @@ func (this *Defs) Equal(that interface{}) bool {
 			return false
 		}
 	}
-	if len(this.Schemas) != len(that1.Schemas) {
-		return false
-	}
-	for i := range this.Schemas {
-		if !this.Schemas[i].Equal(that1.Schemas[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *AttrSchema) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*AttrSchema)
-	if !ok {
-		that2, ok := that.(AttrSchema)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.CellDataModel != that1.CellDataModel {
-		return false
-	}
-	if this.SchemaName != that1.SchemaName {
-		return false
-	}
-	if this.SchemaID != that1.SchemaID {
-		return false
-	}
 	if len(this.Attrs) != len(that1.Attrs) {
 		return false
 	}
 	for i := range this.Attrs {
 		if !this.Attrs[i].Equal(that1.Attrs[i]) {
+			return false
+		}
+	}
+	if len(this.Cells) != len(that1.Cells) {
+		return false
+	}
+	for i := range this.Cells {
+		if !this.Cells[i].Equal(that1.Cells[i]) {
+			return false
+		}
+	}
+	if len(this.Selectors) != len(that1.Selectors) {
+		return false
+	}
+	for i := range this.Selectors {
+		if !this.Selectors[i].Equal(that1.Selectors[i]) {
 			return false
 		}
 	}
@@ -2681,20 +2629,97 @@ func (this *AttrSpec) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if this.AttrURI != that1.AttrURI {
+	if this.DefID != that1.DefID {
 		return false
 	}
-	if this.AttrID != that1.AttrID {
+	if this.ElemType != that1.ElemType {
 		return false
 	}
 	if this.SeriesType != that1.SeriesType {
 		return false
 	}
-	if this.BoundSI != that1.BoundSI {
+	if this.AttrName != that1.AttrName {
 		return false
 	}
-	if this.ValTypeID != that1.ValTypeID {
+	return true
+}
+func (this *CellSpec) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*CellSpec)
+	if !ok {
+		that2, ok := that.(CellSpec)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
 		return false
+	}
+	if this.DefID != that1.DefID {
+		return false
+	}
+	if len(this.CommonAttrs) != len(that1.CommonAttrs) {
+		return false
+	}
+	for i := range this.CommonAttrs {
+		if this.CommonAttrs[i] != that1.CommonAttrs[i] {
+			return false
+		}
+	}
+	if len(this.PinnedAttrs) != len(that1.PinnedAttrs) {
+		return false
+	}
+	for i := range this.PinnedAttrs {
+		if this.PinnedAttrs[i] != that1.PinnedAttrs[i] {
+			return false
+		}
+	}
+	return true
+}
+func (this *ItemSelector) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*ItemSelector)
+	if !ok {
+		that2, ok := that.(ItemSelector)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.DefID != that1.DefID {
+		return false
+	}
+	if len(this.Include) != len(that1.Include) {
+		return false
+	}
+	for i := range this.Include {
+		if this.Include[i] != that1.Include[i] {
+			return false
+		}
+	}
+	if len(this.Exclude) != len(that1.Exclude) {
+		return false
+	}
+	for i := range this.Exclude {
+		if this.Exclude[i] != that1.Exclude[i] {
+			return false
+		}
 	}
 	return true
 }
@@ -2774,27 +2799,20 @@ func (this *PinReq) Equal(that interface{}) bool {
 	if this.ParentReqID != that1.ParentReqID {
 		return false
 	}
-	if len(this.Args) != len(that1.Args) {
+	if this.PinURI != that1.PinURI {
 		return false
-	}
-	for i := range this.Args {
-		if !this.Args[i].Equal(that1.Args[i]) {
-			return false
-		}
 	}
 	if this.PinCell != that1.PinCell {
 		return false
 	}
-	if this.ContentSchemaID != that1.ContentSchemaID {
+	if this.ParentAttrSelector != that1.ParentAttrSelector {
 		return false
 	}
-	if len(this.ChildSchemas) != len(that1.ChildSchemas) {
+	if this.ChildCellSelector != that1.ChildCellSelector {
 		return false
 	}
-	for i := range this.ChildSchemas {
-		if this.ChildSchemas[i] != that1.ChildSchemas[i] {
-			return false
-		}
+	if this.MaintainSync != that1.MaintainSync {
+		return false
 	}
 	return true
 }
@@ -3004,14 +3022,14 @@ func (this *CryptoKey) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *Link) Equal(that interface{}) bool {
+func (this *CellInfo) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*Link)
+	that1, ok := that.(*CellInfo)
 	if !ok {
-		that2, ok := that.(Link)
+		that2, ok := that.(CellInfo)
 		if ok {
 			that1 = &that2
 		} else {
@@ -3023,22 +3041,31 @@ func (this *Link) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if this.ShapeURI != that1.ShapeURI {
+	if this.CellDefID != that1.CellDefID {
 		return false
 	}
-	if this.SkinURI != that1.SkinURI {
+	if this.Title != that1.Title {
 		return false
 	}
-	if this.URL != that1.URL {
+	if this.Subtitle != that1.Subtitle {
 		return false
 	}
-	if this.Label != that1.Label {
+	if this.About != that1.About {
 		return false
 	}
-	if this.Desc != that1.Desc {
+	if !this.Glyph.Equal(that1.Glyph) {
 		return false
 	}
-	if this.Tags != that1.Tags {
+	if !this.GlyphLarge.Equal(that1.GlyphLarge) {
+		return false
+	}
+	if !this.Link.Equal(that1.Link) {
+		return false
+	}
+	if this.Created != that1.Created {
+		return false
+	}
+	if this.Modified != that1.Modified {
 		return false
 	}
 	return true
@@ -3188,20 +3215,15 @@ func (this *Msg) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 14)
+	s := make([]string, 0, 11)
 	s = append(s, "&arc.Msg{")
 	s = append(s, "Op: "+fmt.Sprintf("%#v", this.Op)+",\n")
 	s = append(s, "ReqID: "+fmt.Sprintf("%#v", this.ReqID)+",\n")
 	s = append(s, "CellID: "+fmt.Sprintf("%#v", this.CellID)+",\n")
 	s = append(s, "AttrID: "+fmt.Sprintf("%#v", this.AttrID)+",\n")
 	s = append(s, "SI: "+fmt.Sprintf("%#v", this.SI)+",\n")
-	s = append(s, "ValType: "+fmt.Sprintf("%#v", this.ValType)+",\n")
 	s = append(s, "ValBuf: "+fmt.Sprintf("%#v", this.ValBuf)+",\n")
-	s = append(s, "ValInt: "+fmt.Sprintf("%#v", this.ValInt)+",\n")
 	s = append(s, "Flags: "+fmt.Sprintf("%#v", this.Flags)+",\n")
-	if this.Next != nil {
-		s = append(s, "Next: "+fmt.Sprintf("%#v", this.Next)+",\n")
-	}
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3219,27 +3241,34 @@ func (this *PlanetEpoch) GoString() string {
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
-func (this *UserSeat) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 6)
-	s = append(s, "&arc.UserSeat{")
-	s = append(s, "UserID: "+fmt.Sprintf("%#v", this.UserID)+",\n")
-	s = append(s, "HomePlanetID: "+fmt.Sprintf("%#v", this.HomePlanetID)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *LoginReq) GoString() string {
+func (this *Login) GoString() string {
 	if this == nil {
 		return "nil"
 	}
 	s := make([]string, 0, 8)
-	s = append(s, "&arc.LoginReq{")
+	s = append(s, "&arc.Login{")
 	s = append(s, "UserUID: "+fmt.Sprintf("%#v", this.UserUID)+",\n")
 	s = append(s, "HostAddr: "+fmt.Sprintf("%#v", this.HostAddr)+",\n")
 	s = append(s, "DeviceLabel: "+fmt.Sprintf("%#v", this.DeviceLabel)+",\n")
 	s = append(s, "DeviceUID: "+fmt.Sprintf("%#v", this.DeviceUID)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *LoginChallenge) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 4)
+	s = append(s, "&arc.LoginChallenge{")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *LoginResponse) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 4)
+	s = append(s, "&arc.LoginResponse{")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3250,36 +3279,27 @@ func (this *Symbol) GoString() string {
 	s := make([]string, 0, 6)
 	s = append(s, "&arc.Symbol{")
 	s = append(s, "ID: "+fmt.Sprintf("%#v", this.ID)+",\n")
-	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
+	s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
-func (this *Defs) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 6)
-	s = append(s, "&arc.Defs{")
-	if this.Symbols != nil {
-		s = append(s, "Symbols: "+fmt.Sprintf("%#v", this.Symbols)+",\n")
-	}
-	if this.Schemas != nil {
-		s = append(s, "Schemas: "+fmt.Sprintf("%#v", this.Schemas)+",\n")
-	}
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *AttrSchema) GoString() string {
+func (this *RegisterDefs) GoString() string {
 	if this == nil {
 		return "nil"
 	}
 	s := make([]string, 0, 8)
-	s = append(s, "&arc.AttrSchema{")
-	s = append(s, "CellDataModel: "+fmt.Sprintf("%#v", this.CellDataModel)+",\n")
-	s = append(s, "SchemaName: "+fmt.Sprintf("%#v", this.SchemaName)+",\n")
-	s = append(s, "SchemaID: "+fmt.Sprintf("%#v", this.SchemaID)+",\n")
+	s = append(s, "&arc.RegisterDefs{")
+	if this.Symbols != nil {
+		s = append(s, "Symbols: "+fmt.Sprintf("%#v", this.Symbols)+",\n")
+	}
 	if this.Attrs != nil {
 		s = append(s, "Attrs: "+fmt.Sprintf("%#v", this.Attrs)+",\n")
+	}
+	if this.Cells != nil {
+		s = append(s, "Cells: "+fmt.Sprintf("%#v", this.Cells)+",\n")
+	}
+	if this.Selectors != nil {
+		s = append(s, "Selectors: "+fmt.Sprintf("%#v", this.Selectors)+",\n")
 	}
 	s = append(s, "}")
 	return strings.Join(s, "")
@@ -3288,13 +3308,36 @@ func (this *AttrSpec) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 9)
+	s := make([]string, 0, 8)
 	s = append(s, "&arc.AttrSpec{")
-	s = append(s, "AttrURI: "+fmt.Sprintf("%#v", this.AttrURI)+",\n")
-	s = append(s, "AttrID: "+fmt.Sprintf("%#v", this.AttrID)+",\n")
+	s = append(s, "DefID: "+fmt.Sprintf("%#v", this.DefID)+",\n")
+	s = append(s, "ElemType: "+fmt.Sprintf("%#v", this.ElemType)+",\n")
 	s = append(s, "SeriesType: "+fmt.Sprintf("%#v", this.SeriesType)+",\n")
-	s = append(s, "BoundSI: "+fmt.Sprintf("%#v", this.BoundSI)+",\n")
-	s = append(s, "ValTypeID: "+fmt.Sprintf("%#v", this.ValTypeID)+",\n")
+	s = append(s, "AttrName: "+fmt.Sprintf("%#v", this.AttrName)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *CellSpec) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 7)
+	s = append(s, "&arc.CellSpec{")
+	s = append(s, "DefID: "+fmt.Sprintf("%#v", this.DefID)+",\n")
+	s = append(s, "CommonAttrs: "+fmt.Sprintf("%#v", this.CommonAttrs)+",\n")
+	s = append(s, "PinnedAttrs: "+fmt.Sprintf("%#v", this.PinnedAttrs)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *ItemSelector) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 7)
+	s = append(s, "&arc.ItemSelector{")
+	s = append(s, "DefID: "+fmt.Sprintf("%#v", this.DefID)+",\n")
+	s = append(s, "Include: "+fmt.Sprintf("%#v", this.Include)+",\n")
+	s = append(s, "Exclude: "+fmt.Sprintf("%#v", this.Exclude)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3324,15 +3367,14 @@ func (this *PinReq) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 9)
+	s := make([]string, 0, 10)
 	s = append(s, "&arc.PinReq{")
 	s = append(s, "ParentReqID: "+fmt.Sprintf("%#v", this.ParentReqID)+",\n")
-	if this.Args != nil {
-		s = append(s, "Args: "+fmt.Sprintf("%#v", this.Args)+",\n")
-	}
+	s = append(s, "PinURI: "+fmt.Sprintf("%#v", this.PinURI)+",\n")
 	s = append(s, "PinCell: "+fmt.Sprintf("%#v", this.PinCell)+",\n")
-	s = append(s, "ContentSchemaID: "+fmt.Sprintf("%#v", this.ContentSchemaID)+",\n")
-	s = append(s, "ChildSchemas: "+fmt.Sprintf("%#v", this.ChildSchemas)+",\n")
+	s = append(s, "ParentAttrSelector: "+fmt.Sprintf("%#v", this.ParentAttrSelector)+",\n")
+	s = append(s, "ChildCellSelector: "+fmt.Sprintf("%#v", this.ChildCellSelector)+",\n")
+	s = append(s, "MaintainSync: "+fmt.Sprintf("%#v", this.MaintainSync)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3419,18 +3461,27 @@ func (this *CryptoKey) GoString() string {
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
-func (this *Link) GoString() string {
+func (this *CellInfo) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 10)
-	s = append(s, "&arc.Link{")
-	s = append(s, "ShapeURI: "+fmt.Sprintf("%#v", this.ShapeURI)+",\n")
-	s = append(s, "SkinURI: "+fmt.Sprintf("%#v", this.SkinURI)+",\n")
-	s = append(s, "URL: "+fmt.Sprintf("%#v", this.URL)+",\n")
-	s = append(s, "Label: "+fmt.Sprintf("%#v", this.Label)+",\n")
-	s = append(s, "Desc: "+fmt.Sprintf("%#v", this.Desc)+",\n")
-	s = append(s, "Tags: "+fmt.Sprintf("%#v", this.Tags)+",\n")
+	s := make([]string, 0, 13)
+	s = append(s, "&arc.CellInfo{")
+	s = append(s, "CellDefID: "+fmt.Sprintf("%#v", this.CellDefID)+",\n")
+	s = append(s, "Title: "+fmt.Sprintf("%#v", this.Title)+",\n")
+	s = append(s, "Subtitle: "+fmt.Sprintf("%#v", this.Subtitle)+",\n")
+	s = append(s, "About: "+fmt.Sprintf("%#v", this.About)+",\n")
+	if this.Glyph != nil {
+		s = append(s, "Glyph: "+fmt.Sprintf("%#v", this.Glyph)+",\n")
+	}
+	if this.GlyphLarge != nil {
+		s = append(s, "GlyphLarge: "+fmt.Sprintf("%#v", this.GlyphLarge)+",\n")
+	}
+	if this.Link != nil {
+		s = append(s, "Link: "+fmt.Sprintf("%#v", this.Link)+",\n")
+	}
+	s = append(s, "Created: "+fmt.Sprintf("%#v", this.Created)+",\n")
+	s = append(s, "Modified: "+fmt.Sprintf("%#v", this.Modified)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3634,71 +3685,37 @@ func (m *Msg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Next != nil {
-		{
-			size, err := m.Next.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintArc(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x2
-		i--
-		dAtA[i] = 0x82
-	}
 	if m.Flags != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.Flags))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xc0
-	}
-	if m.ValInt != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.ValInt))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xb0
+		dAtA[i] = 0x60
 	}
 	if len(m.ValBuf) > 0 {
 		i -= len(m.ValBuf)
 		copy(dAtA[i:], m.ValBuf)
 		i = encodeVarintArc(dAtA, i, uint64(len(m.ValBuf)))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xaa
-	}
-	if m.ValType != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.ValType))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xa0
+		dAtA[i] = 0x52
 	}
 	if m.SI != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.SI))
 		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x80
+		dAtA[i] = 0x40
 	}
 	if m.AttrID != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.AttrID))
 		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x30
 	}
 	if m.CellID != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.CellID))
 		i--
-		dAtA[i] = 0x30
+		dAtA[i] = 0x20
 	}
 	if m.ReqID != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.ReqID))
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x10
 	}
 	if m.Op != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.Op))
@@ -3759,7 +3776,7 @@ func (m *PlanetEpoch) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *UserSeat) Marshal() (dAtA []byte, err error) {
+func (m *Login) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3769,45 +3786,12 @@ func (m *UserSeat) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *UserSeat) MarshalTo(dAtA []byte) (int, error) {
+func (m *Login) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UserSeat) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.HomePlanetID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.HomePlanetID))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.UserID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.UserID))
-		i--
-		dAtA[i] = 0x10
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *LoginReq) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *LoginReq) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *LoginReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Login) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -3843,6 +3827,52 @@ func (m *LoginReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *LoginChallenge) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LoginChallenge) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LoginChallenge) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *LoginResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LoginResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LoginResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func (m *Symbol) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3863,10 +3893,10 @@ func (m *Symbol) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Value) > 0 {
-		i -= len(m.Value)
-		copy(dAtA[i:], m.Value)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.Value)))
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintArc(dAtA, i, uint64(len(m.Name)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -3878,7 +3908,7 @@ func (m *Symbol) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Defs) Marshal() (dAtA []byte, err error) {
+func (m *RegisterDefs) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -3888,20 +3918,48 @@ func (m *Defs) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Defs) MarshalTo(dAtA []byte) (int, error) {
+func (m *RegisterDefs) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Defs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *RegisterDefs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Schemas) > 0 {
-		for iNdEx := len(m.Schemas) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Selectors) > 0 {
+		for iNdEx := len(m.Selectors) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Schemas[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Selectors[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintArc(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Cells) > 0 {
+		for iNdEx := len(m.Cells) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Cells[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintArc(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Attrs) > 0 {
+		for iNdEx := len(m.Attrs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Attrs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -3929,62 +3987,6 @@ func (m *Defs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AttrSchema) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AttrSchema) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AttrSchema) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Attrs) > 0 {
-		for iNdEx := len(m.Attrs) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Attrs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintArc(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x42
-		}
-	}
-	if m.SchemaID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.SchemaID))
-		i--
-		dAtA[i] = 0x30
-	}
-	if len(m.SchemaName) > 0 {
-		i -= len(m.SchemaName)
-		copy(dAtA[i:], m.SchemaName)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.SchemaName)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.CellDataModel) > 0 {
-		i -= len(m.CellDataModel)
-		copy(dAtA[i:], m.CellDataModel)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.CellDataModel)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *AttrSpec) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -4005,32 +4007,153 @@ func (m *AttrSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ValTypeID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.ValTypeID))
+	if m.AttrName != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.AttrName))
 		i--
-		dAtA[i] = 0x68
-	}
-	if m.BoundSI != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.BoundSI))
-		i--
-		dAtA[i] = 0x38
+		dAtA[i] = 0x30
 	}
 	if m.SeriesType != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.SeriesType))
 		i--
-		dAtA[i] = 0x30
+		dAtA[i] = 0x28
 	}
-	if m.AttrID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.AttrID))
+	if m.ElemType != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.ElemType))
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x18
 	}
-	if len(m.AttrURI) > 0 {
-		i -= len(m.AttrURI)
-		copy(dAtA[i:], m.AttrURI)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.AttrURI)))
+	if m.DefID != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.DefID))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CellSpec) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CellSpec) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CellSpec) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.PinnedAttrs) > 0 {
+		dAtA2 := make([]byte, len(m.PinnedAttrs)*10)
+		var j1 int
+		for _, num := range m.PinnedAttrs {
+			for num >= 1<<7 {
+				dAtA2[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA2[j1] = uint8(num)
+			j1++
+		}
+		i -= j1
+		copy(dAtA[i:], dAtA2[:j1])
+		i = encodeVarintArc(dAtA, i, uint64(j1))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.CommonAttrs) > 0 {
+		dAtA4 := make([]byte, len(m.CommonAttrs)*10)
+		var j3 int
+		for _, num := range m.CommonAttrs {
+			for num >= 1<<7 {
+				dAtA4[j3] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j3++
+			}
+			dAtA4[j3] = uint8(num)
+			j3++
+		}
+		i -= j3
+		copy(dAtA[i:], dAtA4[:j3])
+		i = encodeVarintArc(dAtA, i, uint64(j3))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.DefID != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.DefID))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ItemSelector) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ItemSelector) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ItemSelector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Exclude) > 0 {
+		dAtA6 := make([]byte, len(m.Exclude)*10)
+		var j5 int
+		for _, num := range m.Exclude {
+			for num >= 1<<7 {
+				dAtA6[j5] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j5++
+			}
+			dAtA6[j5] = uint8(num)
+			j5++
+		}
+		i -= j5
+		copy(dAtA[i:], dAtA6[:j5])
+		i = encodeVarintArc(dAtA, i, uint64(j5))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Include) > 0 {
+		dAtA8 := make([]byte, len(m.Include)*10)
+		var j7 int
+		for _, num := range m.Include {
+			for num >= 1<<7 {
+				dAtA8[j7] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j7++
+			}
+			dAtA8[j7] = uint8(num)
+			j7++
+		}
+		i -= j7
+		copy(dAtA[i:], dAtA8[:j7])
+		i = encodeVarintArc(dAtA, i, uint64(j7))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.DefID != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.DefID))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -4129,48 +4252,37 @@ func (m *PinReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ChildSchemas) > 0 {
-		dAtA3 := make([]byte, len(m.ChildSchemas)*10)
-		var j2 int
-		for _, num1 := range m.ChildSchemas {
-			num := uint64(num1)
-			for num >= 1<<7 {
-				dAtA3[j2] = uint8(uint64(num)&0x7f | 0x80)
-				num >>= 7
-				j2++
-			}
-			dAtA3[j2] = uint8(num)
-			j2++
+	if m.MaintainSync {
+		i--
+		if m.MaintainSync {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
 		}
-		i -= j2
-		copy(dAtA[i:], dAtA3[:j2])
-		i = encodeVarintArc(dAtA, i, uint64(j2))
 		i--
-		dAtA[i] = 0x4a
+		dAtA[i] = 0x40
 	}
-	if m.ContentSchemaID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.ContentSchemaID))
+	if m.ChildCellSelector != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.ChildCellSelector))
 		i--
-		dAtA[i] = 0x38
+		dAtA[i] = 0x30
+	}
+	if m.ParentAttrSelector != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.ParentAttrSelector))
+		i--
+		dAtA[i] = 0x28
 	}
 	if m.PinCell != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.PinCell))
 		i--
-		dAtA[i] = 0x28
+		dAtA[i] = 0x18
 	}
-	if len(m.Args) > 0 {
-		for iNdEx := len(m.Args) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Args[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintArc(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x22
-		}
+	if len(m.PinURI) > 0 {
+		i -= len(m.PinURI)
+		copy(dAtA[i:], m.PinURI)
+		i = encodeVarintArc(dAtA, i, uint64(len(m.PinURI)))
+		i--
+		dAtA[i] = 0x12
 	}
 	if m.ParentReqID != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.ParentReqID))
@@ -4484,7 +4596,7 @@ func (m *CryptoKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Link) Marshal() (dAtA []byte, err error) {
+func (m *CellInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4494,57 +4606,91 @@ func (m *Link) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Link) MarshalTo(dAtA []byte) (int, error) {
+func (m *CellInfo) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Link) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *CellInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Tags) > 0 {
-		i -= len(m.Tags)
-		copy(dAtA[i:], m.Tags)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.Tags)))
+	if m.Modified != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.Modified))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa8
+	}
+	if m.Created != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.Created))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa0
+	}
+	if m.Link != nil {
+		{
+			size, err := m.Link.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintArc(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x72
+	}
+	if m.GlyphLarge != nil {
+		{
+			size, err := m.GlyphLarge.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintArc(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x62
 	}
-	if len(m.Desc) > 0 {
-		i -= len(m.Desc)
-		copy(dAtA[i:], m.Desc)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.Desc)))
+	if m.Glyph != nil {
+		{
+			size, err := m.Glyph.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintArc(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x52
 	}
-	if len(m.Label) > 0 {
-		i -= len(m.Label)
-		copy(dAtA[i:], m.Label)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.Label)))
+	if len(m.About) > 0 {
+		i -= len(m.About)
+		copy(dAtA[i:], m.About)
+		i = encodeVarintArc(dAtA, i, uint64(len(m.About)))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x32
 	}
-	if len(m.URL) > 0 {
-		i -= len(m.URL)
-		copy(dAtA[i:], m.URL)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.URL)))
+	if len(m.Subtitle) > 0 {
+		i -= len(m.Subtitle)
+		copy(dAtA[i:], m.Subtitle)
+		i = encodeVarintArc(dAtA, i, uint64(len(m.Subtitle)))
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(m.SkinURI) > 0 {
-		i -= len(m.SkinURI)
-		copy(dAtA[i:], m.SkinURI)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.SkinURI)))
+	if len(m.Title) > 0 {
+		i -= len(m.Title)
+		copy(dAtA[i:], m.Title)
+		i = encodeVarintArc(dAtA, i, uint64(len(m.Title)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x22
 	}
-	if len(m.ShapeURI) > 0 {
-		i -= len(m.ShapeURI)
-		copy(dAtA[i:], m.ShapeURI)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.ShapeURI)))
+	if m.CellDefID != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.CellDefID))
 		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -4803,24 +4949,14 @@ func (m *Msg) Size() (n int) {
 		n += 1 + sovArc(uint64(m.AttrID))
 	}
 	if m.SI != 0 {
-		n += 2 + sovArc(uint64(m.SI))
-	}
-	if m.ValType != 0 {
-		n += 2 + sovArc(uint64(m.ValType))
+		n += 1 + sovArc(uint64(m.SI))
 	}
 	l = len(m.ValBuf)
 	if l > 0 {
-		n += 2 + l + sovArc(uint64(l))
-	}
-	if m.ValInt != 0 {
-		n += 2 + sovArc(uint64(m.ValInt))
+		n += 1 + l + sovArc(uint64(l))
 	}
 	if m.Flags != 0 {
-		n += 2 + sovArc(uint64(m.Flags))
-	}
-	if m.Next != nil {
-		l = m.Next.Size()
-		n += 2 + l + sovArc(uint64(l))
+		n += 1 + sovArc(uint64(m.Flags))
 	}
 	return n
 }
@@ -4848,22 +4984,7 @@ func (m *PlanetEpoch) Size() (n int) {
 	return n
 }
 
-func (m *UserSeat) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.UserID != 0 {
-		n += 1 + sovArc(uint64(m.UserID))
-	}
-	if m.HomePlanetID != 0 {
-		n += 1 + sovArc(uint64(m.HomePlanetID))
-	}
-	return n
-}
-
-func (m *LoginReq) Size() (n int) {
+func (m *Login) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4888,6 +5009,24 @@ func (m *LoginReq) Size() (n int) {
 	return n
 }
 
+func (m *LoginChallenge) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *LoginResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *Symbol) Size() (n int) {
 	if m == nil {
 		return 0
@@ -4897,14 +5036,14 @@ func (m *Symbol) Size() (n int) {
 	if m.ID != 0 {
 		n += 1 + sovArc(uint64(m.ID))
 	}
-	l = len(m.Value)
+	l = len(m.Name)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
 	}
 	return n
 }
 
-func (m *Defs) Size() (n int) {
+func (m *RegisterDefs) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4916,34 +5055,20 @@ func (m *Defs) Size() (n int) {
 			n += 1 + l + sovArc(uint64(l))
 		}
 	}
-	if len(m.Schemas) > 0 {
-		for _, e := range m.Schemas {
+	if len(m.Attrs) > 0 {
+		for _, e := range m.Attrs {
 			l = e.Size()
 			n += 1 + l + sovArc(uint64(l))
 		}
 	}
-	return n
-}
-
-func (m *AttrSchema) Size() (n int) {
-	if m == nil {
-		return 0
+	if len(m.Cells) > 0 {
+		for _, e := range m.Cells {
+			l = e.Size()
+			n += 1 + l + sovArc(uint64(l))
+		}
 	}
-	var l int
-	_ = l
-	l = len(m.CellDataModel)
-	if l > 0 {
-		n += 1 + l + sovArc(uint64(l))
-	}
-	l = len(m.SchemaName)
-	if l > 0 {
-		n += 1 + l + sovArc(uint64(l))
-	}
-	if m.SchemaID != 0 {
-		n += 1 + sovArc(uint64(m.SchemaID))
-	}
-	if len(m.Attrs) > 0 {
-		for _, e := range m.Attrs {
+	if len(m.Selectors) > 0 {
+		for _, e := range m.Selectors {
 			l = e.Size()
 			n += 1 + l + sovArc(uint64(l))
 		}
@@ -4957,21 +5082,69 @@ func (m *AttrSpec) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.AttrURI)
-	if l > 0 {
-		n += 1 + l + sovArc(uint64(l))
+	if m.DefID != 0 {
+		n += 1 + sovArc(uint64(m.DefID))
 	}
-	if m.AttrID != 0 {
-		n += 1 + sovArc(uint64(m.AttrID))
+	if m.ElemType != 0 {
+		n += 1 + sovArc(uint64(m.ElemType))
 	}
 	if m.SeriesType != 0 {
 		n += 1 + sovArc(uint64(m.SeriesType))
 	}
-	if m.BoundSI != 0 {
-		n += 1 + sovArc(uint64(m.BoundSI))
+	if m.AttrName != 0 {
+		n += 1 + sovArc(uint64(m.AttrName))
 	}
-	if m.ValTypeID != 0 {
-		n += 1 + sovArc(uint64(m.ValTypeID))
+	return n
+}
+
+func (m *CellSpec) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DefID != 0 {
+		n += 1 + sovArc(uint64(m.DefID))
+	}
+	if len(m.CommonAttrs) > 0 {
+		l = 0
+		for _, e := range m.CommonAttrs {
+			l += sovArc(uint64(e))
+		}
+		n += 1 + sovArc(uint64(l)) + l
+	}
+	if len(m.PinnedAttrs) > 0 {
+		l = 0
+		for _, e := range m.PinnedAttrs {
+			l += sovArc(uint64(e))
+		}
+		n += 1 + sovArc(uint64(l)) + l
+	}
+	return n
+}
+
+func (m *ItemSelector) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DefID != 0 {
+		n += 1 + sovArc(uint64(m.DefID))
+	}
+	if len(m.Include) > 0 {
+		l = 0
+		for _, e := range m.Include {
+			l += sovArc(uint64(e))
+		}
+		n += 1 + sovArc(uint64(l)) + l
+	}
+	if len(m.Exclude) > 0 {
+		l = 0
+		for _, e := range m.Exclude {
+			l += sovArc(uint64(e))
+		}
+		n += 1 + sovArc(uint64(l)) + l
 	}
 	return n
 }
@@ -5019,24 +5192,21 @@ func (m *PinReq) Size() (n int) {
 	if m.ParentReqID != 0 {
 		n += 1 + sovArc(uint64(m.ParentReqID))
 	}
-	if len(m.Args) > 0 {
-		for _, e := range m.Args {
-			l = e.Size()
-			n += 1 + l + sovArc(uint64(l))
-		}
+	l = len(m.PinURI)
+	if l > 0 {
+		n += 1 + l + sovArc(uint64(l))
 	}
 	if m.PinCell != 0 {
 		n += 1 + sovArc(uint64(m.PinCell))
 	}
-	if m.ContentSchemaID != 0 {
-		n += 1 + sovArc(uint64(m.ContentSchemaID))
+	if m.ParentAttrSelector != 0 {
+		n += 1 + sovArc(uint64(m.ParentAttrSelector))
 	}
-	if len(m.ChildSchemas) > 0 {
-		l = 0
-		for _, e := range m.ChildSchemas {
-			l += sovArc(uint64(e))
-		}
-		n += 1 + sovArc(uint64(l)) + l
+	if m.ChildCellSelector != 0 {
+		n += 1 + sovArc(uint64(m.ChildCellSelector))
+	}
+	if m.MaintainSync {
+		n += 2
 	}
 	return n
 }
@@ -5180,35 +5350,44 @@ func (m *CryptoKey) Size() (n int) {
 	return n
 }
 
-func (m *Link) Size() (n int) {
+func (m *CellInfo) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.ShapeURI)
+	if m.CellDefID != 0 {
+		n += 1 + sovArc(uint64(m.CellDefID))
+	}
+	l = len(m.Title)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
 	}
-	l = len(m.SkinURI)
+	l = len(m.Subtitle)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
 	}
-	l = len(m.URL)
+	l = len(m.About)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
 	}
-	l = len(m.Label)
-	if l > 0 {
+	if m.Glyph != nil {
+		l = m.Glyph.Size()
 		n += 1 + l + sovArc(uint64(l))
 	}
-	l = len(m.Desc)
-	if l > 0 {
+	if m.GlyphLarge != nil {
+		l = m.GlyphLarge.Size()
 		n += 1 + l + sovArc(uint64(l))
 	}
-	l = len(m.Tags)
-	if l > 0 {
+	if m.Link != nil {
+		l = m.Link.Size()
 		n += 1 + l + sovArc(uint64(l))
+	}
+	if m.Created != 0 {
+		n += 2 + sovArc(uint64(m.Created))
+	}
+	if m.Modified != 0 {
+		n += 2 + sovArc(uint64(m.Modified))
 	}
 	return n
 }
@@ -5325,11 +5504,8 @@ func (this *Msg) String() string {
 		`CellID:` + fmt.Sprintf("%v", this.CellID) + `,`,
 		`AttrID:` + fmt.Sprintf("%v", this.AttrID) + `,`,
 		`SI:` + fmt.Sprintf("%v", this.SI) + `,`,
-		`ValType:` + fmt.Sprintf("%v", this.ValType) + `,`,
 		`ValBuf:` + fmt.Sprintf("%v", this.ValBuf) + `,`,
-		`ValInt:` + fmt.Sprintf("%v", this.ValInt) + `,`,
 		`Flags:` + fmt.Sprintf("%v", this.Flags) + `,`,
-		`Next:` + strings.Replace(this.Next.String(), "Msg", "Msg", 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5351,26 +5527,33 @@ func (this *PlanetEpoch) String() string {
 	}, "")
 	return s
 }
-func (this *UserSeat) String() string {
+func (this *Login) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&UserSeat{`,
-		`UserID:` + fmt.Sprintf("%v", this.UserID) + `,`,
-		`HomePlanetID:` + fmt.Sprintf("%v", this.HomePlanetID) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *LoginReq) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&LoginReq{`,
+	s := strings.Join([]string{`&Login{`,
 		`UserUID:` + fmt.Sprintf("%v", this.UserUID) + `,`,
 		`HostAddr:` + fmt.Sprintf("%v", this.HostAddr) + `,`,
 		`DeviceLabel:` + fmt.Sprintf("%v", this.DeviceLabel) + `,`,
 		`DeviceUID:` + fmt.Sprintf("%v", this.DeviceUID) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *LoginChallenge) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&LoginChallenge{`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *LoginResponse) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&LoginResponse{`,
 		`}`,
 	}, "")
 	return s
@@ -5381,12 +5564,12 @@ func (this *Symbol) String() string {
 	}
 	s := strings.Join([]string{`&Symbol{`,
 		`ID:` + fmt.Sprintf("%v", this.ID) + `,`,
-		`Value:` + fmt.Sprintf("%v", this.Value) + `,`,
+		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`}`,
 	}, "")
 	return s
 }
-func (this *Defs) String() string {
+func (this *RegisterDefs) String() string {
 	if this == nil {
 		return "nil"
 	}
@@ -5395,32 +5578,26 @@ func (this *Defs) String() string {
 		repeatedStringForSymbols += strings.Replace(f.String(), "Symbol", "Symbol", 1) + ","
 	}
 	repeatedStringForSymbols += "}"
-	repeatedStringForSchemas := "[]*AttrSchema{"
-	for _, f := range this.Schemas {
-		repeatedStringForSchemas += strings.Replace(f.String(), "AttrSchema", "AttrSchema", 1) + ","
-	}
-	repeatedStringForSchemas += "}"
-	s := strings.Join([]string{`&Defs{`,
-		`Symbols:` + repeatedStringForSymbols + `,`,
-		`Schemas:` + repeatedStringForSchemas + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *AttrSchema) String() string {
-	if this == nil {
-		return "nil"
-	}
 	repeatedStringForAttrs := "[]*AttrSpec{"
 	for _, f := range this.Attrs {
 		repeatedStringForAttrs += strings.Replace(f.String(), "AttrSpec", "AttrSpec", 1) + ","
 	}
 	repeatedStringForAttrs += "}"
-	s := strings.Join([]string{`&AttrSchema{`,
-		`CellDataModel:` + fmt.Sprintf("%v", this.CellDataModel) + `,`,
-		`SchemaName:` + fmt.Sprintf("%v", this.SchemaName) + `,`,
-		`SchemaID:` + fmt.Sprintf("%v", this.SchemaID) + `,`,
+	repeatedStringForCells := "[]*CellSpec{"
+	for _, f := range this.Cells {
+		repeatedStringForCells += strings.Replace(f.String(), "CellSpec", "CellSpec", 1) + ","
+	}
+	repeatedStringForCells += "}"
+	repeatedStringForSelectors := "[]*ItemSelector{"
+	for _, f := range this.Selectors {
+		repeatedStringForSelectors += strings.Replace(f.String(), "ItemSelector", "ItemSelector", 1) + ","
+	}
+	repeatedStringForSelectors += "}"
+	s := strings.Join([]string{`&RegisterDefs{`,
+		`Symbols:` + repeatedStringForSymbols + `,`,
 		`Attrs:` + repeatedStringForAttrs + `,`,
+		`Cells:` + repeatedStringForCells + `,`,
+		`Selectors:` + repeatedStringForSelectors + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5430,11 +5607,34 @@ func (this *AttrSpec) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&AttrSpec{`,
-		`AttrURI:` + fmt.Sprintf("%v", this.AttrURI) + `,`,
-		`AttrID:` + fmt.Sprintf("%v", this.AttrID) + `,`,
+		`DefID:` + fmt.Sprintf("%v", this.DefID) + `,`,
+		`ElemType:` + fmt.Sprintf("%v", this.ElemType) + `,`,
 		`SeriesType:` + fmt.Sprintf("%v", this.SeriesType) + `,`,
-		`BoundSI:` + fmt.Sprintf("%v", this.BoundSI) + `,`,
-		`ValTypeID:` + fmt.Sprintf("%v", this.ValTypeID) + `,`,
+		`AttrName:` + fmt.Sprintf("%v", this.AttrName) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *CellSpec) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&CellSpec{`,
+		`DefID:` + fmt.Sprintf("%v", this.DefID) + `,`,
+		`CommonAttrs:` + fmt.Sprintf("%v", this.CommonAttrs) + `,`,
+		`PinnedAttrs:` + fmt.Sprintf("%v", this.PinnedAttrs) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ItemSelector) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ItemSelector{`,
+		`DefID:` + fmt.Sprintf("%v", this.DefID) + `,`,
+		`Include:` + fmt.Sprintf("%v", this.Include) + `,`,
+		`Exclude:` + fmt.Sprintf("%v", this.Exclude) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5465,17 +5665,13 @@ func (this *PinReq) String() string {
 	if this == nil {
 		return "nil"
 	}
-	repeatedStringForArgs := "[]*KwArg{"
-	for _, f := range this.Args {
-		repeatedStringForArgs += strings.Replace(f.String(), "KwArg", "KwArg", 1) + ","
-	}
-	repeatedStringForArgs += "}"
 	s := strings.Join([]string{`&PinReq{`,
 		`ParentReqID:` + fmt.Sprintf("%v", this.ParentReqID) + `,`,
-		`Args:` + repeatedStringForArgs + `,`,
+		`PinURI:` + fmt.Sprintf("%v", this.PinURI) + `,`,
 		`PinCell:` + fmt.Sprintf("%v", this.PinCell) + `,`,
-		`ContentSchemaID:` + fmt.Sprintf("%v", this.ContentSchemaID) + `,`,
-		`ChildSchemas:` + fmt.Sprintf("%v", this.ChildSchemas) + `,`,
+		`ParentAttrSelector:` + fmt.Sprintf("%v", this.ParentAttrSelector) + `,`,
+		`ChildCellSelector:` + fmt.Sprintf("%v", this.ChildCellSelector) + `,`,
+		`MaintainSync:` + fmt.Sprintf("%v", this.MaintainSync) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5564,17 +5760,20 @@ func (this *CryptoKey) String() string {
 	}, "")
 	return s
 }
-func (this *Link) String() string {
+func (this *CellInfo) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&Link{`,
-		`ShapeURI:` + fmt.Sprintf("%v", this.ShapeURI) + `,`,
-		`SkinURI:` + fmt.Sprintf("%v", this.SkinURI) + `,`,
-		`URL:` + fmt.Sprintf("%v", this.URL) + `,`,
-		`Label:` + fmt.Sprintf("%v", this.Label) + `,`,
-		`Desc:` + fmt.Sprintf("%v", this.Desc) + `,`,
-		`Tags:` + fmt.Sprintf("%v", this.Tags) + `,`,
+	s := strings.Join([]string{`&CellInfo{`,
+		`CellDefID:` + fmt.Sprintf("%v", this.CellDefID) + `,`,
+		`Title:` + fmt.Sprintf("%v", this.Title) + `,`,
+		`Subtitle:` + fmt.Sprintf("%v", this.Subtitle) + `,`,
+		`About:` + fmt.Sprintf("%v", this.About) + `,`,
+		`Glyph:` + strings.Replace(this.Glyph.String(), "AssetRef", "AssetRef", 1) + `,`,
+		`GlyphLarge:` + strings.Replace(this.GlyphLarge.String(), "AssetRef", "AssetRef", 1) + `,`,
+		`Link:` + strings.Replace(this.Link.String(), "AssetRef", "AssetRef", 1) + `,`,
+		`Created:` + fmt.Sprintf("%v", this.Created) + `,`,
+		`Modified:` + fmt.Sprintf("%v", this.Modified) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5690,7 +5889,7 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
+		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ReqID", wireType)
 			}
@@ -5709,7 +5908,7 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 6:
+		case 4:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CellID", wireType)
 			}
@@ -5723,12 +5922,12 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.CellID |= uint64(b&0x7F) << shift
+				m.CellID |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 8:
+		case 6:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AttrID", wireType)
 			}
@@ -5742,12 +5941,12 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.AttrID |= int32(b&0x7F) << shift
+				m.AttrID |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 16:
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SI", wireType)
 			}
@@ -5766,26 +5965,7 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 20:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValType", wireType)
-			}
-			m.ValType = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ValType |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 21:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ValBuf", wireType)
 			}
@@ -5819,26 +5999,7 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				m.ValBuf = []byte{}
 			}
 			iNdEx = postIndex
-		case 22:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValInt", wireType)
-			}
-			m.ValInt = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ValInt |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 24:
+		case 12:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Flags", wireType)
 			}
@@ -5857,42 +6018,6 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 32:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Next", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Next == nil {
-				m.Next = &Msg{}
-			}
-			if err := m.Next.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipArc(dAtA[iNdEx:])
@@ -6064,7 +6189,7 @@ func (m *PlanetEpoch) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UserSeat) Unmarshal(dAtA []byte) error {
+func (m *Login) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6087,98 +6212,10 @@ func (m *UserSeat) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UserSeat: wiretype end group for non-group")
+			return fmt.Errorf("proto: Login: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UserSeat: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UserID", wireType)
-			}
-			m.UserID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.UserID |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field HomePlanetID", wireType)
-			}
-			m.HomePlanetID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.HomePlanetID |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipArc(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthArc
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *LoginReq) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowArc
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: LoginReq: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: LoginReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Login: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -6330,6 +6367,106 @@ func (m *LoginReq) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *LoginChallenge) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowArc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LoginChallenge: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LoginChallenge: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipArc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthArc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LoginResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowArc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LoginResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LoginResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipArc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthArc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Symbol) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -6373,14 +6510,14 @@ func (m *Symbol) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ID |= uint64(b&0x7F) << shift
+				m.ID |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -6407,9 +6544,9 @@ func (m *Symbol) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
-			if m.Value == nil {
-				m.Value = []byte{}
+			m.Name = append(m.Name[:0], dAtA[iNdEx:postIndex]...)
+			if m.Name == nil {
+				m.Name = []byte{}
 			}
 			iNdEx = postIndex
 		default:
@@ -6433,7 +6570,7 @@ func (m *Symbol) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Defs) Unmarshal(dAtA []byte) error {
+func (m *RegisterDefs) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6456,10 +6593,10 @@ func (m *Defs) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Defs: wiretype end group for non-group")
+			return fmt.Errorf("proto: RegisterDefs: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Defs: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RegisterDefs: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -6498,173 +6635,6 @@ func (m *Defs) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Schemas", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Schemas = append(m.Schemas, &AttrSchema{})
-			if err := m.Schemas[len(m.Schemas)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipArc(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthArc
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AttrSchema) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowArc
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AttrSchema: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AttrSchema: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CellDataModel", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.CellDataModel = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SchemaName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SchemaName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SchemaID", wireType)
-			}
-			m.SchemaID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.SchemaID |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 8:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Attrs", wireType)
 			}
 			var msglen int
@@ -6694,6 +6664,74 @@ func (m *AttrSchema) Unmarshal(dAtA []byte) error {
 			}
 			m.Attrs = append(m.Attrs, &AttrSpec{})
 			if err := m.Attrs[len(m.Attrs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cells", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthArc
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthArc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Cells = append(m.Cells, &CellSpec{})
+			if err := m.Cells[len(m.Cells)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Selectors", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthArc
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthArc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Selectors = append(m.Selectors, &ItemSelector{})
+			if err := m.Selectors[len(m.Selectors)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6747,43 +6785,11 @@ func (m *AttrSpec) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: AttrSpec: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AttrURI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.AttrURI = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
+		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AttrID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field DefID", wireType)
 			}
-			m.AttrID = 0
+			m.DefID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -6793,12 +6799,31 @@ func (m *AttrSpec) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.AttrID |= int32(b&0x7F) << shift
+				m.DefID |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 6:
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ElemType", wireType)
+			}
+			m.ElemType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ElemType |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SeriesType", wireType)
 			}
@@ -6812,16 +6837,16 @@ func (m *AttrSpec) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.SeriesType |= SeriesType(b&0x7F) << shift
+				m.SeriesType |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 7:
+		case 6:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BoundSI", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AttrName", wireType)
 			}
-			m.BoundSI = 0
+			m.AttrName = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -6831,16 +6856,66 @@ func (m *AttrSpec) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.BoundSI |= int64(b&0x7F) << shift
+				m.AttrName |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 13:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValTypeID", wireType)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipArc(dAtA[iNdEx:])
+			if err != nil {
+				return err
 			}
-			m.ValTypeID = 0
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthArc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CellSpec) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowArc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CellSpec: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CellSpec: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefID", wireType)
+			}
+			m.DefID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -6850,10 +6925,383 @@ func (m *AttrSpec) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ValTypeID |= int32(b&0x7F) << shift
+				m.DefID |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
+			}
+		case 4:
+			if wireType == 0 {
+				var v uint32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.CommonAttrs = append(m.CommonAttrs, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthArc
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthArc
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.CommonAttrs) == 0 {
+					m.CommonAttrs = make([]uint32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowArc
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.CommonAttrs = append(m.CommonAttrs, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field CommonAttrs", wireType)
+			}
+		case 5:
+			if wireType == 0 {
+				var v uint32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.PinnedAttrs = append(m.PinnedAttrs, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthArc
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthArc
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.PinnedAttrs) == 0 {
+					m.PinnedAttrs = make([]uint32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowArc
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.PinnedAttrs = append(m.PinnedAttrs, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field PinnedAttrs", wireType)
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipArc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthArc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ItemSelector) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowArc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ItemSelector: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ItemSelector: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DefID", wireType)
+			}
+			m.DefID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DefID |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType == 0 {
+				var v uint32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Include = append(m.Include, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthArc
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthArc
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.Include) == 0 {
+					m.Include = make([]uint32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowArc
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Include = append(m.Include, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Include", wireType)
+			}
+		case 5:
+			if wireType == 0 {
+				var v uint32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Exclude = append(m.Exclude, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowArc
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthArc
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthArc
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
+				}
+				elementCount = count
+				if elementCount != 0 && len(m.Exclude) == 0 {
+					m.Exclude = make([]uint32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowArc
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Exclude = append(m.Exclude, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Exclude", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -7154,11 +7602,11 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 4:
+		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Args", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PinURI", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -7168,27 +7616,25 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthArc
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthArc
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Args = append(m.Args, &KwArg{})
-			if err := m.Args[len(m.Args)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
+			m.PinURI = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 3:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field PinCell", wireType)
 			}
@@ -7202,16 +7648,16 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.PinCell |= uint64(b&0x7F) << shift
+				m.PinCell |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 7:
+		case 5:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ContentSchemaID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ParentAttrSelector", wireType)
 			}
-			m.ContentSchemaID = 0
+			m.ParentAttrSelector = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -7221,87 +7667,50 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ContentSchemaID |= int32(b&0x7F) << shift
+				m.ParentAttrSelector |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 9:
-			if wireType == 0 {
-				var v int32
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowArc
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= int32(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChildCellSelector", wireType)
+			}
+			m.ChildCellSelector = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
 				}
-				m.ChildSchemas = append(m.ChildSchemas, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowArc
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return ErrInvalidLengthArc
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return ErrInvalidLengthArc
-				}
-				if postIndex > l {
+				if iNdEx >= l {
 					return io.ErrUnexpectedEOF
 				}
-				var elementCount int
-				var count int
-				for _, integer := range dAtA[iNdEx:postIndex] {
-					if integer < 128 {
-						count++
-					}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ChildCellSelector |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
 				}
-				elementCount = count
-				if elementCount != 0 && len(m.ChildSchemas) == 0 {
-					m.ChildSchemas = make([]int32, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v int32
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowArc
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						v |= int32(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					m.ChildSchemas = append(m.ChildSchemas, v)
-				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field ChildSchemas", wireType)
 			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaintainSync", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MaintainSync = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipArc(dAtA[iNdEx:])
@@ -8156,7 +8565,7 @@ func (m *CryptoKey) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Link) Unmarshal(dAtA []byte) error {
+func (m *CellInfo) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8179,15 +8588,34 @@ func (m *Link) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Link: wiretype end group for non-group")
+			return fmt.Errorf("proto: CellInfo: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Link: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CellInfo: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CellDefID", wireType)
+			}
+			m.CellDefID = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CellDefID |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ShapeURI", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8215,43 +8643,11 @@ func (m *Link) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ShapeURI = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SkinURI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SkinURI = string(dAtA[iNdEx:postIndex])
+			m.Title = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field URL", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Subtitle", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8279,11 +8675,11 @@ func (m *Link) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.URL = string(dAtA[iNdEx:postIndex])
+			m.Subtitle = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 7:
+		case 6:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Label", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field About", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8311,13 +8707,13 @@ func (m *Link) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Label = string(dAtA[iNdEx:postIndex])
+			m.About = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 10:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Desc", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Glyph", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -8327,29 +8723,33 @@ func (m *Link) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthArc
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthArc
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Desc = string(dAtA[iNdEx:postIndex])
+			if m.Glyph == nil {
+				m.Glyph = &AssetRef{}
+			}
+			if err := m.Glyph.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 12:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GlyphLarge", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -8359,24 +8759,102 @@ func (m *Link) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthArc
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthArc
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Tags = string(dAtA[iNdEx:postIndex])
+			if m.GlyphLarge == nil {
+				m.GlyphLarge = &AssetRef{}
+			}
+			if err := m.GlyphLarge.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Link", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthArc
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthArc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Link == nil {
+				m.Link = &AssetRef{}
+			}
+			if err := m.Link.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 20:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Created", wireType)
+			}
+			m.Created = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Created |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 21:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Modified", wireType)
+			}
+			m.Modified = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Modified |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipArc(dAtA[iNdEx:])

@@ -23,13 +23,6 @@ service HostGrpc {
 
 enum Const {
     Const_Defs = 0;
-    
-    // HostSessionCellID is a hard-coded cell ID for the user's session
-    // This is the first cell pinned as it allows the host and client to exchange MsgOp_ResolveAndRegister msgs.
-    Const_HostSessionCellID = 3;
-    
-    // RootCellID is a hard-coded cell ID used to pin the root cell for a user.
-    Const_RootCellID = 6;
 
     // TIDBinaryLen is the byte size of a Tx ID ("TID"), a hash with a leading big endian binary time index.
     //
@@ -40,73 +33,50 @@ enum Const {
     // Byte layout is designed so that TIDs are sortable by their embedded timestamp:
     //    0:6   - Standard UTC timestamp in unix seconds (big endian)
     //    6:8   - Timestamp fraction (big endian)
-    //    8:30  - Signature/hash
-    Const_TIDBinaryLen = 30;
+    //    8:32  - Signature/hash
+    Const_TIDBinaryLen = 32;
 
     // TIDStringLen is the ASCII-compatible string length of a (binary) TID encoded into its base32 form.
     // The encoding used is the geohash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
-    Const_TIDStringLen = 48;
+    Const_TIDStringLen = 52;
 
     // TIDTimestampSz is the number of left-hand bytes in a TID reserved for a time index value.
     Const_TIDTimestampSz = 8;
 
     // DefaultGrpcServicePort is the TCP port the service HostGrpc should run on by default.
     Const_DefaultGrpcServicePort = 5192;
+    
+}
+
+// These are hard-wired symbol IDs are required to bootstrap a new connection.
+// After bootstrapping, the client uses RegisterDefs to register its symbols.
+enum ConstSymbol {
+    ConstSymbol_nil            = 0;
+
+    ConstSymbol_Err            = 6;
+    ConstSymbol_RegisterDefs   = 10;
+    ConstSymbol_HandleURI      = 11;
+    
+    ConstSymbol_Login          = 20;
+    ConstSymbol_LoginChallenge = 21;
+    ConstSymbol_LoginResponse  = 22;
+    
+    // Minimum symbol ID that a client is allowed to issue
+    // This value sets a ceiling for the above hard-wired symbol IDs.
+    ConstSymbol_IssuerInitsAt  = 256; 
 }
 
 
 
 
 
-// ValType describes the type of a Cell, an Attr literal, or Attr set collection element type. 
-enum ValType {
-    ValType_nil                 = 0;
-        
+
     // ValType_AttrSet            = 4; // .ValInt is a AttrSet CellID
     // ValType_NameSet            = 5; // CellID+AttrID+NameID     => Msg.(Type)          Values only 
     // ValType_CellSet            = 6; // CellID+AttrID+CellID     => Cell_NID            AttrSet NIDs only 
     // ValType_Series             = 8; // CellID+AttrID+TSI+FromID => Msg.(Type)          Values only
     // ValType_CellRef            = 20; // .FromID and .SI together identify a cell
     // ValType_CellSetID          = 21; // .ValInt is a CellSet ID (used for SetValType_CellSet)
-    
-    /******     Untyped primitives      ******/
-    
-    ValType_int                 = 4; // .ValInt is an untyped int64
-    ValType_bytes               = 6; // .ValBuf is an untyped buffer
-    ValType_string              = 7; // .ValBuf is an untyped UTF8 string
-    
-    /******     Typed primitives        ******/
-    
-    ValType_TID                 = 16; // .ValBuf is a binary TxID
-    ValType_SchemaID            = 18; // .ValInt is a SchemaID
-    ValType_Blob                = 22; // .ValInt is a Blob ID 
-    ValType_DateTime            = 23; // .ValInt is a TimeFS value (1 sec == 1<<16 ticks)
-    ValType_Duration            = 24; // .ValInt is a TimeFS delta (1 sec == 1<<16 ticks)
-    ValType_URL                 = 26; // .ValBuf is a UTF8 URL
-    ValType_HandleURI           = 27; // .ValBuf is a UTF8 URI / URL to be handled
-    
-    /******     Builtin protobufs       ******/
-    
-    ValType_Err                 = 50; // .ValBuf is a Err 
-    ValType_AssetRef            = 51; // .ValBuf is an AssetRef
-    ValType_DataSegment         = 52; // .ValBuf is an DataSegment
-    ValType_MetaMsg             = 53; // .ValBuf is an MetaMsg
-    ValType_Content             = 54; // .ValBuf is an Content
-    ValType_CryptoKey           = 56; // .ValBuf is a CryptoKey
-    ValType_Txn                 = 58; // .ValBuf is a Txn
-    ValType_LoginReq            = 60; // .ValBuf is a LoginReq
-    ValType_Defs                = 62; // .ValBuf is a Defs
-    ValType_PinReq              = 64; // .ValBuf is a PinReq
-    ValType_CreateCellsReq      = 65; // .ValBuf is a CreateCellsReq
-    ValType_AttrRange           = 66; // .ValBuf is a AttrRange
-    ValType_Link                = 80; // .ValBuf is a Link
-    ValType_GeoFix              = 82; // .ValBuf is an GeoFix
-    ValType_TRS                 = 84; // .ValBuf is a TRS
-
-    // Clients have above this value to bind their own ValTypeIDs
-    ValType_BuiltinMax          = 999;
-}
-
 
 
 
@@ -114,19 +84,14 @@ enum ValType {
 enum MsgOp {
     MsgOp_NoOp = 0;
 
-    // From the client to host, this requests to login to the host.
-    // From the host to client, this is a reply with a challenge.
+    // MsgOp_Login is used to initiate a session and is a multi-step process:
     //
     // Params: 
-    //      Msg.ReqID:        client-generated (unique) request ID 
-    //      Msg.ValType:      ValType_LoginReq
-    //      Msg.ValBuf:       req params
+    //      Msg.ReqID:        client-generated request ID 
+    //      Msg.ValBuf:       Login           (client -> host)
+    //                        LoginChallenge  (client <- host)
+    //                        LoginResponse   (client -> host)
     MsgOp_Login = 1;
-    
-    // // From the client to host, this is a reply to a host challenge.
-    // // From the host to client, this is a reply to auth completion
-    // MsgOp_AuthChallenge = 2;
-    
     
     /*
     MsgOp.PinCell->   
@@ -141,58 +106,46 @@ enum MsgOp {
         <-MsgOp.PushAttr
         ...
     <-MsgOp.Commit
-    
     */
 
-    // MsgOp_MetaMsg posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
-    MsgOp_MetaMsg = 4;
-    // Params: 
-    //      Msg.ReqID:      originating request ID
-    //      Msg.ValType:    ValType_MetaMsg   
-    //      Msg.ValBuf:     MetaMsg    
-
-
-    // MsgOp_ResolveAndRegister allows a client to send the host a set of Defs to the Host, defining all session CellTypes and identifiers.
+    // MsgOp_MetaAttr posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
     //
     // Params: 
-    //      Msg.ReqID:      client-generated (unique) request ID 
-    //      Msg.ValType:    ValType_Defs
-    //      Msg.ValBuf:     Defs (serialized) 
-    MsgOp_ResolveAndRegister = 5;
-    
-    
+    //      Msg.ReqID:      originating request ID
+    //      Msg.ValBuf:     IAW with AttrID
+    MsgOp_MetaAttr = 4;
+
+
     // From client to host, this requests a given cell be pinned.
-    // From host to client, this is precedes a push of the pinned cell's attributes.
-    // Note that the same cell pinned multiple times may not have child cells with matching cell IDs.
     //
     // Params: 
     //      Msg.ReqID:      client-generated (unique) request ID 
     //      Msg.CellID:     CellID being pinned     (host to client, otherwise 0)
-    //      Msg.ValType:    ValType_PinReq          (client to host, otherwise nil)
     //      Msg.ValBuf:     PinReq                  (client to host, otherwise nil)
     MsgOp_PinCell = 6;
-
+    
 
     // Requests a given CellID to be pinned under a unique client-generated PinID
     //
     // Params: 
     //      Msg.ReqID:      client-generated request ID 
     //      Msg.CellID:     which cell
-    //      Msg.ValType:    ValType_AttrRange
-    //      Msg.ValInt:     cell type ID specifying the AttrSchema (the expected cell and format)
     //MsgOp_PinAttrRange = 8;
     
+    // Params: 
+    //      Msg.ReqID:      originating MsgOp_PinCell request ID
+    //      Msg.CellID:     cell being inserted / updated
+    //      Msg.SI (hack):  CellSpecID of cell
+    //MsgOp_CellTx = 9;
 
-    // Used to push attr values.
-    // A cell attr item us specified by the host via ReqID+AttrID+SI and its value type via ValType. 
+    // Used to push attr element values.
     //
     // Params: 
     //      Msg.ReqID:      originating MsgOp_PinCell request ID
     //      Msg.CellID:     which cell is being updated
     //      Msg.AttrID:     which attr is being updated
-    //      Msg.ValType:    format of Msg.ValInt / .ValBuf 
-    //      Msg.Val*:       attr value
-    MsgOp_PushAttr = 10;
+    //      Msg.ValBuf:     IAW with AttrID
+    MsgOp_PushAttrElem = 10; // Atom?
     
     // Signals the insertion of a new child cell into the pinned (parent) cell.
     // After this message, zero or more MsgOp_PushAttr msgs follow.
@@ -200,20 +153,18 @@ enum MsgOp {
     // Params: 
     //      Msg.ReqID:      originating MsgOp_PinCell request ID
     //      Msg.CellID:     new cell being added
-    //      Msg.ValType:    ValType_SchemaID
     //      Msg.ValInt:     cell schema ID being pushed (specifies which Cell attribs are expected to follow)
     //      Msg.ValStr:     cell local ID (if present)
-    MsgOp_InsertChildCell = 14;
+    //MsgOp_InsertChildCell = 14;
     
     // Similar to InsertCell, except this auto-creates a new cell if it doesn't exist.
     //
     // Params: 
     //      Msg.ReqID:      originating MsgOp_PinCell request ID (client to host)
     //      Msg.CellID:     new cell that was added (set on host reply)
-    //      Msg.ValType:    ValType_SchemaID
     //      Msg.ValInt:     cell schema ID to be attached to the new cell
     //      Msg.ValStr:     cell local ID (optional)
-    MsgOp_UpsertCell = 15; 
+    //MsgOp_UpsertCell = 15; 
     
     // Used by the sender to signal that the given cell's state push is up to date and can be processed by the recipient.
     // This msg is typically used to drive UI updates or other aggregate cell dependencies.
@@ -221,24 +172,41 @@ enum MsgOp {
     // Params: 
     //      Msg.ReqID:      originating request ID
     //      Msg.CellID:     which cell is an an updated state
-    MsgOp_Commit = 24;
+    MsgOp_Checkpoint = 24;
 
     // From the client to host, this signals to cancel the operation(s) associated with the given request ID (PinID). 
     // From the host to client, this signals that the given request ID has been canceled / discarded (and is now closed).
-    // if Msg.ValType == ValType_Err, amplifying info in included as to why the request was closed.
+    // if len(Msg.ValBuf) > 0, then an Err is serialized, offering amplifying info on why the request was closed.
     //
     // Params: 
     //      Msg.ReqID:      parent request ID
-    //      Msg.ValType:    ValType_Err (or 0)
-    MsgOp_CloseReq = 255;
+    MsgOp_Close = 127;
     
 }
 
+
+// enum BatchFlags {
+//     BatchFlags_None = 0;
+//     BatchFlags_CellReplace = 0x001; // full update
+//     BatchFlags_CellCheckpoint = 0x001; // partial update
+//     BatchFlags_CellDeleted    = 0x002;
+// }
 
 enum MsgFlags {
 
     MsgFlags_None = 0;
     
+   // MsgFlags_EndOfAttrBatch = 0;
+
+    // Used to signal that the attrs of Msg.CellID are in a stable state "checkpoint",
+    // This flag is applied on the last MsgOp_PushAttrElem of a batch of attr updates to a cell.
+    //MsgFlags_CellAttrsSynced  = 0x001;
+
+    
+    // Used to signal that Msg.CelID has been deleted
+    MsgFlags_CellDeleted  = 0x002;
+    
+     
     // // CellCheckpoint signals that the cell referenced by this Msg is at a stable state "checkpoint", 
     // MsgFlags_CellCheckpoint = 0x001;
     
@@ -260,67 +228,65 @@ message Msg {
     
     // ReqID specifies a request context. 
     //
-    // When a client issues request-side MsgOp (e.g. PinCell, ResolveAndRegister), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
+    // When a client issues request-side MsgOp (e.g. PinCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
     // If this msg is a reply to a request, ReqID identifies the originating request op.
-    uint64              ReqID           = 3;
+    uint64              ReqID           = 2;
     
     // CellID identifies the cell associated with Msg.Op.
-    uint64              CellID          = 6;
+    int64               CellID          = 4;
+
+
+    // CellID corresponding to a user or agent that authored the content of this Msg.
+    // uint32              FromID          = 11;
     
-    // AttrID names the attribute associated with this Msg (used for MsgOp_PushAttr)
-    int32               AttrID          = 8;
+    // AttrID names the attribute associated with this Msg (used for MsgOp_PushAttr).
+    // This value corresponds to AttrSpec.DefID
+    uint32              AttrID          = 6;
     
-    // // CellID corresponding to a user or agent that authored the content of this Msg.
-    // uint64              FromID          = 11;
+    // SI ("Series Index") specifies how an int64 is interpreted as an attr element index value.
+    // See AttrSpec.SeriesType
+    int64               SI              = 8;    
 
-    // SI ("Series Index") associates and binds a value to and int64 key.
-    // By convention, this is 48.16 fixed signed fractional seconds (one second == 0x10000 ticks), naming a time duration or timestamp.
-    // When naming an absolute timestamp, unix UTC is assumed (0x10000 corresponds to 00:00:01, Jan 1 1970 GMT)
-    int64               SI              = 16;    
-
-    // ValType specifies how to interpret ValBuf / ValInt
-    int32               ValType         = 20;
-
-    // ValBuf and/or ValInt are interpreted according to ValType 
-    bytes               ValBuf          = 21;
-    int64               ValInt          = 22;
+    // ValBuf is interpreted according to AttrID 
+    bytes               ValBuf          = 10;
 
     // Flags contains MsgFlags
-    MsgFlags            Flags           = 24;
+    MsgFlags            Flags           = 12;
     
-    // int64               RevID_TimeFS    = 26;  // When was this rev authored
-    // uint64              RevID_TxnID     = 27;  // Which txn contains this rev 
-    // uint64              RevID_FromID    = 28;  // Who authored this rev    
-    
-    // Allows a sequence of Msgs to be chained together.
-    Msg                 Next            = 32;
 }
 
 
+// message AttrElemTx {
+//     uint32              AttrID          = 1;
+//     int64               SI              = 3;    
+//     bytes               ValBuf          = 4;
+// }
 
+
+// message CellTx {
+//     MsgOp               Op              = 1;
+//     uint64              ReqID           = 3;
+//     int64                 CellID          = 1;
+//     uint32                CellSpec        = 2;
+//     CellTxFlags           Flags           = 3;
+//     repeated AttrElemTx   Changes         = 4;
+// }
+
+// enum CellTxFlags {
+
+//     CellTxFlags_None = 0;
+//     CellTxFlags_CellDeleted = 0x01;
+// }
+/*
 
 // Note that element domain uniqueness always implies an SI *and* a FromID.
 enum SeriesType {
-
-    // SeriesType_Fixed denotes that a given data model attr URI is bound to a given AttrID and SeriesIndex assignment.
-    // AttrSpec.Fixed_SI is used in conjunction with this, allowing the client to wire multiple data model attrs to the same AttrID.
-    SeriesType_Fixed = 0;
-    
-    // SeriesType_I64 denotes that SI values are int64
-    SeriesType_I64 = 2;
-    
-    // SeriesType_Time16 denotes that SI values are signed 48.16 bit time offsets (1 second == 2^16 ticks).
-    SeriesType_Time16 = 5;
-    
-    // SeriesType_UTC16 denotes that SI values are signed 48.16 bit UTC values (1 second == 2^16 ticks).
-    SeriesType_UTC16 = 6;
-    
     // SeriesType_CellSet denotes that Msg.SI are CellIDs.
     //SeriesType_NameSet = 10;
     //SeriesType_CellSet = 11;
 
 }
-
+*/
 
 message PlanetEpoch {
 
@@ -339,13 +305,7 @@ message PlanetEpoch {
 
 
 
-message UserSeat {
-    uint64              UserID          = 2;
-    uint64              HomePlanetID    = 4;
-}
-
-
-message LoginReq {
+message Login {
 
     // A byte string identifying user who is logging in (lot limited to UTF8)
     // This is typically a username or a persistent UID issued by the device OS when the app is (re)installed. 
@@ -359,28 +319,117 @@ message LoginReq {
     string              DeviceUID       = 9; 
 }
 
+// LoginChallenge is sent from host to client in response to a Login message
+message LoginChallenge {
+
+    // TODO
+}
+
+// LoginChallenge is sent from client to host in response to a LoginChallenge message
+message LoginResponse {
+
+    // TODO
+}
+
+
+
+
 
 message Symbol {
-    uint64              ID              = 1;
-    bytes               Value           = 2;
+    // A symbol ID is intentionally 32 bits as it corresponds to real-world const byte strings (and so which 2^32 is plenty as it is)
+    uint32                 ID          = 1;
+    bytes                  Name        = 2;
 }
 
 
-message Defs {
-    repeated Symbol     Symbols         = 1;
-    repeated AttrSchema Schemas         = 2;
+message RegisterDefs {
+    repeated Symbol        Symbols     = 1;
+    repeated AttrSpec      Attrs       = 2;
+    repeated CellSpec      Cells       = 3;
+    repeated ItemSelector  Selectors   = 4;
+}
+
+
+
+// AttrSpec fully describes a cell attribute, specifying a name, element type, and series element type.
+message AttrSpec {
+
+    // Composite expression / invocation of this AttrSpec in the form: 
+    //      "[{SeriesType}]{ElemType}:{AttrName}"
+    //
+    // This the value is used for Msg.AttrID -- it references an AttrSpec.
+    // e.g. "AssetRef", "AssetRef:promo", "[GeoFix]AssetRef:promo-shoots",
+    uint32              DefID = 1;  
+    
+    // ElemType identifies this attr's element type and has a form like a subdomain:
+    //    "({subTypeName}.)*<typeName>"
+    //
+    // A particular ElemType corresponds to a serializable data type (typically a protobuf or capnp message)
+    // Valid chars are [A-Za-z0-9_-] in addition to '.' that separates identifiers..
+    // 
+    // e.g. 
+    //    "AssetRef", 
+    //    "GreetingAttr.tutorial_06.hello-world.learn.arcspace.systems", 
+    uint32              ElemType = 3;
+
+    // SeriesType specifies how to interpret an attr's SeriesIndex ("SI") int64 value associated with each attr element value.
+    // If "", this attr is a scalar value (and SI is 0 and ignored).
+    //
+    // UTC16 and Secs16 are 48.16 fixed signed fractional seconds (one second == 0x10000 ticks), naming a time duration or timestamp.
+    // When naming an absolute timestamp, unix UTC is assumed (0x10000 corresponds to 00:00:01, Jan 1 1970 GMT)
+    //
+    // e.g. "", "UTC16", "Secs16", "Int64", "GeoHash", "NodeID", "TID"
+    uint32              SeriesType = 5;
+    
+    // AttrLabel?  Label?
+    //
+    // AttrName identifies this attribute, consisting of [A-Za-z0-9_-]
+    // Unnamed attrs are common and typically are used to denote a characterizing cell attribute.
+    //
+    // e.g. "", "en-us", "es-co", "mini", "1440p"
+    uint32              AttrName = 6; 
+    
+
+
+    
+    
+}
+
+
+// A CellSpec describes this cell's attrs as a child and when this cell is pinned.
+// Two cells with matching CellSpec descriptor are the same "type" of cell.
+message CellSpec {
+
+    // Composite expression / invocation of this CellSpec in the form:
+    //      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)" 
+    //
+    // e.g. "(CellInfo,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:locations)"
+    uint32              DefID          = 1;
+    
+    // A sequence of attr IDs (attr descriptors) that are this Cell has as both a child and parent.
+    repeated uint32     CommonAttrs    = 4;
+    
+    // A sequence of attr IDs cells specifying *additional* attrs this Cell has when pinned.
+    repeated uint32     PinnedAttrs    = 5;
 }
 
 
 
 
-// AttrSchema is a Cell protocol specifier as well as a data packaging schema.
-//
-// A client forms a CellAttr tree structure, informing how sub cells should be auto-loaded and updated.
-//
-// Like a protobuf message, once a AttrSchema is published, its fields ("attributes") cannot change type.
-// Otherwise, data corruption is possible.
-message AttrSchema {
+// ItemSelector selects / filters a srt of items (e.g. CellSpec or AttrSpec descriptors)
+message ItemSelector {
+
+    // Composite expression of this ItemSelector in the form:
+    //      "(Include[0],Include[1],..)~(Exclude[0],Exclude[1],..)" 
+    //
+    uint32              DefID       = 1;
+
+    // A set of descriptor IDs explicitly included
+    repeated uint32     Include     = 4;
+    
+    // A set of descriptor IDs explicitly excluded
+    repeated uint32     Exclude     = 5;
+    
     
     // ScopeID specifies an app or scope that should handle this schema's requests.
     // The reserved value "." denotes the app / scope ID that has registered for AttrSchema.CellDataModel (typical).
@@ -389,60 +438,17 @@ message AttrSchema {
     // CellDataModel identifies a data model this schema conforms to, in effect it specifies a scope for the attached Attrs.
     // This URI names a complete data protocol / specification that this collection of AttrSpecs conforms to (and is a subset of).
     // To an implementing app on the Go side, this URI implies a family of valid possible AttrSpecs to choose from. 
-    string              CellDataModel = 3;
+    //uint32              CellDataModel = 3;
 
-    // This describes this *particular* AttrSchema, a particular collection of AttrSpecs (and is implicitly scoped within CellDataModel).
+    // This describes this *particular* AttrSchema, a particular collection of Attrs (and is implicitly scoped within CellDataModel).
     // The host (and its apps) generally don't even look at this field since "{CellDataModel}/{Attrs[i].AttrURI}" fully specifies each attr's data model URI.
     // The can use this for internal identification, usually to link this schema to particular cell view binding.
-    string              SchemaName = 4;
-
-    // SchemaID is a non-zero, unique, client-generated ID that is bound to this AttrSchema (and registered during RegisterAndResolve).
-    // This ID is used in PinReq to specify this particular AttrSchema and persists for the duration of the host session.
-    int32               SchemaID = 6; // [(gogoproto.customname) = "SchemaID"];
+    //uint32              SelectorName = 4;
+    
 
     // Attrs binds a set of AttrSpecs to this SchemaURI.
-    repeated AttrSpec   Attrs = 8;
+    //repeated uint32     Attrs = 8;
 
-}
-
-
-// AttrSpec binds an app data model attr URI to a client-provided AttrID, corresponding to a handler on the client side (typically a UI element).
-message AttrSpec {
-
-
-    // AttrURI is a self-describing URI scoped within the parent's CellDataModel.
-    // It communicates a purpose or role, for a particular usage context of the attr.
-    // It originates from an app data model spec and allows the host to associate an app attr to a client-provided AttrID (and SI when SeriesType == Fixed).
-    // e.g. for AttrSchema.CellDataModel == "hfs1/directory"
-    //      "v1/creation-time"
-    //      "v1/thumbnail.glyph"
-    //      "v1/detailed.glyph"
-    //      "v1/name"
-    //      "v1/status"
-    //      "v1/item-count"
-    string              AttrURI = 2;
-
-    // AttrID is a non-zero, client-generated ID that is bound to the given AttrURI during RegisterAndResolve.
-    // This identifies which attr is being updated in a PushAttr Msg and can be thought of as a binding to a given UI entity.
-    // Multiple AttrURIs can be bound to the same AttrID and is useful when funneling multiple data model attrs to a single UI element for unified handling.
-    int32               AttrID = 4;
-
-    // SeriesType specifies how the client interprets the attr domain SeriesIndex ("SI") integer.
-    // Scalar (non-array-like) attrs are typically SeriesType_Fixed since a particular SI value is fixed or "hard-wired" to the given AttrURI.
-    SeriesType          SeriesType = 6;
-    
-    // BoundSI specifies which SI value this fixed attr is "hard-wired" to, meaning that a PushAttr Msg has its SI field set to this value. 
-    // Only used / applicable when SeriesType == SeriesType_Fixed.
-    int64               BoundSI = 7;
-    
-    // Specifies the attr item / element value type (this is what shows up in Msg.ValType)
-    // If omitted, ValTypeID is assumed to be a built-in type (ValType_XXX). 
-    //string              ValTypeURI = 12;
-    
-    // ValTypeID is either a standard ValType (enum) or a client-generated ID that is bound to the given ValTypeURI.
-    // This enum is placed in Msg.ValType in a MsgOp_PushAttr msg.
-    int32               ValTypeID = 13;
-    
 }
 
 
@@ -464,21 +470,22 @@ message PinReq {
     // Set to 0 if PinCell and/or PinURI implies that no parent req exists.
     uint64              ParentReqID = 1;
     
-    // App-definable params can specify additional context.
-    repeated KwArg      Args = 4;
+    // URI specifying the cell to be pinned and whose child cells are to be pushed.
+    // Typically: [[arc://]arc-app-uri/]cell-uri..
+    string              PinURI = 2;
         
     // Cell ID to be pinned (or 0 if PinURI does not require a cell ID)
-    uint64              PinCell = 5;
-    
-    // AttrSchema ID to apply on the cell being pinned, specifying which attrs of the target cell will be pushed to the client.
-    int32               ContentSchemaID = 7; 
-    
-    // Specifies which child cell types should be pushed (and which attr schema they should be pushed with).
-    // If empty, no child cells are pushed.
-    repeated int32      ChildSchemas = 9; 
-    
-    // Explicit list of SI values or CellIDs to be pinned
-    //repeated uint64     CellIDs         = 15;
+    int64               PinCell = 3;
+
+	// If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
+	uint32              ParentAttrSelector = 5;
+	
+	// If set, specifies an ItemSelector that filters which child cells are pushed to the client.
+	uint32              ChildCellSelector = 6;
+	
+	// MaintainSync is set if the request should remain open after initial state is pushed so as to receive state updates.
+	bool                MaintainSync = 8;
+	
 }
 
 
@@ -533,6 +540,7 @@ enum URIScheme {
     URIScheme_Data          = 1;    // [data:]<mimetype>[[;base64],<data>] 
     URIScheme_HTTP          = 2;    // [http[s]://]<hostname>[:<port>]/<path>
     URIScheme_File          = 5;    // [file://]<unix-pathname>
+    URIScheme_Arc           = 6;    // [arc://]<arc-app-uri/cell-uri..>
     URIScheme_CrateAsset    = 2701; // [crate-asset://]<crate-asset-uri>
     URIScheme_CellSchema    = 2702; // [cell-schema://]<cell-schema-uri>
 }
@@ -588,15 +596,56 @@ message CryptoKey {
     bytes               KeyBytes        = 4;
 }
 
-message Link {
-    string              ShapeURI      = 1;
-    string              SkinURI       = 2;
-    string              URL           = 5;
-    string              Label         = 7;
-    string              Desc          = 10;
-    string              Tags          = 12; //  Comma-delimited list of tags
+
+// CellInfo is the standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
+message CellInfo {
+
+    // CellDefID references a CellSpec definition, fully describing this cell's common and pinned attrs.
+    // This typically corresponds 1:1 to a cell's purpose / function.
+    // See message CellSpec 
+    uint32              CellDefID     = 1;
+    
+    
+    string              Title         = 4;  // Title, name, or label
+    string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label
+    string              About         = 6;  // Additional phase information about this item (html or rtf ok)
+    
+    AssetRef            Glyph         = 10;  // glyph sufficient for "10x10" viewing
+    AssetRef            GlyphLarge    = 12;  // detailed glyph for close-up viewing (but loaded more sparingly)
+    AssetRef            Link          = 14;  // When an arc:// URL, meaning "pin this URI into a cell" -- but could be any URL or asset
+    
+    int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16)
+    int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16)
+
 }
 
+
+
+/*
+ 
+message SectionAttr {
+    //  No new fields needed 
+}
+ 
+ 
+message LabelAttr {
+    string              Main            = 1;
+    string              Subtext         = 2;
+}
+message SwitchAttr {
+    string              Label           = 1;
+    string              About           = 2;
+    bool                Enabled         = 2;
+}
+    
+message EditableTextAttr {
+    string              Label           = 1;
+    string              About           = 2;
+    string              Content         = 3;
+    int                 Flags           = 4;
+}
+    
+    */
 
 
 
@@ -668,7 +717,7 @@ enum ErrCode {
     ErrCode_InternalErr                 = 5001;
     ErrCode_UnsupportedOp               = 5002;
     ErrCode_Unimplemented               = 5003;
-    ErrCode_ReqCanceled                 = 5004;
+    ErrCode_Timeout                     = 5004;
     ErrCode_ShuttingDown                = 5005;
     ErrCode_NotConnected                = 5006;
     ErrCode_AuthFailed                  = 5007;
@@ -685,7 +734,7 @@ enum ErrCode {
     ErrCode_PlanetNotFound              = 5032;
     ErrCode_PlanetFailure               = 5033;
     ErrCode_AppNotFound                 = 5034;
-    ErrCode_NoAttrsFound                = 5036;
+    ErrCode_DefNotFound                 = 5036;
     ErrCode_MalformedTx                 = 5040;
 
     ErrCode_TypeNotFound                = 5050;
@@ -693,13 +742,13 @@ enum ErrCode {
     ErrCode_BadSchema                   = 5052;
     ErrCode_DataFailure                 = 5053;
     ErrCode_ExportErr                   = 5054;
+    ErrCode_PinFailed                   = 5055;
+    ErrCode_PinContextClosed            = 5056;
     ErrCode_CellNotFound                = 5058;
     ErrCode_ProviderErr                 = 5059;
     
     ErrCode_ViolatesAppendOnly          = 5100;
     ErrCode_InsufficientPermissions     = 5101;
-
-    ErrCode_ChProtocolNotRecognized     = 5201;
 }
 
 

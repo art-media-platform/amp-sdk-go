@@ -1,10 +1,7 @@
 package arc
 
 import (
-	"reflect"
 	"sync"
-
-	"github.com/arcspace/go-arc-sdk/stdlib/symbol"
 )
 
 // MsgBatch is an ordered list os Msgs
@@ -68,6 +65,16 @@ func (batch *MsgBatch) Reclaim() {
 	gMsgBatchPool.Put(batch)
 }
 
+func (batch *MsgBatch) PushCopyToClient(dst PinContext) bool {
+	for _, src := range batch.Msgs {
+		msg := CopyMsg(src)
+		if !dst.PushMsg(msg) {
+			return false
+		}
+	}
+	return true
+}
+
 func NewMsg() *Msg {
 	msg := gMsgPool.Get().(*Msg)
 	if msg.Flags&MsgFlags_ValBufShared != 0 {
@@ -113,181 +120,42 @@ func (msg *Msg) Reclaim() {
 	}
 }
 
-func (msg *Msg) SetValInt(valType ValType, valInt int64) {
-	msg.ValType = int32(valType)
-	msg.ValInt = valInt
-	msg.ValBuf = msg.ValBuf[:0]
-}
-
-// Sets ValType to the given type and resizes ValBuf to the given size in preparation to receive value data.
-func (msg *Msg) SetupValBuf(valType ValType, sz int) {
-	msg.ValInt = int64(sz)
-	msg.ValType = int32(valType)
+func (msg *Msg) MarshalValue(src PbValue) error {
+	sz := src.Size()
 	if sz > cap(msg.ValBuf) {
 		msg.ValBuf = make([]byte, sz, (sz+0x3FF)&^0x3FF)
 	} else {
 		msg.ValBuf = msg.ValBuf[:sz]
 	}
+	_, err := src.MarshalToSizedBuffer(msg.ValBuf)
+	return err
 }
 
-// Sets ValType to the given type and copies value data into ValBuf.
-func (msg *Msg) SetValBuf(valType ValType, valSrc []byte) {
-	msg.SetupValBuf(valType, len(valSrc))
-	copy(msg.ValBuf, valSrc)
+func (msg *Msg) UnmarshalValue(dst PbValue) error {
+	return dst.Unmarshal(msg.ValBuf)
 }
 
-func (msg *Msg) setVal(val interface{}) {
-	var err error
-
-	switch v := val.(type) {
-
-	case string:
-		msg.SetValBuf(ValType_bytes, []byte(v))
-
-	case *[]byte:
-		msg.SetValBuf(ValType_bytes, *v)
-
-	case []byte:
-		msg.SetValBuf(ValType_bytes, v)
-
-	case *Defs:
-		msg.SetupValBuf(ValType_Defs, v.Size())
-		_, err = v.MarshalToSizedBuffer(msg.ValBuf)
-
-		// case *CellInfo:
-		// 	msg.SetupValBuf(uint64(ValType_CellInfo), v.Size())
-		//     _, err = v.MarshalToSizedBuffer(msg.ValBuf)
-
-	case *Err:
-		msg.SetupValBuf(ValType_Err, v.Size())
-		_, err = v.MarshalToSizedBuffer(msg.ValBuf)
-
-	case error:
-		plErr, _ := v.(*Err)
-		if plErr == nil {
-			err := ErrCode_UnnamedErr.Wrap(v)
-			plErr = err.(*Err)
-		}
-		msg.SetupValBuf(ValType_Err, plErr.Size())
-		_, err = plErr.MarshalToSizedBuffer(msg.ValBuf)
-
-	case nil:
-		msg.SetupValBuf(ValType_nil, 0)
-	}
-
+func (msg *Msg) UnmarshalAttrElem(reg SessionRegistry) (elem AttrElem, err error) {
+	elem.Val, err = reg.NewAttrElem(msg.AttrID, false)
 	if err != nil {
-		panic(err)
+		return
 	}
+	err = elem.Val.Unmarshal(msg.ValBuf)
+	if err != nil {
+		return
+	}
+	elem.AttrID = msg.AttrID
+	elem.SI = msg.SI
+	return
 }
 
-func (msg *Msg) LoadVal(dst interface{}) error {
-	if msg == nil {
-		loadNil(dst)
-		return ErrCode_BadValue.Error("got nil Msg")
-	}
-
-	ok := false
-
-	switch ValType(msg.ValType) {
-
-	case ValType_int:
-		ok = true
-		switch v := dst.(type) {
-		case *int64:
-			*v = int64(msg.ValInt)
-		case *uint64:
-			*v = uint64(msg.ValInt)
-		default:
-			ok = false
-		}
-
-	case ValType_string, ValType_bytes:
-		ok = true
-		switch v := dst.(type) {
-		case *string:
-			*v = string(msg.ValBuf)
-		case *[]byte:
-			*v = append(*v, msg.ValBuf...)
-		default:
-			ok = false
-		}
-
-	case ValType_PinReq:
-		if v, match := dst.(*PinReq); match {
-			tmp := PinReq{}
-			if tmp.Unmarshal(msg.ValBuf) == nil {
-				*v = tmp
-				ok = true
-			}
-		}
-
-	case ValType_Defs:
-		if v, match := dst.(*Defs); match {
-			tmp := Defs{}
-			if tmp.Unmarshal(msg.ValBuf) == nil {
-				*v = tmp
-				ok = true
-			}
-		}
-
-	case ValType_HandleURI:
-		if v, match := dst.(*HandleURI); match {
-			tmp := HandleURI{}
-			if tmp.Unmarshal(msg.ValBuf) == nil {
-				*v = tmp
-				ok = true
-			}
-		}
-
-	case ValType_LoginReq:
-		if v, match := dst.(*LoginReq); match {
-			tmp := LoginReq{}
-			if tmp.Unmarshal(msg.ValBuf) == nil {
-				*v = tmp
-				ok = true
-			}
-		}
-
-	}
-
-	if !ok {
-		return ErrCode_BadValue.Errorf("expected %v from Msg", reflect.TypeOf(dst))
-	}
-
-	return nil
-}
-
-func loadNil(dst interface{}) {
-	switch v := dst.(type) {
-	// case *Content:
-	//     v.ContentType = v.ContentType[:0]
-	//     v.DataLen = 0
-	//     v.Data = v.Data[:0]
-	case *string:
-		*v = ""
-	case *symbol.ID:
-		*v = 0
-	case *TIDBuf:
-		*v = TIDBuf{}
-	case *TID:
-		*v = nil
-	case *PinReq:
-		*v = PinReq{}
-	case *Defs:
-		*v = Defs{}
-	case *int:
-		*v = 0
-	case *int64:
-		*v = 0
-	case *uint64:
-		*v = 0
-	case *float64:
-		*v = 0
-	case *[]byte:
-		*v = nil
-	default:
-		panic("unexpected dst type")
-	}
+func (attr AttrElem) MarshalToMsg() (*Msg, error) {
+	msg := NewMsg()
+	msg.Op = MsgOp_PushAttrElem
+	msg.AttrID = attr.AttrID
+	msg.SI = attr.SI
+	err := attr.Val.MarshalToBuf(&msg.ValBuf)
+	return msg, err
 }
 
 var gMsgPool = sync.Pool{
@@ -302,47 +170,4 @@ var gMsgBatchPool = sync.Pool{
 			Msgs: make([]*Msg, 0, 16),
 		}
 	},
-}
-
-type AttrStr string
-
-func (v AttrStr) MarshalToMsg(msg *Msg) error {
-	msg.SetValBuf(ValType_bytes, []byte(v))
-	return nil
-}
-
-type AttrBuf []byte
-
-func (v AttrBuf) MarshalToMsg(msg *Msg) error {
-	msg.SetValBuf(ValType_bytes, v)
-	return nil
-}
-
-func (v *AssetRef) MarshalToMsg(msg *Msg) error {
-	msg.SetupValBuf(ValType_AssetRef, v.Size())
-	_, err := v.MarshalToSizedBuffer(msg.ValBuf)
-	return err
-}
-
-func (v TimeFS) MarshalToMsg(msg *Msg) error {
-	msg.SetValInt(ValType_DateTime, int64(v))
-	return nil
-}
-
-func (v *Err) MarshalToMsg(msg *Msg) error {
-	msg.SetupValBuf(ValType_Err, v.Size())
-	_, err := v.MarshalToSizedBuffer(msg.ValBuf)
-	return err
-}
-
-func ErrorToValue(v error) Value {
-	if v == nil {
-		return nil
-	}
-	arcErr, _ := v.(*Err)
-	if arcErr == nil {
-		wrapped := ErrCode_UnnamedErr.Wrap(v)
-		arcErr = wrapped.(*Err)
-	}
-	return arcErr
 }

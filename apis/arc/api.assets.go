@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/process"
+	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
 // Options when publishing an asset
@@ -30,7 +30,7 @@ type MediaAsset interface {
 
 	// OnStart is called when this asset is live within the given context.
 	// This MediaAsset should call ctx.Close() if a fatal error occurs or its underlying asset becomes unavailable.
-	OnStart(ctx process.Context) error
+	OnStart(ctx task.Context) error
 
 	// Called when this asset is requested by a client for read access
 	NewAssetReader() (AssetReader, error)

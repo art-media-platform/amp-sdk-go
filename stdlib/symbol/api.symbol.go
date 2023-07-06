@@ -1,25 +1,34 @@
 package symbol
 
 import (
+	"encoding/binary"
+	"errors"
+
 	"github.com/arcspace/go-arc-sdk/stdlib/generics"
 )
 
 // ID is a persistent integer value associated with an immutable string or buffer value.
-// For convenience, Table's interface methods accept and return uint64 types, but these are understood to be of type ID.
 // ID == 0 denotes nil or unassigned.
-type ID uint64
+type ID uint32
+
+// Ord returns the ordinal value of this ID (a type recasting to uint32)
+func (id ID) Ord() uint32 {
+	return uint32(id)
+}
 
 // IDSz is the byte size of a symbol.ID (big endian)
 // The tradeoff is between key bytes idle (wasted) in a massive db and exponentially more IDs available.
-// With 5 bytes, an app continuously issuing a new symbol ID every millisecond could do so for 35 years.
-const IDSz = 5
+//
+// The thinking of a 4 byte ID is that an symbol table exceeding 100 million entries is impractical and inefficient.
+// If a billion symbol IDs is "not enough"  then you are issuing IDs for the wrong purpose.
+const IDSz = 4
 
-// MinIssuedID specifies a minimum ID value for newly issued IDs.]
+// DefaultIssuerMin specifies the default minimum ID value for newly issued IDs.
 //
 // ID values less than this value are reserved for clients to represent hard-wired or "out of band" meaning.
 // "Hard-wired" meaning that Table.SetSymbolID() can be called with IDs less than MinIssuedID without risk
 // of an auto-issued ID contending with it.
-const MinIssuedID = 1000
+const DefaultIssuerMin = 600
 
 type Issuer interface {
 	generics.RefCloser
@@ -27,6 +36,8 @@ type Issuer interface {
 	// Issues the next sequential unique ID, starting at MinIssuedID.
 	IssueNextID() (ID, error)
 }
+
+var ErrIssuerNotOpen = errors.New("issuer not open")
 
 // Table stores value-ID pairs, designed for high-performance lookup of an ID or byte string.
 // This implementation is intended to handle extreme loads, leveraging:
@@ -60,41 +71,29 @@ type Table interface {
 	GetSymbol(ID ID, io []byte) []byte
 }
 
-func ReadID(in []byte) (uint64, []byte) {
-	ID := ((uint64(in[1]) << 32) |
-		(uint64(in[2]) << 24) |
-		(uint64(in[3]) << 16) |
-		(uint64(in[4]) << 8) |
-		(uint64(in[5])))
-
-	return ID, in[6:]
+// Reads a big endian encoded uint32 ID from the given byte slice
+func ReadID(in []byte) (uint32, []byte) {
+	ID := binary.BigEndian.Uint32(in)
+	return ID, in[IDSz:]
 }
 
-func (id *ID) ReadFrom(in []byte) int {
-	*id = ID(
-		(uint64(in[0]) << 32) |
-			(uint64(in[1]) << 24) |
-			(uint64(in[2]) << 16) |
-			(uint64(in[3]) << 8) |
-			(uint64(in[4])))
-
-	return IDSz
+// Reads an ID from the given byte slice (reading IDSz=4 bytes)
+func (id *ID) ReadFrom(in []byte) {
+	*id = ID(binary.BigEndian.Uint32(in))
 }
 
-func AppendID(ID uint64, io []byte) []byte {
+func AppendID(io []byte, ID uint32) []byte {
 	return append(io, // big endian marshal
-		byte(ID>>32),
 		byte(ID>>24),
 		byte(ID>>16),
 		byte(ID>>8),
 		byte(ID))
 }
 
-func (id ID) WriteTo(io []byte) []byte {
+func (id ID) AppendTo(io []byte) []byte {
 	return append(io, // big endian marshal
-		byte(uint64(id)>>32),
-		byte(uint64(id)>>24),
-		byte(uint64(id)>>16),
-		byte(uint64(id)>>8),
+		byte(uint32(id)>>24),
+		byte(uint32(id)>>16),
+		byte(uint32(id)>>8),
 		byte(id))
 }

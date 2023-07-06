@@ -13,7 +13,6 @@ import (
 
 const kTotalEntries = 1001447
 
-
 func DoTableTest(t *testing.T, totalEntries int, opener func() (symbol.Table, error)) {
 	if totalEntries == 0 {
 		totalEntries = kTotalEntries
@@ -75,8 +74,8 @@ func (tt *tableTester) setupTestData(totalEntries int) {
 	}
 }
 
-const (
-	hardwireStart     = symbol.MinIssuedID - hardwireTestCount
+var (
+	hardwireStart     = symbol.DefaultIssuerMin - hardwireTestCount
 	hardwireTestCount = 101
 )
 
@@ -112,7 +111,7 @@ func (tt *tableTester) fillTable(table symbol.Table) {
 				for j := 0; j < totalEntries; j++ {
 					idx := (startAt + j) % totalEntries
 					symID := table.GetSymbolID(vals[idx], true)
-					if symID < symbol.MinIssuedID {
+					if symID < symbol.DefaultIssuerMin {
 						atomic.AddInt32(hardwireCountPtr, 1)
 					}
 					stored := table.GetSymbol(symID, symBuf[:0])

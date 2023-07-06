@@ -10,14 +10,10 @@ import (
 )
 
 func createTable(opts TableOpts) (symbol.Table, error) {
-	var err error
 	if opts.Issuer == nil {
-		opts.Issuer, err = newIssuer(opts)
+		opts.Issuer = symbol.NewVolatileIssuer(opts.IssuerInitsAt)
 	} else {
 		opts.Issuer.AddRef()
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	st := &symbolTable{

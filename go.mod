@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	capnproto.org/go/capnp/v3 v3.0.0-alpha-29
-	github.com/alecthomas/participle/v2 v2.0.0
 	github.com/brynbellomy/klog v0.0.0-20200414031930-87fbf2e555ae
 	github.com/google/uuid v1.3.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8

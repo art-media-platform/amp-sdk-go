@@ -84,15 +84,6 @@ enum ConstSymbol {
 enum MsgOp {
     MsgOp_NoOp = 0;
 
-    // MsgOp_Login is used to initiate a session and is a multi-step process:
-    //
-    // Params: 
-    //      Msg.ReqID:        client-generated request ID 
-    //      Msg.ValBuf:       Login           (client -> host)
-    //                        LoginChallenge  (client <- host)
-    //                        LoginResponse   (client -> host)
-    MsgOp_Login = 1;
-    
     /*
     MsgOp.PinCell->   
         <-MsgOp.PushAttr
@@ -322,31 +313,28 @@ message Login {
 // LoginChallenge is sent from host to client in response to a Login message
 message LoginChallenge {
 
-    // TODO
+    bytes               Hash            = 1;
 }
 
 // LoginChallenge is sent from client to host in response to a LoginChallenge message
 message LoginResponse {
 
-    // TODO
+    bytes               HashResp        = 1;
 }
 
 
-
-
-
 message Symbol {
-    // A symbol ID is intentionally 32 bits as it corresponds to real-world const byte strings (and so which 2^32 is plenty as it is)
-    uint32                 ID          = 1;
-    bytes                  Name        = 2;
+    // A symbol ID is 32 bits and corresponds to a real-world const byte strings.
+    uint32              ID              = 1;
+    bytes               Name            = 2;
 }
 
 
 message RegisterDefs {
-    repeated Symbol        Symbols     = 1;
-    repeated AttrSpec      Attrs       = 2;
-    repeated CellSpec      Cells       = 3;
-    repeated ItemSelector  Selectors   = 4;
+    repeated Symbol        Symbols      = 1;
+    repeated AttrSpec      Attrs        = 2;
+    repeated CellSpec      Cells        = 3;
+    repeated ItemSelector  Selectors    = 4;
 }
 
 

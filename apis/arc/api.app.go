@@ -30,17 +30,16 @@ type AppModule struct {
 	NewAppInstance func() AppInstance
 }
 
-// AppContext encapsulates execution of an AppInstance and is provided by the archost runtime.
+// AppContext hosts is provided by the arc runtime and hosts an AppInstance.
 //
 // An AppModule retains the AppContext it is given via NewAppInstance() for:
 //   - archost operations (e.g. resolve type schemas, publish assets for client consumption -- see AppContext)
 //   - having a context to select{} against (for graceful shutdown)
 type AppContext interface {
-	task.Context          // Each app instance has a task.Context and is a child of the user's session
+	task.Context
 	AssetPublisher        // Allows an app to publish assets for client consumption
-	CellResolver          // How to resolve App cells by URI
 	SessionRegistry       // How to resolve Attrs by name and type
-	Session() HostSession // Access to host & user ops
+	Session() HostSession // Access to underlying Session
 
 	// Returns the absolute fs path of the app's local state directory.
 	// This directory is scoped by the app's UID and is unique to this app instance.
@@ -62,7 +61,8 @@ type AppContext interface {
 
 // AppInstance is implemented by an arc app (AppModule)
 type AppInstance interface {
-	AppContext
+	AppContext   // An app instance implies an underlying host AppContext
+	CellResolver // How to resolve App cell requests
 
 	// Callback made immediately after AppModule.NewAppInstance() -- typically resolves app-specific type specs.
 	OnNew(ctx AppContext) error

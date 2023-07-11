@@ -65,7 +65,8 @@ type HostService interface {
 // HostSession in an open session instance with a Host.
 // Closing is initiated via Context.Close().
 type HostSession interface {
-	task.Context
+	task.Context    // Underlying task context
+	SessionRegistry // How an AppInstance resolves symbols and types
 
 	// Called when this session is newly opened to set up the SessionRegistry
 	InitSessionRegistry(symTable symbol.Table)
@@ -86,9 +87,9 @@ type HostSession interface {
 
 // SessionRegistry manages a HostSession's symbol and type definitions.
 type SessionRegistry interface {
+	ClientSymbols() symbol.Table
 
-	// Registers an ElemVal as a prototype under its AttrElemType (also a valid AttrSpec type expression).
-	// If an entry already exists (common for a type used by multiple apps), an error is returned and is a no-op.
+	// Registers an ElemVal as a prototype under its element type name..
 	// This and ResolveAttrSpec() allow NewElemVal() to work.
 	RegisterElemType(prototype ElemVal) error
 
@@ -177,8 +178,8 @@ type PbValue interface {
 
 type ElemVal interface {
 
-	// Returns the AttrSpec in string form -- see AttrSpec
-	AttrSpec() string
+	// Returns the element type name (a degenerate AttrSpec).
+	TypeName() string
 
 	// Marshals this ElemVal to a buffer, reallocating if needed.
 	MarshalToBuf(dst *[]byte) error

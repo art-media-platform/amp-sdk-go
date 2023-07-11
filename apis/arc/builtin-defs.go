@@ -32,14 +32,15 @@ func RegisterConstSymbols(reg SessionRegistry) {
 func RegisterBuiltInTypes(reg Registry) error {
 
 	prototypes := []ElemVal{
-		&AssetRef{},
 		&Err{},
 		&RegisterDefs{},
 		&HandleURI{},
+		&Login{},
 		&LoginChallenge{},
 		&LoginResponse{},
-		&Login{},
+
 		&CellInfo{},
+		&AssetRef{},
 		//&GeoFix{},
 		//&TRS{},
 	}
@@ -76,7 +77,7 @@ func (v *AssetRef) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *AssetRef) AttrSpec() string {
+func (v *AssetRef) TypeName() string {
 	return "AssetRef"
 }
 
@@ -88,7 +89,7 @@ func (v *Err) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *Err) AttrSpec() string {
+func (v *Err) TypeName() string {
 	return "Err"
 }
 
@@ -100,7 +101,7 @@ func (v *HandleURI) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *HandleURI) AttrSpec() string {
+func (v *HandleURI) TypeName() string {
 	return "HandleURI"
 }
 
@@ -112,7 +113,7 @@ func (v *Login) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *Login) AttrSpec() string {
+func (v *Login) TypeName() string {
 	return "Login"
 }
 
@@ -124,7 +125,7 @@ func (v *LoginChallenge) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *LoginChallenge) AttrSpec() string {
+func (v *LoginChallenge) TypeName() string {
 	return "LoginChallenge"
 }
 
@@ -136,7 +137,7 @@ func (v *LoginResponse) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *LoginResponse) AttrSpec() string {
+func (v *LoginResponse) TypeName() string {
 	return "LoginResponse"
 }
 
@@ -148,7 +149,7 @@ func (v *CellInfo) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *CellInfo) AttrSpec() string {
+func (v *CellInfo) TypeName() string {
 	return "CellInfo"
 }
 
@@ -160,7 +161,7 @@ func (v *RegisterDefs) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *RegisterDefs) AttrSpec() string {
+func (v *RegisterDefs) TypeName() string {
 	return "RegisterDefs"
 }
 

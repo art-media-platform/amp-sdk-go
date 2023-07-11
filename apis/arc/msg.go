@@ -120,7 +120,8 @@ func (msg *Msg) Reclaim() {
 	}
 }
 
-func (msg *Msg) MarshalValue(src PbValue) error {
+func (msg *Msg) MarshalAttrElem(attrID uint32, src PbValue) error {
+	msg.AttrID = attrID
 	sz := src.Size()
 	if sz > cap(msg.ValBuf) {
 		msg.ValBuf = make([]byte, sz, (sz+0x3FF)&^0x3FF)

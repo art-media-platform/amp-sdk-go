@@ -246,7 +246,7 @@ func (app *AppBase) OnNew(ctx AppContext) error {
 		return err
 	}
 
-	if app.CellInfoAttr, err = app.ResolveAppAttr((&CellInfo{}).AttrSpec()); err != nil {
+	if app.CellInfoAttr, err = app.ResolveAppAttr((&CellInfo{}).TypeName()); err != nil {
 		return err
 	}
 
@@ -285,6 +285,10 @@ func (app *AppBase) RegisterElemType(prototype ElemVal) error {
 		return err
 	}
 	return nil
+}
+
+func (app *AppBase) ResolveCell(req CellReq) (PinnedCell, error) {
+	return nil, ErrCode_Unimplemented.Error("app implements this")
 }
 
 var _ = (AppInstance)(&AppBase{})

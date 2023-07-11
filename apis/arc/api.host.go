@@ -80,9 +80,9 @@ type HostSession interface {
 	// Sends an unnamed attr to the client's session controller.
 	PushMetaAttr(val ElemVal) error
 
-	// Gets the currently active AppContext for an AppID.
-	// If does not exist and autoCreate is set, a new AppContext is created, started, and returned.
-	GetAppContext(appID UID, autoCreate bool) (AppContext, error)
+	// Gets the currently running AppInstance for an AppID.
+	// If the requested app is not running and autoCreate is set, a new instance is created and started.
+	GetAppInstance(appID UID, autoCreate bool) (AppInstance, error)
 }
 
 // SessionRegistry manages a HostSession's symbol and type definitions.

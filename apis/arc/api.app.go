@@ -22,7 +22,7 @@ type AppModule struct {
 	UID          UID      // Universally unique and persistent ID for this module (and the module's "home" planet if present)
 	Desc         string   // Human-readable description of this app
 	Version      string   // "v{MajorVers}.{MinorID}.{RevID}"
-	Dependencies []UID    // Module UIDs this app may access via GetAppContext()
+	Dependencies []UID    // Module UIDs this app may access
 	Invocations  []string // Additional aliases that invoke this app
 	AttrDecl     []string // Attrs to be resolved and registered with the HostSession -- get the registered
 

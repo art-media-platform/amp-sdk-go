@@ -8,7 +8,7 @@ import (
 )
 
 // ID is a persistent integer value associated with an immutable string or buffer value.
-// ID == 0 denotes nil or unassigned.
+// ID == 0 always maps to the empty string / buf.
 type ID uint32
 
 // Ord returns the ordinal value of this ID (a type recasting to uint32)

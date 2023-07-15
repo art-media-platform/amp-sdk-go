@@ -172,3 +172,49 @@ var gMsgBatchPool = sync.Pool{
 		}
 	},
 }
+
+func (bat *AttrBatch) Clear(target CellID) {
+	bat.Target = target
+	if cap(bat.Attrs) > 0 {
+		bat.Attrs = bat.Attrs[:0]
+	} else {
+		bat.Attrs = make([]AttrElem, 0, 4)
+	}
+}
+
+func (bat *AttrBatch) Add(attrID uint32, val ElemVal) {
+	if val == nil {
+		return
+	}
+	if attrID == 0 {
+		panic("attrID == 0")
+	}
+	bat.Attrs = append(bat.Attrs, AttrElem{
+		Val:    val,
+		AttrID: attrID,
+	})
+}
+
+// Pushes a attr mutation to the client, returning true if the msg was sent (false if the client has been closed).
+func (bat AttrBatch) PushBatch(ctx PinContext) error {
+
+	for _, attr := range bat.Attrs {
+		msg, err := attr.MarshalToMsg()
+		if err != nil {
+			ctx.Warnf("MarshalToMsg() err: %v", err)
+			continue
+		}
+		msg.CellID = int64(bat.Target)
+
+		// if i == len(bat.Attrs)-1 {
+		// 	msg.Flags |= MsgFlags_CellCheckpoint
+		// }
+
+		if !ctx.PushMsg(msg) {
+			return ErrPinCtxClosed
+		}
+	}
+
+	return nil
+
+}

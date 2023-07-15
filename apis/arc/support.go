@@ -2,6 +2,8 @@ package arc
 
 import (
 	"bytes"
+	"net/url"
+	strings "strings"
 	"time"
 
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
@@ -253,8 +255,8 @@ func (app *AppBase) OnNew(ctx AppContext) error {
 	return nil
 }
 
-func (app *AppBase) HandleMetaAttr(attr AttrElem) (handled bool) {
-	return false
+func (app *AppBase) HandleURL(*url.URL) error {
+	return ErrUnimplemented
 }
 
 func (app *AppBase) OnClosing() {
@@ -263,35 +265,40 @@ func (app *AppBase) OnClosing() {
 
 // ResolveAppCell is a convenience function that resolves a cell spec into a CellSpec def ID.
 func (app *AppBase) ResolveAppCell(cellSpec string) (cellSpecID uint32, err error) {
-	cellDef, err := app.AppContext.ResolveCellSpec(cellSpec)
+	cellDef, err := app.AppContext.Session().ResolveCellSpec(cellSpec)
 	if err != nil {
 		return
 	}
 	return cellDef.ClientDefID, nil
 }
 
-// ResolveAppAttr is a convenience function that resolves an attr spec into an AttrSpec def ID.
+// ResolveAppAttr is a convenience function that resolves an attr spec intended to be sent to the client.
 func (app *AppBase) ResolveAppAttr(attrSpec string) (uint32, error) {
-	attrDef, err := app.AppContext.ResolveAttrSpec(attrSpec)
+	spec, err := app.AppContext.Session().ResolveAttrSpec(attrSpec, false)
 	if err != nil {
 		return 0, err
 	}
-	return attrDef.Client.DefID, nil
+	return spec.DefID, nil
 }
 
 func (app *AppBase) RegisterElemType(prototype ElemVal) error {
-	err := app.AppContext.RegisterElemType(prototype)
+	err := app.AppContext.Session().RegisterElemType(prototype)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (app *AppBase) ResolveCell(req CellReq) (PinnedCell, error) {
-	return nil, ErrCode_Unimplemented.Error("app implements this")
-}
 
-var _ = (AppInstance)(&AppBase{})
+// Analyses an AttrSpec's SeriesSpec and returns the index class it uses.
+func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
+	switch {
+	case strings.HasSuffix(seriesSpec, ".Name"):
+		return SeriesIndexType_Name
+	default:
+		return SeriesIndexType_Literal
+	}
+}
 
 /*
 

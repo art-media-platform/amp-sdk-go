@@ -12,8 +12,6 @@ import (
 type Host interface {
 	task.Context
 
-	//HostPlanet() Planet
-
 	Registry() Registry
 
 	// StartNewSession creates a new HostSession and binds its Msg transport to a stream.
@@ -99,8 +97,10 @@ type SessionRegistry interface {
 	// Resolves an AttrSpec into useful symbols, auto-registering the AttrSpec as needed.
 	// Typically used during AppInstance.OnNew() to get the AttrIDs that correspond to the AttrSpecs it will send later.
 	//
+	// If native === true, the spec is resolved with native symbols (vs client symbols).
+	//
 	// See AttrSpec docs.
-	ResolveAttrSpec(attrSpec string) (AttrDef, error)
+	ResolveAttrSpec(attrSpec string, native bool) (AttrSpec, error)
 
 	// Resolves a CellSpec (a cell attr schema) into symbol IDs, auto-registering each as needed.
 	// Called by apps to resolve cell types it supports, getting a CellSpec ID to stamp cells it pushes to clients.
@@ -109,7 +109,7 @@ type SessionRegistry interface {
 	ResolveCellSpec(cellSpec string) (CellDef, error)
 
 	// Instantiates an attr element value for an AttrID -- typically followed by ElemVal.Unmarshal()
-	NewAttrElem(attrDefID uint32, convertFromNative bool) (ElemVal, error)
+	NewAttrElem(attrDefID uint32, native bool) (ElemVal, error)
 }
 
 // Registry maps an app ID to an AppModule.    It is safe to access from multiple goroutines.
@@ -143,11 +143,6 @@ type SIRange struct {
 	Hi uint64
 }
 
-// type CellURL struct {
-// 	Raw *url.URL // URL is url.Parse(PinReq.URI)
-// 	Path []string // Path is URL.Path split by "/"
-// }
-
 type CellReq interface {
 	PinID() CellID
 	URL() *url.URL
@@ -157,18 +152,6 @@ type CellReq interface {
 
 // FUTURE: type CellTID [2]uint64
 type CellID uint64
-
-// CellResolver accepts requests to pin cells.
-type CellResolver interface {
-
-	// ResolveCell resolves the given request to a PinnedCell, potentially pinning the cell as needed.
-	// After returned PinnedCell will then have PushState() to:
-	///    - push the cell's state to the client
-	//     - push cell state updates as needed
-	//     - have <-ctx.Closing() to use alongside blocking operations.
-	//
-	ResolveCell(req CellReq) (PinnedCell, error)
-}
 
 type PbValue interface {
 	Size() int
@@ -184,6 +167,7 @@ type ElemVal interface {
 	// Marshals this ElemVal to a buffer, reallocating if needed.
 	MarshalToBuf(dst *[]byte) error
 
+	// Unmarshals and merges value state from a buffer.
 	Unmarshal(src []byte) error
 
 	// Creates a default instance of this same ElemVal type
@@ -213,50 +197,4 @@ type CellDef struct {
 type AttrBatch struct {
 	Target CellID
 	Attrs  []AttrElem
-}
-
-func (bat *AttrBatch) Clear(target CellID) {
-	bat.Target = target
-	if cap(bat.Attrs) > 0 {
-		bat.Attrs = bat.Attrs[:0]
-	} else {
-		bat.Attrs = make([]AttrElem, 0, 4)
-	}
-}
-
-func (bat *AttrBatch) Add(attrID uint32, val ElemVal) {
-	if val == nil {
-		return
-	}
-	if attrID == 0 {
-		panic("attrID == 0")
-	}
-	bat.Attrs = append(bat.Attrs, AttrElem{
-		Val:    val,
-		AttrID: attrID,
-	})
-}
-
-// Pushes a attr mutation to the client, returning true if the msg was sent (false if the client has been closed).
-func (bat AttrBatch) PushBatch(ctx PinContext) error {
-
-	for _, attr := range bat.Attrs {
-		msg, err := attr.MarshalToMsg()
-		if err != nil {
-			ctx.Warnf("MarshalToMsg() err: %v", err)
-			continue
-		}
-		msg.CellID = int64(bat.Target)
-
-		// if i == len(bat.Attrs)-1 {
-		// 	msg.Flags |= MsgFlags_CellCheckpoint
-		// }
-
-		if !ctx.PushMsg(msg) {
-			return ErrPinCtxClosed
-		}
-	}
-
-	return nil
-
 }

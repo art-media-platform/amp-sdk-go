@@ -1,6 +1,8 @@
 package arc
 
 import (
+	"net/url"
+
 	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
@@ -11,11 +13,10 @@ import (
 //   - a client or other app invoking its UID or URI directly
 type AppModule struct {
 
-	// AppID identifies this app with form "v{MajorVers}.{AppNameID}.{FamilyID}.{PublisherID}" -- e.g. "v1.filesys.amp.arcspace.systems"
+	// AppID identifies this app with form "{AppNameID}.{FamilyID}.{PublisherID}" -- e.g. "filesys.amp.arcspace.systems"
 	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "arcspace.systems"
 	//   - FamilyID:    encompassing namespace ID used to group related apps and content (no spaces or punctuation)
 	//   - AppNameID:   uniquely identifies this app within its parent family and domain (no spaces or punctuation)
-	//   - MajorVers:   an integer starting with 1 that is incremented when a breaking change is made to the app's API.
 	//
 	// AppID form is consistent of a URL domain name (and subdomains).
 	AppID        string
@@ -38,7 +39,6 @@ type AppModule struct {
 type AppContext interface {
 	task.Context
 	AssetPublisher        // Allows an app to publish assets for client consumption
-	SessionRegistry       // How to resolve Attrs by name and type
 	Session() HostSession // Access to underlying Session
 
 	// Returns the absolute fs path of the app's local state directory.
@@ -61,17 +61,25 @@ type AppContext interface {
 
 // AppInstance is implemented by an arc app (AppModule)
 type AppInstance interface {
-	AppContext   // An app instance implies an underlying host AppContext
-	CellResolver // How to resolve App cell requests
+	AppContext // An app instance implies an underlying host AppContext
 
 	// Callback made immediately after AppModule.NewAppInstance() -- typically resolves app-specific type specs.
 	OnNew(ctx AppContext) error
 
+	// Celled when the app is pin the cell IAW with the given request.
+	// If parent != nil, this is the context of the request.
+	// If parent == nil, this app was invoked without out a parent cell / context.
+	PinCell(parent PinnedCell, req CellReq) (PinnedCell, error)
+
 	// Handles a meta message sent to this app, which could be any attr type.
-	HandleMetaAttr(attr AttrElem) (handled bool)
+	HandleURL(*url.URL) error
 
 	// Called exactly once if / when an app is signaled to close.
 	OnClosing()
+}
+
+type CellTx struct {
+	Attrs []AttrElem // Attrs to merge -- AttrIDs are NATIVE (not client) IDs
 }
 
 // PinnedCell is how your app encapsulates a pinned cell to the archost runtime and thus clients.
@@ -81,8 +89,20 @@ type PinnedCell interface {
 	// This means an AppContext contains all its PinnedCells and thus Close() will close all PinnedCells.
 	Context() task.Context
 
-	// A PinnedCell is a closure / context for incoming ResolveCell requests.
-	CellResolver
+	// Pins the requested cell (typically a child cell).
+	PinCell(req CellReq) (PinnedCell, error)
+	//PinChild(req CellReq) (PinnedCell, error)
+
+	//App() AppInstance
+
+	// A PinnedCell is also a closure / context for incoming ResolveCell requests.
+	// ResolveCell resolves the given request to a PinnedCell, potentially pinning the cell as needed.
+	// After returned PinnedCell will then have PushState() to:
+	///    - push the cell's state to the client
+	//     - push cell state updates as needed
+	//     - have <-ctx.Closing() to use alongside blocking operations.
+	//
+	//ResolveRequest(req CellReq, parentApp AppInstance) (Cell, error)
 
 	// Pushes this cell and child cells to the client state is called.
 	// Exits when any of the following occur:
@@ -90,11 +110,17 @@ type PinnedCell interface {
 	//   - a fatal error is encountered, or
 	//   - state has been pushed to the client AND ctx.MaintainSync() == false
 	PushState(ctx PinContext) error
+
+	// Merges a set of changes into this cell.
+	MergeTx(tx CellTx) error
 }
 
 // PinContext wraps a client request to receive a cell's state / updates.
 type PinContext interface {
-	task.Context // Started as a CHILD of the arc.PinnedCell returned by App.PinCell()
+	task.Context // Started as a CHILD of the arc.PinnedCell returned by AppInstance.PinCell()
+
+	// If true, symbol IDs are native (not client).
+	UsingNativeSymbols() bool
 
 	// If true:   PinnedCell.PushState() should block until PinContext.Closing() is signaled.
 	// If false:  PinnedCell.PushState() should exit once state has been pushed.

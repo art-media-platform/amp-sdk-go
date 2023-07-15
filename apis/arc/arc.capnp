@@ -13,6 +13,9 @@ struct AttrDefTest {
 }
 
 const linkCellSpec        :Text = "(CellInfo)()";
+#const linkCellSpec        :Text = "(CellInfo,[Locale.Name]Labels,[Purpose.Name]AssetRef:Glyphs[Surface.Name]Positions)()";
+
+
 
 
 # testing

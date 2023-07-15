@@ -219,13 +219,12 @@ message Msg {
     
     // ReqID specifies a request context. 
     //
-    // When a client issues request-side MsgOp (e.g. PinCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
+    // When a client issues request-side MsgOp (e.g. ResolveCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
     // If this msg is a reply to a request, ReqID identifies the originating request op.
     uint64              ReqID           = 2;
     
     // CellID identifies the cell associated with Msg.Op.
     int64               CellID          = 4;
-
 
     // CellID corresponding to a user or agent that authored the content of this Msg.
     // uint32              FromID          = 11;
@@ -235,7 +234,7 @@ message Msg {
     uint32              AttrID          = 6;
     
     // SI ("Series Index") specifies how an int64 is interpreted as an attr element index value.
-    // See AttrSpec.SeriesType
+    // See AttrSpec.SeriesSpec
     int64               SI              = 8;    
 
     // ValBuf is interpreted according to AttrID 
@@ -247,36 +246,26 @@ message Msg {
 }
 
 
-// message AttrElemTx {
-//     uint32              AttrID          = 1;
-//     int64               SI              = 3;    
-//     bytes               ValBuf          = 4;
-// }
-
-
-// message CellTx {
-//     MsgOp               Op              = 1;
-//     uint64              ReqID           = 3;
-//     int64                 CellID          = 1;
-//     uint32                CellSpec        = 2;
-//     CellTxFlags           Flags           = 3;
-//     repeated AttrElemTx   Changes         = 4;
-// }
-
-// enum CellTxFlags {
-
-//     CellTxFlags_None = 0;
-//     CellTxFlags_CellDeleted = 0x01;
-// }
 /*
-
-// Note that element domain uniqueness always implies an SI *and* a FromID.
-enum SeriesType {
-    // SeriesType_CellSet denotes that Msg.SI are CellIDs.
-    //SeriesType_NameSet = 10;
-    //SeriesType_CellSet = 11;
-
+message MultiCellTx {
+    uint64             ReqID           = 3;
+    repeated CellTxn   CellTx         = 4;
 }
+
+message CellTxn {
+    MsgOp                 Op              = 1;
+    int64                 CellID          = 2;
+    uint32                CellSpec        = 3;
+    repeated AttrElemTx   Attrs           = 4;
+}
+
+message AttrElemTx {
+    uint32              AttrID          = 1;
+    int64               SI              = 3;    
+    bytes               ValBuf          = 4;
+}
+
+
 */
 
 message PlanetEpoch {
@@ -343,10 +332,10 @@ message RegisterDefs {
 message AttrSpec {
 
     // Composite expression / invocation of this AttrSpec in the form: 
-    //      "[{SeriesType}]{ElemType}:{AttrName}"
+    //      "[{SeriesSpec}]{ElemType}:{AttrName}"
     //
     // This the value is used for Msg.AttrID -- it references an AttrSpec.
-    // e.g. "AssetRef", "AssetRef:promo", "[GeoFix]AssetRef:promo-shoots",
+    // e.g. "AssetRef", "AssetRef:promo", "[UTC16]Position:past-promo-shoots",
     uint32              DefID = 1;  
     
     // ElemType identifies this attr's element type and has a form like a subdomain:
@@ -360,27 +349,38 @@ message AttrSpec {
     //    "GreetingAttr.tutorial_06.hello-world.learn.arcspace.systems", 
     uint32              ElemType = 3;
 
-    // SeriesType specifies how to interpret an attr's SeriesIndex ("SI") int64 value associated with each attr element value.
-    // If "", this attr is a scalar value (and SI is 0 and ignored).
+    // SeriesSpec specifies how to interpret an attr's SeriesIndex int64 value ("SI") and has the form:
+    //    "{SeriesName}[.{SeriesIndexType}]"
+    //
+    // A SeriesSpec includes its underlying SeriesType as a suffix, telling the host to perform necessary handling.
+    // If SeriesSpec is omitted, this attr is a scalar value (and SI is 0 assumed).
     //
     // UTC16 and Secs16 are 48.16 fixed signed fractional seconds (one second == 0x10000 ticks), naming a time duration or timestamp.
     // When naming an absolute timestamp, unix UTC is assumed (0x10000 corresponds to 00:00:01, Jan 1 1970 GMT)
     //
-    // e.g. "", "UTC16", "Secs16", "Int64", "GeoHash", "NodeID", "TID"
-    uint32              SeriesType = 5;
+    // e.g. "", "UTC16", "Secs16", "Int64", "Locale.Name" -- FUTURE "GeoHash", "NodeID", "TID" 
+    uint32              SeriesSpec = 4;
     
-    // AttrLabel?  Label?
+    // SeriesIndexType tells the host how to handle and process attr series index values.
+    // If SeriesSpec is omitted (SeriesSpec = 0), SI index values are considered literals (SeriesIndexType_Literal).
+    SeriesIndexType     SeriesIndexType = 5;
+    
+    // AttrName differentiates an attribute from others having the same ElemType and SeriesSpec
+    //   - Unnamed attrs are common and typically are used to denote a characterizing cell attribute.
+    //   - By convention, attr names of series are plural, and reflects that the attr is intended to contain multiple entries (e.g. "[Locale.Name]Labels")
+    //   - Valid chars consist of [A-Za-z0-9_-] ('.' is not allowed)
     //
-    // AttrName identifies this attribute, consisting of [A-Za-z0-9_-]
-    // Unnamed attrs are common and typically are used to denote a characterizing cell attribute.
-    //
-    // e.g. "", "en-us", "es-co", "mini", "1440p"
+    // e.g. "", "playable", "mini", "1440p"
     uint32              AttrName = 6; 
     
 
+}
 
-    
-    
+
+enum SeriesIndexType  {
+    SeriesIndexType_Literal = 0; // SeriesSpec has no suffix:      SI values are literal values (Int64, UTC16, GeoHash)
+    SeriesIndexType_Name    = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
+    //SeriesIndexTypeCellTID  = 2; // SI values correspond to Cell TIDs 
 }
 
 
@@ -391,7 +391,7 @@ message CellSpec {
     // Composite expression / invocation of this CellSpec in the form:
     //      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)" 
     //
-    // e.g. "(CellInfo,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:locations)"
+    // e.g. "(CellInfo,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
     // A sequence of attr IDs (attr descriptors) that are this Cell has as both a child and parent.
@@ -454,7 +454,7 @@ message HandleURI {
 // PinReq is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.  
 message PinReq {
 
-    // ParentReqID specifies the request ID that pushed PinCell (as a child), providing context.
+    // ParentReqID specifies the request ID that pushed PinReq.ResolveCell (as a child), providing context.
     // Set to 0 if PinCell and/or PinURI implies that no parent req exists.
     uint64              ParentReqID = 1;
     
@@ -471,8 +471,9 @@ message PinReq {
 	// If set, specifies an ItemSelector that filters which child cells are pushed to the client.
 	uint32              ChildCellSelector = 6;
 	
-	// MaintainSync is set if the request should remain open after initial state is pushed so as to receive state updates.
-	bool                MaintainSync = 8;
+	// AutoClose, if set, causes this request to close once state is pushed.
+	// If false, the request will remains open and the client will continue to receive state updates until request is explicitly closed.
+	bool                AutoClose = 8;
 	
 }
 
@@ -506,19 +507,25 @@ message Txn {
 }
 
 
-enum GeoModel {
-    GeoModel_Sphere = 0;
+// CordType describes how to interpret coordinates contained in a Position.
+enum CordType {
+    CordType_Unspecified     = 0;
+    CordType_Ordered         = 1;  // U is order ranking
+    CordType_Plane_Cartesian = 5;  // (U,V,W) are cartesian coordinates
+    CordType_Plane_HexEvenR  = 6;  // (U,V) are hexagonal "even-r" coordinates
+    CordType_Geoid_Sphere    = 10; // U is lat, V is long, W is altitude (m)
+    CordType_Geoid_WGS84     = 11; // U is lat, V is long, W is altitude (m)
 }
 
-message GeoFix {
-    GeoModel            Model           = 1;
+// Position describes a position in space and/or time using a given coordinate system.
+message Position {
+    CordType            CordType    = 1; // CordType describing how to interpret U,V,W
     
-    double              Lat             = 4; // degrees
-    double              Lng             = 5; // degrees
-    double              Alt             = 6; // meters
+    double              U           = 3; 
+    double              V           = 4;
+    double              W           = 5;
     
-    float               AltROU          = 10; // radius of uncertainty (meters)
-    float               PosROU          = 11; // radius of uncertainty (meters)
+    float               ROU         = 6; // radius of uncertainty (meters)
 }
 
 
@@ -561,7 +568,7 @@ message Content {
     int64               LinksCellID     = 10; // CellSetID with elements AttrSchemaID_CellBase (or nil)
     
     
-    GeoFix              Location        = 11;
+    //GeoFix              Location        = 11;
     
 }
 
@@ -607,7 +614,13 @@ message CellInfo {
 
 }
 
-
+// AuthToken is an oauth token -- see oauth2.Token
+message AuthToken {
+    string              AccessToken  = 1;
+    string              TokenType    = 2;
+    string              RefreshToken = 3;
+    int64               Expiry       = 4; // Unix UTC
+}
 
 /*
  

@@ -44,7 +44,7 @@ func (reg *registry) RegisterApp(app *AppModule) error {
 
 	if strings.ContainsRune(app.AppID, '/') ||
 		strings.ContainsRune(app.AppID, ' ') ||
-		strings.Count(app.AppID, ".") < 3 {
+		strings.Count(app.AppID, ".") < 2 {
 
 		// Reject if URI does not conform to standards for AppModule.AppURI
 		return ErrCode_BadSchema.Errorf("illegal app ID: %q", app.AppID)
@@ -58,12 +58,12 @@ func (reg *registry) RegisterApp(app *AppModule) error {
 		}
 	}
 
-	versEnd := strings.Index(app.AppID, ".") + 1
-	noVersName := app.AppID[versEnd:]
-	reg.appsByInvoke[noVersName] = app
+	// invoke by full app ID
+	reg.appsByInvoke[app.AppID] = app
 
-	appPos := strings.Index(app.AppID[versEnd:], ".")
-	appName := app.AppID[versEnd : versEnd+appPos]
+	// invoke by first component of app ID
+	appPos := strings.Index(app.AppID, ".")
+	appName := app.AppID[0:appPos]
 	reg.appsByInvoke[appName] = app
 
 	return nil

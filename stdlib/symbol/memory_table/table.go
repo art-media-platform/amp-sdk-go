@@ -10,14 +10,10 @@ import (
 )
 
 func createTable(opts TableOpts) (symbol.Table, error) {
-	var err error
 	if opts.Issuer == nil {
-		opts.Issuer, err = newIssuer(opts)
+		opts.Issuer = symbol.NewVolatileIssuer(opts.IssuerInitsAt)
 	} else {
 		opts.Issuer.AddRef()
-	}
-	if err != nil {
-		return nil, err
 	}
 
 	st := &symbolTable{
@@ -188,6 +184,12 @@ func (st *symbolTable) SetSymbolID(val []byte, symID symbol.ID) symbol.ID {
 //	    if mapID == false, a new value-to-ID assignment is (over)written and any existing ID-to-value assignment remains.
 //	    if mapID == true, both value-to-ID and ID-to-value assignments are (over)written.
 func (st *symbolTable) getsetValueIDPair(val []byte, symID symbol.ID, mapID bool) symbol.ID {
+
+	// The empty string is always mapped to ID 0
+	if len(val) == 0 {
+		return 0
+	}
+
 	if symID == 0 && mapID {
 		symID, _ = st.opts.Issuer.IssueNextID()
 	}

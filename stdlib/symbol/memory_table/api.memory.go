@@ -10,14 +10,16 @@ func (opts TableOpts) CreateTable() (symbol.Table, error) {
 }
 
 type TableOpts struct {
-	symbol.Issuer         // How this table will issue new IDs.  If nil, this table's db will be used as the Issuer
-	WorkingSizeHint int   // anticipated number of entries in working set
-	PoolSz          int32 // Value backing buffer allocation pool sz
+	symbol.Issuer             // How this table will issue new IDs.  If nil, this table's db will be used as the Issuer
+	IssuerInitsAt   symbol.ID // The floor ID to start issuing from if initializing a new Issuer.
+	WorkingSizeHint int       // anticipated number of entries in working set
+	PoolSz          int32     // Value backing buffer allocation pool sz
 }
 
 // DefaultOpts is a suggested set of options.
 func DefaultOpts() TableOpts {
 	return TableOpts{
+		IssuerInitsAt:   symbol.DefaultIssuerMin,
 		WorkingSizeHint: 600,
 		PoolSz:          16 * 1024,
 	}

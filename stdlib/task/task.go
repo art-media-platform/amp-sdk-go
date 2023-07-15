@@ -20,9 +20,10 @@ type ctx struct {
 
 	id             int64
 	state          int32
-	idleClose      int32
-	idleCloseDelay time.Duration
 	idle           bool
+	idleCloseRetry atomic.Int64 // time.Duration
+	idleCloseMin   time.Time
+	
 	chClosing      chan struct{}  // signals Close() has been called and close execution has begun.
 	chClosed       chan struct{}  // signals Close() has been called and all close execution is done.
 	err            error          // See context.Err() for spec
@@ -48,45 +49,92 @@ func (p *ctx) Close() error {
 	return nil
 }
 
+func (p *ctx) PreventIdleClose(delay time.Duration) bool {
+	p.subsMu.Lock()
+	p.idleCloseMin = time.Now().Add(delay)
+	p.idle = false
+	p.subsMu.Unlock()
+	
+	select {
+		case <-p.Closing():
+			return false
+		default:
+			return true
+	}
+}
+
+
 func (p *ctx) CloseWhenIdle(delay time.Duration) {
-
-	// Allow subsequent calls to set a new delay
-	p.idleCloseDelay = delay
-
-	// Ensure only one timer for a ctx is every running
+	if delay <= 0 {
+		delay = 0
+	}
+	
 	// Can this be folded into the main go routine in StartChild() to save a goroutine?
-	first := atomic.CompareAndSwapInt32(&p.idleClose, 0, 1)
-	if first {
-		go func() {
-			var timer *time.Timer
+	prevDelay := p.idleCloseRetry.Swap(int64(delay))
+	
+	// Only spawn a new timer when the delay is changed from 0
+	if prevDelay > 0 {
+		return
+	}
+	
+	go func() {
+		var timer *time.Timer
+		
+		for idleClose := true; idleClose; {
+			p.idle = true
+			p.busy.Wait() // wait until there is a chance of catching ctx idle
 
-			for waiting := true; waiting; {
-				p.idle = true // setup idle detection
-				p.busy.Wait() // wait until there is a chance of catching ctx idle
-
-				if delay := p.idleCloseDelay; delay > time.Microsecond {
-					if timer == nil {
-						timer = time.NewTimer(delay)
-					} else {
-						timer.Reset(delay)
+			retry := false
+			
+			p.subsMu.Lock()
+			delay := time.Duration(p.idleCloseRetry.Load())
+			if !p.idle {
+				retry = true
+			} else if delay <= 0 {
+				idleClose = false
+			} else {
+				if !p.idleCloseMin.IsZero() {	
+					minDelay := time.Until(p.idleCloseMin)
+					if minDelay <= 0 {
+						p.idleCloseMin = time.Time{}
 					}
-					select {
-					case <-timer.C:
-					case <-p.Closing():
+					// Wait for the more restrictive time constraint 
+					if delay < minDelay {
+						delay = minDelay
 					}
 				}
-
-				// If no new children were added while we were waiting, then we have been idle and can close.
-				// Note in the case that we're closing, the below has no effect
+			}
+			p.subsMu.Unlock()
+				
+			if retry || !idleClose {
+				continue
+			}
+			
+			if delay > 0 {
+				if timer == nil {
+					timer = time.NewTimer(delay)
+				} else {
+					timer.Reset(delay)
+				}
+				select {
+				case <-timer.C:
+				case <-p.Closing():
+					idleClose = false
+				}
+			}
+			
+			// If no new children were added while we were waiting, then we have been idle and can close.
+			// Note in the case that we're closing, the below has no effect
+			if idleClose {
 				p.subsMu.Lock()
 				if p.idle {
 					p.Close()
-					waiting = false
+					idleClose = false
 				}
 				p.subsMu.Unlock()
 			}
-		}()
-	}
+		}
+	}()
 }
 
 func (p *ctx) Deadline() (deadline time.Time, ok bool) {
@@ -135,12 +183,6 @@ func (p *ctx) GetChildren(in []Context) []Context {
 	p.subsMu.Lock()
 	defer p.subsMu.Unlock()
 	return append(in, p.subs...)
-}
-
-func (p *ctx) ChildCount() int {
-	p.subsMu.Lock()
-	defer p.subsMu.Unlock()
-	return len(p.subs)
 }
 
 // StartChild starts the given child Context as a "sub" task.
@@ -197,11 +239,15 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 		if child.task.OnClosing != nil {
 			child.task.OnClosing()
 		}
+		
+		if p != nil &&  p.task.OnChildClosing != nil {
+			p.task.OnChildClosing(child)
+		}
 
 		// Once all child's children are closed, proceed with completion.
 		child.busy.Wait()
 
-		closeParent := false
+		var idleClose time.Duration
 
 		if p != nil {
 
@@ -220,12 +266,13 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 				}
 
 				// If removing the last child and in IdleClose mode, queue the parent to be closed
-				if N == 0 && p.task.IdleClose > 0 {
-					closeParent = true
+				if N == 0 {
+					idleClose = p.task.IdleClose
 				}
 			}
 			p.subsMu.Unlock()
 		}
+		
 
 		// Move to Closed state now that all all that remains is the OnClosed callback and release of the chClosed chan.
 		child.state = Closed
@@ -234,13 +281,13 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 		}
 		close(child.chClosed)
 
-		// With child no fully closed, the parent is no longer waiting on this child
+		// With the child now fully closed, the parent is no longer waiting on this child
 		if p != nil {
 			p.busy.Done()
 		}
 
-		if closeParent {
-			p.CloseWhenIdle(p.task.IdleClose)
+		if idleClose > 0 {
+			p.CloseWhenIdle(idleClose)
 		}
 	}()
 

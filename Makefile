@@ -69,7 +69,7 @@ generate:
 #   GrpcTools (2.49.1)
 #   Install protoc & grpc_csharp_plugin:
 #      - Download latest Grpc.Tools from https://nuget.org/packages/Grpc.Tools
-#      - Extract .nupkg as .zip, move protoc and grpc_csharp_plugin to ${GOPATH}/bin 
+#      - Extract .nupkg as .zip, move both protoc and grpc_csharp_plugin to ${GOPATH}/bin 
 #   Or, just protoc: https://github.com/protocolbuffers/protobuf/releases
 #   Links: https://grpc.io/docs/languages/csharp/quickstart/
 	protoc \
@@ -88,7 +88,7 @@ generate:
 
 	capnp compile -I${CAPNP_INCLUDE} -ogo     apis/arc/arc.capnp
 
-	capnp compile -I${CAPNP_INCLUDE} -ocsharp apis/arc/arc.capnp \
+#	capnp compile -I${CAPNP_INCLUDE} -ocsharp apis/arc/arc.capnp \
 		&& mv apis/arc/arc.capnp.cs ${ARC_UNITY_PATH}/Arc/Arc.capnp.cs
 
 

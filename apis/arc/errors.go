@@ -8,8 +8,12 @@ var (
 	ErrNotConnected  = ErrCode_NotConnected.Error("not connected")
 	ErrStreamClosed  = ErrCode_NotConnected.Error("stream closed")
 	ErrCellNotFound  = ErrCode_CellNotFound.Error("cell not found")
+	ErrPinCtxClosed  = ErrCode_PinContextClosed.Error("pin context closed")
+	ErrNotPinnable   = ErrCode_PinFailed.Error("not pinnable")
+	ErrUnimplemented = ErrCode_PinFailed.Error("not implemented")
+	ErrNothingToPin  = ErrCode_PinFailed.Error("nothing to pin")
 	ErrShuttingDown  = ErrCode_ShuttingDown.Error("shutting down")
-	ErrInvalidAppURI = ErrCode_AppNotFound.Error("invalid app URI")
+	ErrTimeout       = ErrCode_Timeout.Error("timeout")
 	ErrNoAuthToken   = ErrCode_AuthFailed.Error("no auth token")
 )
 
@@ -24,7 +28,7 @@ func (err *Err) Error() string {
 		return codeStr
 	}
 
-	return codeStr + ": " + err.Msg
+	return err.Msg + " (" + codeStr + ")"
 }
 
 // Error returns an *Err with the given error code

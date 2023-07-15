@@ -2,8 +2,8 @@ package arc
 
 import (
 	"bytes"
-	"path"
-	"reflect"
+	"net/url"
+	strings "strings"
 	"time"
 
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
@@ -62,7 +62,7 @@ func (t TimeFS) ToTime() time.Time {
 
 // Converts TimeFS to milliseconds.
 func (t TimeFS) ToMs() int64 {
-	return (int64(t >> 8) * 1000) >> 8;
+	return (int64(t>>8) * 1000) >> 8
 }
 
 // TID is a convenience function that returns the TID contained within this TIDBuf.
@@ -228,64 +228,79 @@ func (tid TID) CopyNext(inTID TID) {
 	}
 }
 
-func (schema *AttrSchema) SchemaDesc() string {
-	return path.Join(schema.CellDataModel, schema.SchemaName)
+func (id ConstSymbol) Ord() uint32 {
+	return uint32(id)
 }
 
-func (schema *AttrSchema) LookupAttr(attrURI string) *AttrSpec {
-	for _, attr := range schema.Attrs {
-		if attr.AttrURI == attrURI {
-			return attr
-		}
+// AppBase is a helper for implementing AppInstance.
+// It is typically extended by embedding it into a struct that builds on top of it.
+type AppBase struct {
+	AppContext
+	LinkCellSpec uint32
+	CellInfoAttr uint32
+}
+
+func (app *AppBase) OnNew(ctx AppContext) error {
+	app.AppContext = ctx
+
+	var err error
+	if app.LinkCellSpec, err = app.ResolveAppCell(LinkCellSpec); err != nil {
+		return err
+	}
+
+	if app.CellInfoAttr, err = app.ResolveAppAttr((&CellInfo{}).TypeName()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (app *AppBase) HandleURL(*url.URL) error {
+	return ErrUnimplemented
+}
+
+func (app *AppBase) OnClosing() {
+
+}
+
+// ResolveAppCell is a convenience function that resolves a cell spec into a CellSpec def ID.
+func (app *AppBase) ResolveAppCell(cellSpec string) (cellSpecID uint32, err error) {
+	cellDef, err := app.AppContext.Session().ResolveCellSpec(cellSpec)
+	if err != nil {
+		return
+	}
+	return cellDef.ClientDefID, nil
+}
+
+// ResolveAppAttr is a convenience function that resolves an attr spec intended to be sent to the client.
+func (app *AppBase) ResolveAppAttr(attrSpec string) (uint32, error) {
+	spec, err := app.AppContext.Session().ResolveAttrSpec(attrSpec, false)
+	if err != nil {
+		return 0, err
+	}
+	return spec.DefID, nil
+}
+
+func (app *AppBase) RegisterElemType(prototype ElemVal) error {
+	err := app.AppContext.Session().RegisterElemType(prototype)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
-	numFields := valTyp.NumField()
 
-	schema := &AttrSchema{
-		CellDataModel: valTyp.Name(),
-		SchemaName:    "on-demand-reflect",
-		Attrs:         make([]*AttrSpec, 0, numFields),
+// Analyses an AttrSpec's SeriesSpec and returns the index class it uses.
+func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
+	switch {
+	case strings.HasSuffix(seriesSpec, ".Name"):
+		return SeriesIndexType_Name
+	default:
+		return SeriesIndexType_Literal
 	}
-
-	for i := 0; i < numFields; i++ {
-
-		// Importantly, AttrID is always set to the field index + 1, so we know what field to inspect when given an AttrID.
-		field := valTyp.Field(i)
-		if !field.IsExported() {
-			continue
-		}
-
-		attr := &AttrSpec{
-			AttrURI: field.Name,
-			AttrID:  int32(i + 1),
-		}
-
-		attrType := field.Type
-		attrKind := attrType.Kind()
-		switch attrKind {
-		case reflect.Int32, reflect.Uint32, reflect.Int64, reflect.Uint64:
-			attr.ValTypeID = int32(ValType_int)
-		case reflect.String:
-			attr.ValTypeID = int32(ValType_string)
-		case reflect.Slice:
-			elementType := attrType.Elem().Kind()
-			switch elementType {
-			case reflect.Uint8, reflect.Int8:
-				attr.ValTypeID = int32(ValType_bytes)
-			}
-		}
-
-		if attr.ValTypeID == 0 {
-			return nil, ErrCode_ExportErr.Errorf("unsupported type '%s.%s (%v)", schema.CellDataModel, attr.AttrURI, attrKind)
-		}
-
-		schema.Attrs = append(schema.Attrs, attr)
-	}
-	return schema, nil
 }
+
+/*
 
 // ReadCell loads a cell with the given URI having the inferred schema (built from its fields using reflection).
 // The URI is scoped into the user's home planet and AppID.
@@ -320,7 +335,7 @@ func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) 
 	for fi := 0; fi < numFields; fi++ {
 		field := valType.Field(fi)
 		for _, ai := range schema.Attrs {
-			if ai.AttrURI == field.Name {
+			if ai.TypedName == field.Name {
 				for _, msg := range msgs {
 					if msg.AttrID == ai.AttrID {
 						msg.LoadVal(dst.Field(fi).Addr().Interface())
@@ -350,7 +365,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 		tx := NewMsgBatch()
 		msg := tx.AddMsg()
 		msg.Op = MsgOp_UpsertCell
-		msg.ValType = int32(ValType_SchemaID)
+		msg.ValType = ValType_SchemaID.Ord()
 		msg.ValInt = int64(schema.SchemaID)
 		msg.ValBuf = append(append(msg.ValBuf[:0], []byte(ctx.StateScope())...), []byte(subKey)...)
 
@@ -362,12 +377,12 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 			msg.Op = MsgOp_PushAttr
 			msg.AttrID = attr.AttrID
 			for i := 0; i < numFields; i++ {
-				if valType.Field(i).Name == attr.AttrURI {
+				if valType.Field(i).Name == attr.TypedName {
 					msg.setVal(src.Field(i).Interface())
 					break
 				}
 			}
-			if msg.ValType == int32(ValType_nil) {
+			if msg.ValType == ValType_nil.Ord() {
 				panic("missing field")
 			}
 		}
@@ -382,6 +397,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 
 	return nil
 }
+
 
 func (req *CellReq) GetKwArg(argKey string) (string, bool) {
 	for _, arg := range req.Args {
@@ -452,3 +468,5 @@ func (req *CellReq) PushCheckpoint(err error) {
 	}
 	req.PushMsg(m)
 }
+
+*/

@@ -4,6 +4,14 @@ import "github.com/google/uuid"
 
 type UID [16]byte
 
+var (
+	NilUID         = UID{}
+	DevicePlanet   = FormUID(0, 0x01)
+	HostPlanet     = FormUID(0, 0x02)
+	AppHomePlanet  = FormUID(0, 0x03)
+	UserHomePlanet = FormUID(0, 0x04)
+)
+
 // Forms an arc.UID explicitly from two uint64 values.
 func FormUID(n0, n1 uint64) UID {
 	uid := UID{}

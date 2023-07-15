@@ -41,7 +41,8 @@ func RegisterBuiltInTypes(reg Registry) error {
 
 		&CellInfo{},
 		&AssetRef{},
-		//&GeoFix{},
+		&AuthToken{},
+		&Position{},
 		//&TRS{},
 	}
 	for _, val := range prototypes {
@@ -167,4 +168,28 @@ func (v *RegisterDefs) TypeName() string {
 
 func (v *RegisterDefs) New() ElemVal {
 	return &RegisterDefs{}
+}
+
+func (v *Position) MarshalToBuf(dst *[]byte) error {
+	return MarshalPbValueToBuf(v, dst)
+}
+
+func (v *Position) TypeName() string {
+	return "Position"
+}
+
+func (v *Position) New() ElemVal {
+	return &Position{}
+}
+
+func (v *AuthToken) MarshalToBuf(dst *[]byte) error {
+	return MarshalPbValueToBuf(v, dst)
+}
+
+func (v *AuthToken) TypeName() string {
+	return "AuthToken"
+}
+
+func (v *AuthToken) New() ElemVal {
+	return &AuthToken{}
 }

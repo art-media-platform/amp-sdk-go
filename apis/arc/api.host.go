@@ -76,7 +76,8 @@ type HostSession interface {
 	LoginInfo() Login
 
 	// Sends an unnamed attr to the client's session controller.
-	PushMetaAttr(val ElemVal) error
+	// If the reqID == 0, the attr is sent to the client's session controller.
+	PushMetaAttr(val ElemVal, reqID uint64) error
 
 	// Gets the currently running AppInstance for an AppID.
 	// If the requested app is not running and autoCreate is set, a new instance is created and started.
@@ -86,6 +87,9 @@ type HostSession interface {
 // SessionRegistry manages a HostSession's symbol and type definitions.
 type SessionRegistry interface {
 	ClientSymbols() symbol.Table
+	
+	// Translates a native symbol ID to a client symbol ID, returning false if not found.
+	NativeToClientID(nativeID uint32) (clientID uint32, found bool)
 
 	// Registers an ElemVal as a prototype under its element type name..
 	// This and ResolveAttrSpec() allow NewElemVal() to work.

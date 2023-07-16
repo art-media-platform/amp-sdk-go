@@ -150,11 +150,12 @@ func (msg *Msg) UnmarshalAttrElem(reg SessionRegistry) (elem AttrElem, err error
 	return
 }
 
-func (attr AttrElem) MarshalToMsg() (*Msg, error) {
+func (attr AttrElem) MarshalToMsg(id CellID) (*Msg, error) {
 	msg := NewMsg()
 	msg.Op = MsgOp_PushAttrElem
 	msg.AttrID = attr.AttrID
 	msg.SI = attr.SI
+	msg.CellID = int64(id)
 	err := attr.Val.MarshalToBuf(&msg.ValBuf)
 	return msg, err
 }
@@ -199,12 +200,11 @@ func (bat *AttrBatch) Add(attrID uint32, val ElemVal) {
 func (bat AttrBatch) PushBatch(ctx PinContext) error {
 
 	for _, attr := range bat.Attrs {
-		msg, err := attr.MarshalToMsg()
+		msg, err := attr.MarshalToMsg(bat.Target)
 		if err != nil {
 			ctx.Warnf("MarshalToMsg() err: %v", err)
 			continue
 		}
-		msg.CellID = int64(bat.Target)
 
 		// if i == len(bat.Attrs)-1 {
 		// 	msg.Flags |= MsgFlags_CellCheckpoint

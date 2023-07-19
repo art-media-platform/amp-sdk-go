@@ -6,17 +6,11 @@ import (
 	capnp "capnproto.org/go/capnp/v3"
 	text "capnproto.org/go/capnp/v3/encoding/text"
 	schemas "capnproto.org/go/capnp/v3/schemas"
-	math "math"
 )
 
 // Constants defined in arc.capnp.
 const (
 	LinkCellSpec = "(CellInfo)()"
-)
-
-// Constants defined in arc.capnp.
-var (
-	BuiltInDefs = AttrDefTest_List(capnp.MustUnmarshalRoot(x_9aff325096b39f47[0:88]).List())
 )
 
 type AttrDefTest capnp.Struct
@@ -109,380 +103,431 @@ func (f AttrDefTest_Future) Struct() (AttrDefTest, error) {
 	return AttrDefTest(p.Struct()), err
 }
 
-type URIScheme2 uint16
+type CellTxOp2 uint16
 
-// URIScheme2_TypeID is the unique identifier for the type URIScheme2.
-const URIScheme2_TypeID = 0xc69edaa315779586
+// CellTxOp2_TypeID is the unique identifier for the type CellTxOp2.
+const CellTxOp2_TypeID = 0xe837dc667fe57e1f
 
-// Values of URIScheme2.
+// Values of CellTxOp2.
 const (
-	URIScheme2_any  URIScheme2 = 0
-	URIScheme2_data URIScheme2 = 1
-	URIScheme2_http URIScheme2 = 2
-	URIScheme2_file URIScheme2 = 3
+	CellTxOp2_noOp        CellTxOp2 = 0
+	CellTxOp2_insertChild CellTxOp2 = 1
+	CellTxOp2_upsertChild CellTxOp2 = 2
+	CellTxOp2_deleteChild CellTxOp2 = 3
+	CellTxOp2_deleteCell  CellTxOp2 = 4
+	CellTxOp2_checkpoint  CellTxOp2 = 5
 )
 
 // String returns the enum's constant name.
-func (c URIScheme2) String() string {
+func (c CellTxOp2) String() string {
 	switch c {
-	case URIScheme2_any:
-		return "any"
-	case URIScheme2_data:
-		return "data"
-	case URIScheme2_http:
-		return "http"
-	case URIScheme2_file:
-		return "file"
+	case CellTxOp2_noOp:
+		return "noOp"
+	case CellTxOp2_insertChild:
+		return "insertChild"
+	case CellTxOp2_upsertChild:
+		return "upsertChild"
+	case CellTxOp2_deleteChild:
+		return "deleteChild"
+	case CellTxOp2_deleteCell:
+		return "deleteCell"
+	case CellTxOp2_checkpoint:
+		return "checkpoint"
 
 	default:
 		return ""
 	}
 }
 
-// URIScheme2FromString returns the enum value with a name,
+// CellTxOp2FromString returns the enum value with a name,
 // or the zero value if there's no such value.
-func URIScheme2FromString(c string) URIScheme2 {
+func CellTxOp2FromString(c string) CellTxOp2 {
 	switch c {
-	case "any":
-		return URIScheme2_any
-	case "data":
-		return URIScheme2_data
-	case "http":
-		return URIScheme2_http
-	case "file":
-		return URIScheme2_file
+	case "noOp":
+		return CellTxOp2_noOp
+	case "insertChild":
+		return CellTxOp2_insertChild
+	case "upsertChild":
+		return CellTxOp2_upsertChild
+	case "deleteChild":
+		return CellTxOp2_deleteChild
+	case "deleteCell":
+		return CellTxOp2_deleteCell
+	case "checkpoint":
+		return CellTxOp2_checkpoint
 
 	default:
 		return 0
 	}
 }
 
-type URIScheme2_List = capnp.EnumList[URIScheme2]
+type CellTxOp2_List = capnp.EnumList[CellTxOp2]
 
-func NewURIScheme2_List(s *capnp.Segment, sz int32) (URIScheme2_List, error) {
-	return capnp.NewEnumList[URIScheme2](s, sz)
+func NewCellTxOp2_List(s *capnp.Segment, sz int32) (CellTxOp2_List, error) {
+	return capnp.NewEnumList[CellTxOp2](s, sz)
 }
 
-type AssetRef2 capnp.Struct
+type MultiTxCp capnp.Struct
 
-// AssetRef2_TypeID is the unique identifier for the type AssetRef2.
-const AssetRef2_TypeID = 0xc1cead83b4340f68
+// MultiTxCp_TypeID is the unique identifier for the type MultiTxCp.
+const MultiTxCp_TypeID = 0x8afb8b2f70664e55
 
-func NewAssetRef2(s *capnp.Segment) (AssetRef2, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4})
-	return AssetRef2(st), err
+func NewMultiTxCp(s *capnp.Segment) (MultiTxCp, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
+	return MultiTxCp(st), err
 }
 
-func NewRootAssetRef2(s *capnp.Segment) (AssetRef2, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4})
-	return AssetRef2(st), err
+func NewRootMultiTxCp(s *capnp.Segment) (MultiTxCp, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1})
+	return MultiTxCp(st), err
 }
 
-func ReadRootAssetRef2(msg *capnp.Message) (AssetRef2, error) {
+func ReadRootMultiTxCp(msg *capnp.Message) (MultiTxCp, error) {
 	root, err := msg.Root()
-	return AssetRef2(root.Struct()), err
+	return MultiTxCp(root.Struct()), err
 }
 
-func (s AssetRef2) String() string {
-	str, _ := text.Marshal(0xc1cead83b4340f68, capnp.Struct(s))
+func (s MultiTxCp) String() string {
+	str, _ := text.Marshal(0x8afb8b2f70664e55, capnp.Struct(s))
 	return str
 }
 
-func (s AssetRef2) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+func (s MultiTxCp) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
 	return capnp.Struct(s).EncodeAsPtr(seg)
 }
 
-func (AssetRef2) DecodeFromPtr(p capnp.Ptr) AssetRef2 {
-	return AssetRef2(capnp.Struct{}.DecodeFromPtr(p))
+func (MultiTxCp) DecodeFromPtr(p capnp.Ptr) MultiTxCp {
+	return MultiTxCp(capnp.Struct{}.DecodeFromPtr(p))
 }
 
-func (s AssetRef2) ToPtr() capnp.Ptr {
+func (s MultiTxCp) ToPtr() capnp.Ptr {
 	return capnp.Struct(s).ToPtr()
 }
-func (s AssetRef2) IsValid() bool {
+func (s MultiTxCp) IsValid() bool {
 	return capnp.Struct(s).IsValid()
 }
 
-func (s AssetRef2) Message() *capnp.Message {
+func (s MultiTxCp) Message() *capnp.Message {
 	return capnp.Struct(s).Message()
 }
 
-func (s AssetRef2) Segment() *capnp.Segment {
+func (s MultiTxCp) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
-func (s AssetRef2) Label() (string, error) {
-	p, err := capnp.Struct(s).Ptr(0)
-	return p.Text(), err
+func (s MultiTxCp) ReqID() int64 {
+	return int64(capnp.Struct(s).Uint64(0))
 }
 
-func (s AssetRef2) HasLabel() bool {
+func (s MultiTxCp) SetReqID(v int64) {
+	capnp.Struct(s).SetUint64(0, uint64(v))
+}
+
+func (s MultiTxCp) CellTxs() (MultiTxCp_CellTxCp_List, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return MultiTxCp_CellTxCp_List(p.List()), err
+}
+
+func (s MultiTxCp) HasCellTxs() bool {
 	return capnp.Struct(s).HasPtr(0)
 }
 
-func (s AssetRef2) LabelBytes() ([]byte, error) {
-	p, err := capnp.Struct(s).Ptr(0)
-	return p.TextBytes(), err
+func (s MultiTxCp) SetCellTxs(v MultiTxCp_CellTxCp_List) error {
+	return capnp.Struct(s).SetPtr(0, v.ToPtr())
 }
 
-func (s AssetRef2) SetLabel(v string) error {
-	return capnp.Struct(s).SetText(0, v)
-}
-
-func (s AssetRef2) MediaType() (string, error) {
-	p, err := capnp.Struct(s).Ptr(1)
-	return p.Text(), err
-}
-
-func (s AssetRef2) HasMediaType() bool {
-	return capnp.Struct(s).HasPtr(1)
-}
-
-func (s AssetRef2) MediaTypeBytes() ([]byte, error) {
-	p, err := capnp.Struct(s).Ptr(1)
-	return p.TextBytes(), err
-}
-
-func (s AssetRef2) SetMediaType(v string) error {
-	return capnp.Struct(s).SetText(1, v)
-}
-
-func (s AssetRef2) Scheme() URIScheme2 {
-	return URIScheme2(capnp.Struct(s).Uint16(0))
-}
-
-func (s AssetRef2) SetScheme(v URIScheme2) {
-	capnp.Struct(s).SetUint16(0, uint16(v))
-}
-
-func (s AssetRef2) Uri() (string, error) {
-	p, err := capnp.Struct(s).Ptr(2)
-	return p.Text(), err
-}
-
-func (s AssetRef2) HasUri() bool {
-	return capnp.Struct(s).HasPtr(2)
-}
-
-func (s AssetRef2) UriBytes() ([]byte, error) {
-	p, err := capnp.Struct(s).Ptr(2)
-	return p.TextBytes(), err
-}
-
-func (s AssetRef2) SetUri(v string) error {
-	return capnp.Struct(s).SetText(2, v)
-}
-
-func (s AssetRef2) Attrs() (AssetRef2_Attrs, error) {
-	p, err := capnp.Struct(s).Ptr(3)
-	return AssetRef2_Attrs(p.Struct()), err
-}
-
-func (s AssetRef2) HasAttrs() bool {
-	return capnp.Struct(s).HasPtr(3)
-}
-
-func (s AssetRef2) SetAttrs(v AssetRef2_Attrs) error {
-	return capnp.Struct(s).SetPtr(3, capnp.Struct(v).ToPtr())
-}
-
-// NewAttrs sets the attrs field to a newly
-// allocated AssetRef2_Attrs struct, preferring placement in s's segment.
-func (s AssetRef2) NewAttrs() (AssetRef2_Attrs, error) {
-	ss, err := NewAssetRef2_Attrs(capnp.Struct(s).Segment())
+// NewCellTxs sets the cellTxs field to a newly
+// allocated MultiTxCp_CellTxCp_List, preferring placement in s's segment.
+func (s MultiTxCp) NewCellTxs(n int32) (MultiTxCp_CellTxCp_List, error) {
+	l, err := NewMultiTxCp_CellTxCp_List(capnp.Struct(s).Segment(), n)
 	if err != nil {
-		return AssetRef2_Attrs{}, err
+		return MultiTxCp_CellTxCp_List{}, err
 	}
-	err = capnp.Struct(s).SetPtr(3, capnp.Struct(ss).ToPtr())
-	return ss, err
+	err = capnp.Struct(s).SetPtr(0, l.ToPtr())
+	return l, err
 }
 
-// AssetRef2_List is a list of AssetRef2.
-type AssetRef2_List = capnp.StructList[AssetRef2]
+// MultiTxCp_List is a list of MultiTxCp.
+type MultiTxCp_List = capnp.StructList[MultiTxCp]
 
-// NewAssetRef2 creates a new list of AssetRef2.
-func NewAssetRef2_List(s *capnp.Segment, sz int32) (AssetRef2_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 4}, sz)
-	return capnp.StructList[AssetRef2](l), err
+// NewMultiTxCp creates a new list of MultiTxCp.
+func NewMultiTxCp_List(s *capnp.Segment, sz int32) (MultiTxCp_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 8, PointerCount: 1}, sz)
+	return capnp.StructList[MultiTxCp](l), err
 }
 
-// AssetRef2_Future is a wrapper for a AssetRef2 promised by a client call.
-type AssetRef2_Future struct{ *capnp.Future }
+// MultiTxCp_Future is a wrapper for a MultiTxCp promised by a client call.
+type MultiTxCp_Future struct{ *capnp.Future }
 
-func (f AssetRef2_Future) Struct() (AssetRef2, error) {
+func (f MultiTxCp_Future) Struct() (MultiTxCp, error) {
 	p, err := f.Future.Ptr()
-	return AssetRef2(p.Struct()), err
-}
-func (p AssetRef2_Future) Attrs() AssetRef2_Attrs_Future {
-	return AssetRef2_Attrs_Future{Future: p.Future.Field(3, nil)}
+	return MultiTxCp(p.Struct()), err
 }
 
-type AssetRef2_Attrs capnp.Struct
+type MultiTxCp_CellTxCp capnp.Struct
 
-// AssetRef2_Attrs_TypeID is the unique identifier for the type AssetRef2_Attrs.
-const AssetRef2_Attrs_TypeID = 0xa4b56be7c7ee6f1e
+// MultiTxCp_CellTxCp_TypeID is the unique identifier for the type MultiTxCp_CellTxCp.
+const MultiTxCp_CellTxCp_TypeID = 0xf6f1fa73036d902f
 
-func NewAssetRef2_Attrs(s *capnp.Segment) (AssetRef2_Attrs, error) {
-	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 0})
-	return AssetRef2_Attrs(st), err
+func NewMultiTxCp_CellTxCp(s *capnp.Segment) (MultiTxCp_CellTxCp, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
+	return MultiTxCp_CellTxCp(st), err
 }
 
-func NewRootAssetRef2_Attrs(s *capnp.Segment) (AssetRef2_Attrs, error) {
-	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 0})
-	return AssetRef2_Attrs(st), err
+func NewRootMultiTxCp_CellTxCp(s *capnp.Segment) (MultiTxCp_CellTxCp, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
+	return MultiTxCp_CellTxCp(st), err
 }
 
-func ReadRootAssetRef2_Attrs(msg *capnp.Message) (AssetRef2_Attrs, error) {
+func ReadRootMultiTxCp_CellTxCp(msg *capnp.Message) (MultiTxCp_CellTxCp, error) {
 	root, err := msg.Root()
-	return AssetRef2_Attrs(root.Struct()), err
+	return MultiTxCp_CellTxCp(root.Struct()), err
 }
 
-func (s AssetRef2_Attrs) String() string {
-	str, _ := text.Marshal(0xa4b56be7c7ee6f1e, capnp.Struct(s))
+func (s MultiTxCp_CellTxCp) String() string {
+	str, _ := text.Marshal(0xf6f1fa73036d902f, capnp.Struct(s))
 	return str
 }
 
-func (s AssetRef2_Attrs) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+func (s MultiTxCp_CellTxCp) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
 	return capnp.Struct(s).EncodeAsPtr(seg)
 }
 
-func (AssetRef2_Attrs) DecodeFromPtr(p capnp.Ptr) AssetRef2_Attrs {
-	return AssetRef2_Attrs(capnp.Struct{}.DecodeFromPtr(p))
+func (MultiTxCp_CellTxCp) DecodeFromPtr(p capnp.Ptr) MultiTxCp_CellTxCp {
+	return MultiTxCp_CellTxCp(capnp.Struct{}.DecodeFromPtr(p))
 }
 
-func (s AssetRef2_Attrs) ToPtr() capnp.Ptr {
+func (s MultiTxCp_CellTxCp) ToPtr() capnp.Ptr {
 	return capnp.Struct(s).ToPtr()
 }
-func (s AssetRef2_Attrs) IsValid() bool {
+func (s MultiTxCp_CellTxCp) IsValid() bool {
 	return capnp.Struct(s).IsValid()
 }
 
-func (s AssetRef2_Attrs) Message() *capnp.Message {
+func (s MultiTxCp_CellTxCp) Message() *capnp.Message {
 	return capnp.Struct(s).Message()
 }
 
-func (s AssetRef2_Attrs) Segment() *capnp.Segment {
+func (s MultiTxCp_CellTxCp) Segment() *capnp.Segment {
 	return capnp.Struct(s).Segment()
 }
-func (s AssetRef2_Attrs) PixWidth() int32 {
-	return int32(capnp.Struct(s).Uint32(0))
+func (s MultiTxCp_CellTxCp) Op() CellTxOp2 {
+	return CellTxOp2(capnp.Struct(s).Uint16(0))
 }
 
-func (s AssetRef2_Attrs) SetPixWidth(v int32) {
-	capnp.Struct(s).SetUint32(0, uint32(v))
+func (s MultiTxCp_CellTxCp) SetOp(v CellTxOp2) {
+	capnp.Struct(s).SetUint16(0, uint16(v))
 }
 
-func (s AssetRef2_Attrs) PixHeight() int32 {
-	return int32(capnp.Struct(s).Uint32(4))
+func (s MultiTxCp_CellTxCp) CellSpec() uint32 {
+	return capnp.Struct(s).Uint32(4)
 }
 
-func (s AssetRef2_Attrs) SetPixHeight(v int32) {
-	capnp.Struct(s).SetUint32(4, uint32(v))
+func (s MultiTxCp_CellTxCp) SetCellSpec(v uint32) {
+	capnp.Struct(s).SetUint32(4, v)
 }
 
-func (s AssetRef2_Attrs) PhysWidth() float32 {
-	return math.Float32frombits(capnp.Struct(s).Uint32(8))
+func (s MultiTxCp_CellTxCp) CellID() int64 {
+	return int64(capnp.Struct(s).Uint64(8))
 }
 
-func (s AssetRef2_Attrs) SetPhysWidth(v float32) {
-	capnp.Struct(s).SetUint32(8, math.Float32bits(v))
+func (s MultiTxCp_CellTxCp) SetCellID(v int64) {
+	capnp.Struct(s).SetUint64(8, uint64(v))
 }
 
-func (s AssetRef2_Attrs) PhysHeight() float32 {
-	return math.Float32frombits(capnp.Struct(s).Uint32(12))
+func (s MultiTxCp_CellTxCp) Elems() (MultiTxCp_CellTxCp_AttrElemCp, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return MultiTxCp_CellTxCp_AttrElemCp(p.Struct()), err
 }
 
-func (s AssetRef2_Attrs) SetPhysHeight(v float32) {
-	capnp.Struct(s).SetUint32(12, math.Float32bits(v))
+func (s MultiTxCp_CellTxCp) HasElems() bool {
+	return capnp.Struct(s).HasPtr(0)
 }
 
-// AssetRef2_Attrs_List is a list of AssetRef2_Attrs.
-type AssetRef2_Attrs_List = capnp.StructList[AssetRef2_Attrs]
-
-// NewAssetRef2_Attrs creates a new list of AssetRef2_Attrs.
-func NewAssetRef2_Attrs_List(s *capnp.Segment, sz int32) (AssetRef2_Attrs_List, error) {
-	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 0}, sz)
-	return capnp.StructList[AssetRef2_Attrs](l), err
+func (s MultiTxCp_CellTxCp) SetElems(v MultiTxCp_CellTxCp_AttrElemCp) error {
+	return capnp.Struct(s).SetPtr(0, capnp.Struct(v).ToPtr())
 }
 
-// AssetRef2_Attrs_Future is a wrapper for a AssetRef2_Attrs promised by a client call.
-type AssetRef2_Attrs_Future struct{ *capnp.Future }
+// NewElems sets the elems field to a newly
+// allocated MultiTxCp_CellTxCp_AttrElemCp struct, preferring placement in s's segment.
+func (s MultiTxCp_CellTxCp) NewElems() (MultiTxCp_CellTxCp_AttrElemCp, error) {
+	ss, err := NewMultiTxCp_CellTxCp_AttrElemCp(capnp.Struct(s).Segment())
+	if err != nil {
+		return MultiTxCp_CellTxCp_AttrElemCp{}, err
+	}
+	err = capnp.Struct(s).SetPtr(0, capnp.Struct(ss).ToPtr())
+	return ss, err
+}
 
-func (f AssetRef2_Attrs_Future) Struct() (AssetRef2_Attrs, error) {
+// MultiTxCp_CellTxCp_List is a list of MultiTxCp_CellTxCp.
+type MultiTxCp_CellTxCp_List = capnp.StructList[MultiTxCp_CellTxCp]
+
+// NewMultiTxCp_CellTxCp creates a new list of MultiTxCp_CellTxCp.
+func NewMultiTxCp_CellTxCp_List(s *capnp.Segment, sz int32) (MultiTxCp_CellTxCp_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1}, sz)
+	return capnp.StructList[MultiTxCp_CellTxCp](l), err
+}
+
+// MultiTxCp_CellTxCp_Future is a wrapper for a MultiTxCp_CellTxCp promised by a client call.
+type MultiTxCp_CellTxCp_Future struct{ *capnp.Future }
+
+func (f MultiTxCp_CellTxCp_Future) Struct() (MultiTxCp_CellTxCp, error) {
 	p, err := f.Future.Ptr()
-	return AssetRef2_Attrs(p.Struct()), err
+	return MultiTxCp_CellTxCp(p.Struct()), err
+}
+func (p MultiTxCp_CellTxCp_Future) Elems() MultiTxCp_CellTxCp_AttrElemCp_Future {
+	return MultiTxCp_CellTxCp_AttrElemCp_Future{Future: p.Future.Field(0, nil)}
 }
 
-const schema_9aff325096b39f47 = "x\xdat\x93\xcf\x8b\x1cE\x1c\xc5\xdf\xab\xaau\xb2!" +
-	"\xa6\xa7\xe8\x11\x89\x10\x07s\xc9N\x90\xfc\x98\xcdA\x02" +
-	"\xb2\xae\x0e\xc6\xc9A\xb6f\"B\x0e\x92\xcelM\xba" +
-	"\x93\xde\x99v\xba\x96\xec\xa8\x0b\x06\x83F\x88\xa0\xa0\xa2" +
-	"\xe2\x8f\x83\x82'O\xc6? \x17\xf5$\x1eE\xc8-" +
-	"\x10\xe2!\x88\xe0\xc1\x80\xb4\xd4dg\x1a\x97\xcde\x86" +
-	"~\xf5\xea\xf1\xfd\xf4\xf7\xf5\xd1\xab|F\x1d{\xf8\xa0" +
-	"\x820G\xe7\x1e*\x1e\x1f\xde\xfd\xe9\xf6\xc5\x1f\xbe\x81" +
-	"\xd9OQ\xc4\xc1\xf1\xebo}\xf7\xcb\x0d\xa8\x0a\xb0\xf8" +
-	"\x0f\x1fc8/*@8'n\x83\xe5\xb1\x09\xc9\xe2" +
-	"\xe4W\xdf\x7f\xbc\xd2,>\xc3\x9cw\x87w\xc4\x1f\xe1" +
-	"\xdf\xe2Q`\xf1_Q'X\xbc\xfd\xd1\xa5G\xbe\xfe" +
-	"\xfd\xcb\x1f\xa1CQ\x9a\xc1P\xab\xbf\xc2\xfd\x93;\xfb" +
-	"\xd4y\xb0\xb8>T_l~\xfa\xda\xaf\xd0\xa1\xfa\x9f" +
-	"\xf1iu/l{c\xb7\xa5$\xbbg\x95 P\xbc" +
-	"\xf3\xf9\xde#\x9dW\xaa\xbfm\x9f\x82>q]\xdd\x0b" +
-	"/O\xb27\xd5%\xb0\xb8y\xeaVP\xfd\xf6\xc6\xdd" +
-	"\xed\xd9\x8b7\x95`xg\x12~\xcb\x87\xff\xe9\xc3\x9f" +
-	"-\xa2,\xc9\x8fD\xa3\x9e\xf4?\x87{Q6\xc8N" +
-	",\xe7\xb9u\x1d\xdbo\x1e^vN\x8e\xf2\x15\xd2T" +
-	"\xa5\x02\x14\x01\x1d\x9d\x02\xccYI\x93\x0aj\xb2F/" +
-	"&\x1d\xc0\xc4\x92\xc6\x09j!j\x14\x80~\xd5\x8b\x99" +
-	"\xa4yCPKY\xa3\x04\xf4\xf8\x0c`6$\xcd\x15" +
-	"\xc1\"K6^NV]\x0c\x80\x0a\x82\x0a\x13\xed\x05" +
-	"\x9b\x9c\x8fAWj\xf18\xf7F0\xe6n\x08\xee\xde" +
-	"\xd2\xbc\x112v3q\x8a#\xb6\xe3\x04\x9e\xc7(\xb2" +
-	"l\x80f\xb3\xbe\xec\xdc(7\xb5\x19\xdcf\xb3\x9cn" +
-	"\x06w\xd9s\xbc)i\xae\x09r\x8b\xed\xdd\x13\x80\xb9" +
-	"\"i\xde\xf7l\xe2>\xdb{\x07\x00sU\xd2|(" +
-	"\xa8\x95\xacQ\x01\xfa\x03\x1fyM\xd2|\"XO\xa3" +
-	"s6\xe5\x1e\x08\xee\x01\x8b5\xbb\x9aD\xa7\xc7\x19h" +
-	"\xa7\xdaR\xde\x8b\xed\x9aeP\xd6\x09d\x00V\xd6G" +
-	"\xc9\xd4T\x8f\xfc\xd8\xac\x96, \xab\x0f\xc0\x7f\xa9\xd3" +
-	"\xee\xf6\xea>\xb49Y\xe4d\xfc\xc6\x01\x7fE?q" +
-	"\x08\xa0\xd0\xfb\xfc\x9f\xd4\xfa\x10P\x89\x06\xe3`5r" +
-	"Q\x10;\x97\x05\xfd$\xb5;\xa6\x9e[OR\xb7\xd4" +
-	"\x1e\xb4l\xdf\xf7\x83{\xc1\x15IV\xcb\xb6\xc2\x8b\xd0" +
-	"<hv\x91|]\xcf_\x90?S\xcf\x9f)|\xc8" +
-	"s6M\x11\xb4\x07\xfd\xe1\xe4\xf1\xa4\x1d>\x0f\x99l" +
-	"\xec\xbc?\xe7F\xad%\xdb?ms\xe7\x09v\xcd\xb6" +
-	"\xd5\xf0U\\\x904\xc7\x05\xa7\xcb:\xe6\x17\xf3\xa4\xa4" +
-	"yJ\xb0p\xe3\xcc\xbe\x18\xadY\xdf\xaf\xe9\x0b\xf6Z" +
-	"\xbb5\xab\xd6N\x1f@\x9a\x0c.\xfa\x09\xbb\x99\xed\xc1" +
-	"\xd3\xdd\xbf\x0b\xcd\x0b\xc5\x82?h\x0f\xfa\x08\x86\x8d\x85" +
-	"\xc6\x7f\x01\x00\x00\xff\xff\x86\xe8\x18\xda"
+type MultiTxCp_CellTxCp_AttrElemCp capnp.Struct
+
+// MultiTxCp_CellTxCp_AttrElemCp_TypeID is the unique identifier for the type MultiTxCp_CellTxCp_AttrElemCp.
+const MultiTxCp_CellTxCp_AttrElemCp_TypeID = 0xd2411b0b08bea741
+
+func NewMultiTxCp_CellTxCp_AttrElemCp(s *capnp.Segment) (MultiTxCp_CellTxCp_AttrElemCp, error) {
+	st, err := capnp.NewStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
+	return MultiTxCp_CellTxCp_AttrElemCp(st), err
+}
+
+func NewRootMultiTxCp_CellTxCp_AttrElemCp(s *capnp.Segment) (MultiTxCp_CellTxCp_AttrElemCp, error) {
+	st, err := capnp.NewRootStruct(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1})
+	return MultiTxCp_CellTxCp_AttrElemCp(st), err
+}
+
+func ReadRootMultiTxCp_CellTxCp_AttrElemCp(msg *capnp.Message) (MultiTxCp_CellTxCp_AttrElemCp, error) {
+	root, err := msg.Root()
+	return MultiTxCp_CellTxCp_AttrElemCp(root.Struct()), err
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) String() string {
+	str, _ := text.Marshal(0xd2411b0b08bea741, capnp.Struct(s))
+	return str
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) EncodeAsPtr(seg *capnp.Segment) capnp.Ptr {
+	return capnp.Struct(s).EncodeAsPtr(seg)
+}
+
+func (MultiTxCp_CellTxCp_AttrElemCp) DecodeFromPtr(p capnp.Ptr) MultiTxCp_CellTxCp_AttrElemCp {
+	return MultiTxCp_CellTxCp_AttrElemCp(capnp.Struct{}.DecodeFromPtr(p))
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) ToPtr() capnp.Ptr {
+	return capnp.Struct(s).ToPtr()
+}
+func (s MultiTxCp_CellTxCp_AttrElemCp) IsValid() bool {
+	return capnp.Struct(s).IsValid()
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) Message() *capnp.Message {
+	return capnp.Struct(s).Message()
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) Segment() *capnp.Segment {
+	return capnp.Struct(s).Segment()
+}
+func (s MultiTxCp_CellTxCp_AttrElemCp) AttrID() uint32 {
+	return capnp.Struct(s).Uint32(0)
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) SetAttrID(v uint32) {
+	capnp.Struct(s).SetUint32(0, v)
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) SeriesIndex() int64 {
+	return int64(capnp.Struct(s).Uint64(8))
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) SetSeriesIndex(v int64) {
+	capnp.Struct(s).SetUint64(8, uint64(v))
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) ValBuf() ([]byte, error) {
+	p, err := capnp.Struct(s).Ptr(0)
+	return []byte(p.Data()), err
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) HasValBuf() bool {
+	return capnp.Struct(s).HasPtr(0)
+}
+
+func (s MultiTxCp_CellTxCp_AttrElemCp) SetValBuf(v []byte) error {
+	return capnp.Struct(s).SetData(0, v)
+}
+
+// MultiTxCp_CellTxCp_AttrElemCp_List is a list of MultiTxCp_CellTxCp_AttrElemCp.
+type MultiTxCp_CellTxCp_AttrElemCp_List = capnp.StructList[MultiTxCp_CellTxCp_AttrElemCp]
+
+// NewMultiTxCp_CellTxCp_AttrElemCp creates a new list of MultiTxCp_CellTxCp_AttrElemCp.
+func NewMultiTxCp_CellTxCp_AttrElemCp_List(s *capnp.Segment, sz int32) (MultiTxCp_CellTxCp_AttrElemCp_List, error) {
+	l, err := capnp.NewCompositeList(s, capnp.ObjectSize{DataSize: 16, PointerCount: 1}, sz)
+	return capnp.StructList[MultiTxCp_CellTxCp_AttrElemCp](l), err
+}
+
+// MultiTxCp_CellTxCp_AttrElemCp_Future is a wrapper for a MultiTxCp_CellTxCp_AttrElemCp promised by a client call.
+type MultiTxCp_CellTxCp_AttrElemCp_Future struct{ *capnp.Future }
+
+func (f MultiTxCp_CellTxCp_AttrElemCp_Future) Struct() (MultiTxCp_CellTxCp_AttrElemCp, error) {
+	p, err := f.Future.Ptr()
+	return MultiTxCp_CellTxCp_AttrElemCp(p.Struct()), err
+}
+
+const schema_9aff325096b39f47 = "x\xdat\x93\xc1kkE\x14\xc6\xbfo\xe6\xc6\x04l" +
+	"_2\xdc\x82\xa2<\xb2\x11m\xc46m\x9e\x0f}o" +
+	"\x93\x97\x97<4\xe5\xd9vl\x05)\"\xa4\xc9\x84\xc4" +
+	"\xde$\xb7\xb9\xb7\x1a\x17\xda\xa5\xd0ntQ\x05Q\xc4" +
+	"U\x97.\xdc\x0b\xfe\x0b\xae\\\xe8NQ\xba\x10\\(" +
+	"X\x85\x91I\x9b\xdcX\xea\xe6\xce\x9d3g\xce\xf9\x9d" +
+	"s\xbeY9\xe6=ou\xfe\x19\x0fB\xaf\xa4\x1e\xb1" +
+	"\xaf\xad\xb7\xc3\xe2\xf1\xdfG\xd0>i_\xfa\xe2\xeb\x8f" +
+	"7K\xf6S\xa4\x98\x06\xfc\xbfx\xe6\xa7\xc4c\x80\xaf" +
+	"\xc4;\xa0\xad\x9c~\x93y\xf4\xc9\xcaw\xd0OS\xd8" +
+	"\xe2\x87=\x19\x9d\xff\xfe\xe7\x85\xf3\xad\xf7\xc4\x11\xfd\x13" +
+	"\xe1\xee}$\xbe\x02\xed\x07\x9f\xdd(\xbe\xfaf\xee\xfb" +
+	"kC/\xc9s\xff\x8et\x7f\xb7\xa5\x0b\x9d\x7f\xff\xe7" +
+	"\xc3\xf6\x0f/\xfc\x0a\xe5\x8b\xc4\x17\xf4O\xe4\x99\xff\xe5" +
+	"\xd8\xf1s\xf9\x09h\x7f\\\xfb)\x9b;\xfd\xf67(" +
+	"\xdf\x9bu\xbc\xf5\x87\x14\xf4\xe9\xa5\x81\xad\x7f\xa4\xe4V" +
+	"\xc6\x13\x04\x12J}\x93\")\xf7\x82\x99^\x89\xbe\xf2" +
+	"\\\x857\xbd_P\xb5\x8d\xb0\x1b\x15\x1b\xc3\xa6p\x9f" +
+	"\xe5f#\xec\x87w_9\x08\xe2nv{T\x0d\xb5" +
+	"G&\x01\x15\xd7l\xd5\x04\x81;\x01\xa03\xd2\x03<" +
+	"\x02\xaaP\x02\xf4S\x92zE\x90\\\xa0\xb3-\xdd\x07" +
+	"\xf4\xa2\xa4\xae\x09\xe6\x87f\xbf^c\x0a\x82)\xf0\xb0" +
+	"9\x0e\x12\xf1\x06\xb8)\xc9\\\x92\x02t\xc6)U\xea" +
+	"*\x95K\xbd<aX\xae\xc4\xf1\xf0A`z\x0eg" +
+	"\x93\xd4sS\xa0\x07w\x01}OR?\x14T\x13\xa2" +
+	"\xfa.\xa0_\x96\xd4\xdb\x82\x14\x0b\x14\x80\xd2\xce\xf1\xa1" +
+	"\xa4~]\xb0\xdc\x88\xe3a\xbd\xc6\x0c\x043\xa0\x8d\xcc" +
+	"\xb0k\xa2z\x1f\xe9\x96\x19M\xe0\xcbo7\x82\xfb\x07" +
+	"m\xceCp~\x06u\xb6\x81\x8e\xabV6\xedm\x13" +
+	"\xc5\x8ek\xa6Qk\x97My>i\xd4\xaaCxN" +
+	"R\xbf(h\xe3wC\xb3\xde\xe8\x19\x00\x9c\x83\xe0\x1c" +
+	"Xv\xb6z\x8d\x1e\x04\xbd\xff\xc98nIv\xb4\x11" +
+	"\x96\\\xbe\xc7\xc7\xa5U\x9eu\xedTwv\x01\x0au" +
+	"\xdb-R\xad\xba\xc5SK;\x00S\xaa\xb0\x03d\xfb" +
+	"\x83\x8d\xd0v\xfb\x91\x19\xc6\xd5\x0e\xd2\xdd\xa0e\x0f\xc2" +
+	"\xd9]\xcb\x04&6Wv\x062\x08l\xb3c\x9a{" +
+	"\xe1\xa0\x0b\xd9\x8f\xa7`r\x06,\xe8\xf6\xf7\x1c\xdcV" +
+	"h\x9anF\x97EA\xf1-\xbb\xe8\x0e\xea\xfd6\xb2" +
+	"\x83\xc2b\xe1\xda\xeb\xff\x19z>\x98jr\xfa0\x15" +
+	"w\xecD\x06\x90\xd5P\xe7\xa6\xbdn<\x01\xe87$" +
+	"ugF\x03\xc6\x0d\xa0%\xa9CA%x!\x82\x9e" +
+	"\x9b@GR\xc7\x82\x94\x0b\x94\x80\xdaw\x92\x0e$\xf5" +
+	"HP\x0eBf\x93\x17\x0b2\x0b\xda\xe6\xa4,`\"" +
+	"\x99\xb2\xb3%B\xcf\x9b\xc0\xf4\"\xe6\x12\\\x909\xf0" +
+	"\xdf\x00\x00\x00\xff\xff\xa5\xc4%K"
 
 func RegisterSchema(reg *schemas.Registry) {
 	reg.Register(&schemas.Schema{
 		String: schema_9aff325096b39f47,
 		Nodes: []uint64{
-			0xa4b56be7c7ee6f1e,
-			0xc1cead83b4340f68,
-			0xc69edaa315779586,
-			0xd07a997d9d046fb4,
+			0x8afb8b2f70664e55,
+			0xd2411b0b08bea741,
 			0xd8105e522f0e9c87,
+			0xe837dc667fe57e1f,
 			0xeec1a7100fe44add,
+			0xf6f1fa73036d902f,
 		},
 		Compressed: true,
 	})
-}
-
-var x_9aff325096b39f47 = []byte{
-	0, 0, 0, 0, 10, 0, 0, 0,
-	1, 0, 0, 0, 39, 0, 0, 0,
-	8, 0, 0, 0, 1, 0, 1, 0,
-	123, 0, 0, 0, 0, 0, 0, 0,
-	9, 0, 0, 0, 106, 0, 0, 0,
-	200, 1, 0, 0, 0, 0, 0, 0,
-	9, 0, 0, 0, 90, 0, 0, 0,
-	97, 114, 99, 46, 67, 101, 108, 108,
-	73, 110, 102, 111, 0, 0, 0, 0,
-	97, 114, 99, 46, 71, 101, 111, 70,
-	105, 120, 0, 0, 0, 0, 0, 0,
 }

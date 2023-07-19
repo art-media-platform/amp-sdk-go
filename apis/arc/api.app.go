@@ -64,22 +64,18 @@ type AppInstance interface {
 	AppContext // An app instance implies an underlying host AppContext
 
 	// Callback made immediately after AppModule.NewAppInstance() -- typically resolves app-specific type specs.
-	OnNew(ctx AppContext) error
+	OnNew(this AppContext) error
 
 	// Celled when the app is pin the cell IAW with the given request.
 	// If parent != nil, this is the context of the request.
 	// If parent == nil, this app was invoked without out a parent cell / context.
-	PinCell(parent PinnedCell, req CellReq) (PinnedCell, error)
+	PinCell(parent PinnedCell, req PinReq) (PinnedCell, error)
 
 	// Handles a meta message sent to this app, which could be any attr type.
 	HandleURL(*url.URL) error
 
 	// Called exactly once if / when an app is signaled to close.
 	OnClosing()
-}
-
-type CellTx struct {
-	Attrs []AttrElem // Attrs to merge -- AttrIDs are NATIVE (not client) IDs
 }
 
 // PinnedCell is how your app encapsulates a pinned cell to the archost runtime and thus clients.
@@ -90,45 +86,75 @@ type PinnedCell interface {
 	Context() task.Context
 
 	// Pins the requested cell (typically a child cell).
-	PinCell(req CellReq) (PinnedCell, error)
-	//PinChild(req CellReq) (PinnedCell, error)
-
-	//App() AppInstance
-
-	// A PinnedCell is also a closure / context for incoming ResolveCell requests.
-	// ResolveCell resolves the given request to a PinnedCell, potentially pinning the cell as needed.
-	// After returned PinnedCell will then have PushState() to:
-	///    - push the cell's state to the client
-	//     - push cell state updates as needed
-	//     - have <-ctx.Closing() to use alongside blocking operations.
-	//
-	//ResolveRequest(req CellReq, parentApp AppInstance) (Cell, error)
+	PinCell(req PinReq) (PinnedCell, error)
 
 	// Pushes this cell and child cells to the client state is called.
 	// Exits when any of the following occur:
 	//   - ctx.Closing() is signaled,
 	//   - a fatal error is encountered, or
 	//   - state has been pushed to the client AND ctx.MaintainSync() == false
-	PushState(ctx PinContext) error
+	ServeState(ctx PinContext) error
 
-	// Merges a set of changes into this cell.
-	MergeTx(tx CellTx) error
+	// Merges a set of incoming changes into this pinned cell. -- "write" operation
+	MergeUpdate(tx *MultiTx) error
 }
 
-// PinContext wraps a client request to receive a cell's state / updates.
-type PinContext interface {
-	task.Context // Started as a CHILD of the arc.PinnedCell returned by AppInstance.PinCell()
+// FUTURE: type CellTID [2]uint64
+type CellID uint64
 
-	// If true, symbol IDs are native (not client).
-	UsingNativeSymbols() bool
+type PbValue interface {
+	Size() int
+	MarshalToSizedBuffer(dAtA []byte) (int, error)
+	Unmarshal(dAtA []byte) error
+}
 
-	// If true:   PinnedCell.PushState() should block until PinContext.Closing() is signaled.
-	// If false:  PinnedCell.PushState() should exit once state has been pushed.
-	MaintainSync() bool
+type ElemVal interface {
 
-	// Low-level push of a Msg to the client, returning true if the msg was sent (false if the client has been closed).
-	PushMsg(msg *Msg) bool
+	// Returns the element type name (a degenerate AttrSpec).
+	TypeName() string
 
-	// Parent app of the cell associated with this context
-	App() AppContext
+	// Marshals this ElemVal to a buffer, reallocating if needed.
+	MarshalToBuf(dst *[]byte) error
+
+	// Unmarshals and merges value state from a buffer.
+	Unmarshal(src []byte) error
+
+	// Creates a default instance of this same ElemVal type
+	New() ElemVal
+}
+
+// MultiTx is a state update for a pinned cell or a container of meta attrs.
+type MultiTx struct {
+	ReqID   uint64 // allows replies to be routed to the originator
+	Status  ReqStatus
+	CellTxs []CellTx
+	//CellTxsPb []*CellTxPb // serialized version of CellTxs -- this goes away when MultiTx has its own serializer.
+	//CellTxsBuf []byte  // TODO: use to denote serialization
+}
+
+// CellTx is a data super wrapper for arbitrary complexity and size data structures
+type CellTx struct {
+	Op         CellTxOp      // Op is the cell tx operation to perform
+	CellSpec   uint32        // CellSpec ID of the cell being modified -- See CellSpec
+	TargetCell CellID        // Target CellID of the cell being modified
+	ElemsPb    []*AttrElemPb // Attr element run (serialized)
+	//Elems      []AttrElem    // Attrs elements to/from target cell
+}
+
+type AttrElem struct {
+	Val    ElemVal // Val is the abstraction interface allowing serialization and type string-ification
+	SI     int64   // SI is the SeriesIndex, which is described in the AttrSpec.SeriesIndexType
+	AttrID uint32  // AttrID is the native ID (AttrSpec.DefID) that fully names an AttrSpec
+}
+
+type AttrDef struct {
+	Client AttrSpec
+	Native AttrSpec
+}
+
+type CellDef struct {
+	ClientDefID uint32    // READ-ONLY
+	NativeDefID uint32    // READ-ONLY
+	CommonAttrs []AttrDef // READ-ONLY
+	PinnedAttrs []AttrDef // READ-ONLY
 }

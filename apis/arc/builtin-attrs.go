@@ -8,6 +8,7 @@ func RegisterConstSymbols(reg SessionRegistry) {
 		{ConstSymbol_Err, "Err"},
 		{ConstSymbol_RegisterDefs, "RegisterDefs"},
 		{ConstSymbol_HandleURI, "HandleURI"},
+		{ConstSymbol_PinRequest, "PinRequest"},
 		{ConstSymbol_Login, "Login"},
 		{ConstSymbol_LoginChallenge, "LoginChallenge"},
 		{ConstSymbol_LoginResponse, "LoginResponse"},
@@ -39,6 +40,7 @@ func RegisterBuiltInTypes(reg Registry) error {
 		&LoginChallenge{},
 		&LoginResponse{},
 
+		&PinRequest{},
 		&CellInfo{},
 		&AssetRef{},
 		&AuthToken{},
@@ -192,4 +194,16 @@ func (v *AuthToken) TypeName() string {
 
 func (v *AuthToken) New() ElemVal {
 	return &AuthToken{}
+}
+
+func (v *PinRequest) MarshalToBuf(dst *[]byte) error {
+	return MarshalPbValueToBuf(v, dst)
+}
+
+func (v *PinRequest) TypeName() string {
+	return "PinRequest"
+}
+
+func (v *PinRequest) New() ElemVal {
+	return &PinRequest{}
 }

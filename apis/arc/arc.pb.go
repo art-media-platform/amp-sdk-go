@@ -84,9 +84,10 @@ type ConstSymbol int32
 
 const (
 	ConstSymbol_nil            ConstSymbol = 0
-	ConstSymbol_Err            ConstSymbol = 6
-	ConstSymbol_RegisterDefs   ConstSymbol = 10
-	ConstSymbol_HandleURI      ConstSymbol = 11
+	ConstSymbol_Err            ConstSymbol = 10
+	ConstSymbol_RegisterDefs   ConstSymbol = 11
+	ConstSymbol_HandleURI      ConstSymbol = 12
+	ConstSymbol_PinRequest     ConstSymbol = 13
 	ConstSymbol_Login          ConstSymbol = 20
 	ConstSymbol_LoginChallenge ConstSymbol = 21
 	ConstSymbol_LoginResponse  ConstSymbol = 22
@@ -97,9 +98,10 @@ const (
 
 var ConstSymbol_name = map[int32]string{
 	0:   "ConstSymbol_nil",
-	6:   "ConstSymbol_Err",
-	10:  "ConstSymbol_RegisterDefs",
-	11:  "ConstSymbol_HandleURI",
+	10:  "ConstSymbol_Err",
+	11:  "ConstSymbol_RegisterDefs",
+	12:  "ConstSymbol_HandleURI",
+	13:  "ConstSymbol_PinRequest",
 	20:  "ConstSymbol_Login",
 	21:  "ConstSymbol_LoginChallenge",
 	22:  "ConstSymbol_LoginResponse",
@@ -108,9 +110,10 @@ var ConstSymbol_name = map[int32]string{
 
 var ConstSymbol_value = map[string]int32{
 	"ConstSymbol_nil":            0,
-	"ConstSymbol_Err":            6,
-	"ConstSymbol_RegisterDefs":   10,
-	"ConstSymbol_HandleURI":      11,
+	"ConstSymbol_Err":            10,
+	"ConstSymbol_RegisterDefs":   11,
+	"ConstSymbol_HandleURI":      12,
+	"ConstSymbol_PinRequest":     13,
 	"ConstSymbol_Login":          20,
 	"ConstSymbol_LoginChallenge": 21,
 	"ConstSymbol_LoginResponse":  22,
@@ -121,95 +124,55 @@ func (ConstSymbol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{1}
 }
 
-// MsgOp tells a holder of a Msg how to interpret its purpose and fields.
-type MsgOp int32
+type ReqStatus int32
 
 const (
-	MsgOp_NoOp MsgOp = 0
-	// MsgOp_MetaAttr posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
-	//
-	// Params:
-	//      Msg.ReqID:      originating request ID
-	//      Msg.ValBuf:     IAW with AttrID
-	MsgOp_MetaAttr MsgOp = 4
-	// From client to host, this requests a given cell be pinned.
-	//
-	// Params:
-	//      Msg.ReqID:      client-generated (unique) request ID
-	//      Msg.CellID:     CellID being pinned     (host to client, otherwise 0)
-	//      Msg.ValBuf:     PinReq                  (client to host, otherwise nil)
-	MsgOp_PinCell MsgOp = 6
-	// Used to push attr element values.
-	//
-	// Params:
-	//      Msg.ReqID:      originating MsgOp_PinCell request ID
-	//      Msg.CellID:     which cell is being updated
-	//      Msg.AttrID:     which attr is being updated
-	//      Msg.ValBuf:     IAW with AttrID
-	MsgOp_PushAttrElem MsgOp = 10
-	// Used by the sender to signal that the given cell's state push is up to date and can be processed by the recipient.
-	// This msg is typically used to drive UI updates or other aggregate cell dependencies.
-	//
-	// Params:
-	//      Msg.ReqID:      originating request ID
-	//      Msg.CellID:     which cell is an an updated state
-	MsgOp_Checkpoint MsgOp = 24
-	// From the client to host, this signals to cancel the operation(s) associated with the given request ID (PinID).
-	// From the host to client, this signals that the given request ID has been canceled / discarded (and is now closed).
-	// if len(Msg.ValBuf) > 0, then an Err is serialized, offering amplifying info on why the request was closed.
-	//
-	// Params:
-	//      Msg.ReqID:      parent request ID
-	MsgOp_Close MsgOp = 127
+	ReqStatus_Syncing ReqStatus = 0
+	ReqStatus_Synced  ReqStatus = 1
+	//ReqStatus_Canceled     = 0x10;
+	ReqStatus_Closed ReqStatus = 32
 )
 
-var MsgOp_name = map[int32]string{
-	0:   "MsgOp_NoOp",
-	4:   "MsgOp_MetaAttr",
-	6:   "MsgOp_PinCell",
-	10:  "MsgOp_PushAttrElem",
-	24:  "MsgOp_Checkpoint",
-	127: "MsgOp_Close",
+var ReqStatus_name = map[int32]string{
+	0:  "ReqStatus_Syncing",
+	1:  "ReqStatus_Synced",
+	32: "ReqStatus_Closed",
 }
 
-var MsgOp_value = map[string]int32{
-	"MsgOp_NoOp":         0,
-	"MsgOp_MetaAttr":     4,
-	"MsgOp_PinCell":      6,
-	"MsgOp_PushAttrElem": 10,
-	"MsgOp_Checkpoint":   24,
-	"MsgOp_Close":        127,
+var ReqStatus_value = map[string]int32{
+	"ReqStatus_Syncing": 0,
+	"ReqStatus_Synced":  1,
+	"ReqStatus_Closed":  32,
 }
 
-func (MsgOp) EnumDescriptor() ([]byte, []int) {
+func (ReqStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{2}
 }
 
-type MsgFlags int32
+type CellTxOp int32
 
 const (
-	MsgFlags_None MsgFlags = 0
-	// Used to signal that Msg.CelID has been deleted
-	MsgFlags_CellDeleted MsgFlags = 2
-	// ValBufShared signals that this Msg's ValBuf referenced elsewhere and is therefore READ ONLY.
-	// This used internally to support Msg pooling / recycling.
-	// When marshaling, this flag is always cleared!
-	MsgFlags_ValBufShared MsgFlags = 256
+	CellTxOp_MetaAttr   CellTxOp = 0
+	CellTxOp_InsertCell CellTxOp = 1
+	CellTxOp_UpdateCell CellTxOp = 2
+	CellTxOp_RemoveCell CellTxOp = 3
 )
 
-var MsgFlags_name = map[int32]string{
-	0:   "MsgFlags_None",
-	2:   "MsgFlags_CellDeleted",
-	256: "MsgFlags_ValBufShared",
+var CellTxOp_name = map[int32]string{
+	0: "CellTxOp_MetaAttr",
+	1: "CellTxOp_InsertCell",
+	2: "CellTxOp_UpdateCell",
+	3: "CellTxOp_RemoveCell",
 }
 
-var MsgFlags_value = map[string]int32{
-	"MsgFlags_None":         0,
-	"MsgFlags_CellDeleted":  2,
-	"MsgFlags_ValBufShared": 256,
+var CellTxOp_value = map[string]int32{
+	"CellTxOp_MetaAttr":   0,
+	"CellTxOp_InsertCell": 1,
+	"CellTxOp_UpdateCell": 2,
+	"CellTxOp_RemoveCell": 3,
 }
 
-func (MsgFlags) EnumDescriptor() ([]byte, []int) {
+func (CellTxOp) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{3}
 }
 
@@ -232,6 +195,40 @@ var SeriesIndexType_value = map[string]int32{
 
 func (SeriesIndexType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{4}
+}
+
+type PinFlags int32
+
+const (
+	PinFlags_None PinFlags = 0
+	// If set, all symbol / attr ID are native symbol IDs.
+	// This is used for apps pinning cells and so are using native (not client) IDs.
+	PinFlags_UseNativeSymbols PinFlags = 1
+	// If set, PinnedCell.ServeState() causes this request (PinContext) to automatically close once state is pushed and synchronized.
+	// Otherwise, the request remains open and the client will receive any state updates until closed.
+	// This is useful when only a snapshot of the cell is needed.
+	PinFlags_CloseOnSync PinFlags = 4
+	// If set, a pinned cell will not send any state updates to the client.
+	// This is useful when only writing to a cell and no state updates are needed.
+	PinFlags_NoSync PinFlags = 8
+)
+
+var PinFlags_name = map[int32]string{
+	0: "PinFlags_None",
+	1: "PinFlags_UseNativeSymbols",
+	4: "PinFlags_CloseOnSync",
+	8: "PinFlags_NoSync",
+}
+
+var PinFlags_value = map[string]int32{
+	"PinFlags_None":             0,
+	"PinFlags_UseNativeSymbols": 1,
+	"PinFlags_CloseOnSync":      4,
+	"PinFlags_NoSync":           8,
+}
+
+func (PinFlags) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 }
 
 // CordType describes how to interpret coordinates contained in a Position.
@@ -265,7 +262,7 @@ var CordType_value = map[string]int32{
 }
 
 func (CordType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{5}
+	return fileDescriptor_e4a0eb974cf54c93, []int{6}
 }
 
 // URIScheme is used to accompany a URI to specify a URI scheme without it being being a prefix of the URI .
@@ -302,7 +299,7 @@ var URIScheme_value = map[string]int32{
 }
 
 func (URIScheme) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{6}
+	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 }
 
 // CryptoKitID identifies an encryption suite that implements ski.CryptoKit
@@ -333,7 +330,7 @@ var CryptoKitID_value = map[string]int32{
 }
 
 func (CryptoKitID) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{7}
+	return fileDescriptor_e4a0eb974cf54c93, []int{8}
 }
 
 // ErrCode expresses status and error codes.
@@ -448,7 +445,31 @@ var ErrCode_value = map[string]int32{
 }
 
 func (ErrCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{8}
+	return fileDescriptor_e4a0eb974cf54c93, []int{9}
+}
+
+type LogLevel int32
+
+const (
+	LogLevel_Error LogLevel = 0
+	LogLevel_Warn  LogLevel = 2
+	LogLevel_Info  LogLevel = 4
+)
+
+var LogLevel_name = map[int32]string{
+	0: "LogLevel_Error",
+	2: "LogLevel_Warn",
+	4: "LogLevel_Info",
+}
+
+var LogLevel_value = map[string]int32{
+	"LogLevel_Error": 0,
+	"LogLevel_Warn":  2,
+	"LogLevel_Info":  4,
+}
+
+func (LogLevel) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{10}
 }
 
 type TRS_VisualScaleMode int32
@@ -469,29 +490,18 @@ var TRS_VisualScaleMode_value = map[string]int32{
 }
 
 func (TRS_VisualScaleMode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{21, 0}
+	return fileDescriptor_e4a0eb974cf54c93, []int{20, 0}
 }
 
 type Msg struct {
-	// Describes how this Msg should be interpreted
-	Op MsgOp `protobuf:"varint,1,opt,name=Op,proto3,enum=arc.MsgOp" json:"Op,omitempty"`
-	// ReqID specifies a request context.
+	// ReqID names an originating request ID, issued by client using an atomic counter.
 	//
 	// When a client issues request-side MsgOp (e.g. ResolveCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
 	// If this msg is a reply to a request, ReqID identifies the originating request op.
-	ReqID uint64 `protobuf:"varint,2,opt,name=ReqID,proto3" json:"ReqID,omitempty"`
-	// CellID identifies the cell associated with Msg.Op.
-	CellID int64 `protobuf:"varint,4,opt,name=CellID,proto3" json:"CellID,omitempty"`
-	// AttrID names the attribute associated with this Msg (used for MsgOp_PushAttr).
-	// This value corresponds to AttrSpec.DefID
-	AttrID uint32 `protobuf:"varint,6,opt,name=AttrID,proto3" json:"AttrID,omitempty"`
-	// SI ("Series Index") specifies how an int64 is interpreted as an attr element index value.
-	// See AttrSpec.SeriesSpec
-	SI int64 `protobuf:"varint,8,opt,name=SI,proto3" json:"SI,omitempty"`
-	// ValBuf is interpreted according to AttrID
-	ValBuf []byte `protobuf:"bytes,10,opt,name=ValBuf,proto3" json:"ValBuf,omitempty"`
-	// Flags contains MsgFlags
-	Flags MsgFlags `protobuf:"varint,12,opt,name=Flags,proto3,enum=arc.MsgFlags" json:"Flags,omitempty"`
+	ReqID   uint64      `protobuf:"varint,1,opt,name=ReqID,proto3" json:"ReqID,omitempty"`
+	CellTxs []*CellTxPb `protobuf:"bytes,5,rep,name=CellTxs,proto3" json:"CellTxs,omitempty"`
+	// Allows the sender to communicate a status or error to the recipient.
+	Status ReqStatus `protobuf:"varint,3,opt,name=Status,proto3,enum=arc.ReqStatus" json:"Status,omitempty"`
 }
 
 func (m *Msg) Reset()      { *m = Msg{} }
@@ -526,13 +536,6 @@ func (m *Msg) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Msg proto.InternalMessageInfo
 
-func (m *Msg) GetOp() MsgOp {
-	if m != nil {
-		return m.Op
-	}
-	return MsgOp_NoOp
-}
-
 func (m *Msg) GetReqID() uint64 {
 	if m != nil {
 		return m.ReqID
@@ -540,39 +543,180 @@ func (m *Msg) GetReqID() uint64 {
 	return 0
 }
 
-func (m *Msg) GetCellID() int64 {
+func (m *Msg) GetCellTxs() []*CellTxPb {
 	if m != nil {
-		return m.CellID
+		return m.CellTxs
+	}
+	return nil
+}
+
+func (m *Msg) GetStatus() ReqStatus {
+	if m != nil {
+		return m.Status
+	}
+	return ReqStatus_Syncing
+}
+
+type CellTxPb struct {
+	Op         CellTxOp      `protobuf:"varint,1,opt,name=Op,proto3,enum=arc.CellTxOp" json:"Op,omitempty"`
+	CellSpec   uint32        `protobuf:"varint,2,opt,name=CellSpec,proto3" json:"CellSpec,omitempty"`
+	TID_UTC16  uint64        `protobuf:"fixed64,6,opt,name=TID_UTC16,json=TIDUTC16,proto3" json:"TID_UTC16,omitempty"`
+	TID_HASH1  uint64        `protobuf:"fixed64,7,opt,name=TID_HASH1,json=TIDHASH1,proto3" json:"TID_HASH1,omitempty"`
+	TID_HASH2  uint64        `protobuf:"fixed64,8,opt,name=TID_HASH2,json=TIDHASH2,proto3" json:"TID_HASH2,omitempty"`
+	TID_HASH3  uint64        `protobuf:"fixed64,9,opt,name=TID_HASH3,json=TIDHASH3,proto3" json:"TID_HASH3,omitempty"`
+	TargetCell int64         `protobuf:"varint,3,opt,name=TargetCell,proto3" json:"TargetCell,omitempty"`
+	Elems      []*AttrElemPb `protobuf:"bytes,4,rep,name=Elems,proto3" json:"Elems,omitempty"`
+}
+
+func (m *CellTxPb) Reset()      { *m = CellTxPb{} }
+func (*CellTxPb) ProtoMessage() {}
+func (*CellTxPb) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{1}
+}
+func (m *CellTxPb) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CellTxPb) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CellTxPb.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CellTxPb) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CellTxPb.Merge(m, src)
+}
+func (m *CellTxPb) XXX_Size() int {
+	return m.Size()
+}
+func (m *CellTxPb) XXX_DiscardUnknown() {
+	xxx_messageInfo_CellTxPb.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CellTxPb proto.InternalMessageInfo
+
+func (m *CellTxPb) GetOp() CellTxOp {
+	if m != nil {
+		return m.Op
+	}
+	return CellTxOp_MetaAttr
+}
+
+func (m *CellTxPb) GetCellSpec() uint32 {
+	if m != nil {
+		return m.CellSpec
 	}
 	return 0
 }
 
-func (m *Msg) GetAttrID() uint32 {
+func (m *CellTxPb) GetTID_UTC16() uint64 {
+	if m != nil {
+		return m.TID_UTC16
+	}
+	return 0
+}
+
+func (m *CellTxPb) GetTID_HASH1() uint64 {
+	if m != nil {
+		return m.TID_HASH1
+	}
+	return 0
+}
+
+func (m *CellTxPb) GetTID_HASH2() uint64 {
+	if m != nil {
+		return m.TID_HASH2
+	}
+	return 0
+}
+
+func (m *CellTxPb) GetTID_HASH3() uint64 {
+	if m != nil {
+		return m.TID_HASH3
+	}
+	return 0
+}
+
+func (m *CellTxPb) GetTargetCell() int64 {
+	if m != nil {
+		return m.TargetCell
+	}
+	return 0
+}
+
+func (m *CellTxPb) GetElems() []*AttrElemPb {
+	if m != nil {
+		return m.Elems
+	}
+	return nil
+}
+
+// Serialization helper for AttrElem
+type AttrElemPb struct {
+	// AttrID of the attr being updated (64 bits for future proofing)
+	AttrID uint64 `protobuf:"varint,1,opt,name=AttrID,proto3" json:"AttrID,omitempty"`
+	// Serialized value of the attr element -- IAW AttrID
+	ValBuf []byte `protobuf:"bytes,2,opt,name=ValBuf,proto3" json:"ValBuf,omitempty"`
+	// Series index (if applicable)
+	SI int64 `protobuf:"varint,3,opt,name=SI,proto3" json:"SI,omitempty"`
+}
+
+func (m *AttrElemPb) Reset()      { *m = AttrElemPb{} }
+func (*AttrElemPb) ProtoMessage() {}
+func (*AttrElemPb) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{2}
+}
+func (m *AttrElemPb) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AttrElemPb) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AttrElemPb.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AttrElemPb) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AttrElemPb.Merge(m, src)
+}
+func (m *AttrElemPb) XXX_Size() int {
+	return m.Size()
+}
+func (m *AttrElemPb) XXX_DiscardUnknown() {
+	xxx_messageInfo_AttrElemPb.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AttrElemPb proto.InternalMessageInfo
+
+func (m *AttrElemPb) GetAttrID() uint64 {
 	if m != nil {
 		return m.AttrID
 	}
 	return 0
 }
 
-func (m *Msg) GetSI() int64 {
-	if m != nil {
-		return m.SI
-	}
-	return 0
-}
-
-func (m *Msg) GetValBuf() []byte {
+func (m *AttrElemPb) GetValBuf() []byte {
 	if m != nil {
 		return m.ValBuf
 	}
 	return nil
 }
 
-func (m *Msg) GetFlags() MsgFlags {
+func (m *AttrElemPb) GetSI() int64 {
 	if m != nil {
-		return m.Flags
+		return m.SI
 	}
-	return MsgFlags_None
+	return 0
 }
 
 type PlanetEpoch struct {
@@ -587,7 +731,7 @@ type PlanetEpoch struct {
 func (m *PlanetEpoch) Reset()      { *m = PlanetEpoch{} }
 func (*PlanetEpoch) ProtoMessage() {}
 func (*PlanetEpoch) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{1}
+	return fileDescriptor_e4a0eb974cf54c93, []int{3}
 }
 func (m *PlanetEpoch) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -651,7 +795,7 @@ type Login struct {
 func (m *Login) Reset()      { *m = Login{} }
 func (*Login) ProtoMessage() {}
 func (*Login) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{2}
+	return fileDescriptor_e4a0eb974cf54c93, []int{4}
 }
 func (m *Login) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -716,7 +860,7 @@ type LoginChallenge struct {
 func (m *LoginChallenge) Reset()      { *m = LoginChallenge{} }
 func (*LoginChallenge) ProtoMessage() {}
 func (*LoginChallenge) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{3}
+	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 }
 func (m *LoginChallenge) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -760,7 +904,7 @@ type LoginResponse struct {
 func (m *LoginResponse) Reset()      { *m = LoginResponse{} }
 func (*LoginResponse) ProtoMessage() {}
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{4}
+	return fileDescriptor_e4a0eb974cf54c93, []int{6}
 }
 func (m *LoginResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -805,7 +949,7 @@ type Symbol struct {
 func (m *Symbol) Reset()      { *m = Symbol{} }
 func (*Symbol) ProtoMessage() {}
 func (*Symbol) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{5}
+	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 }
 func (m *Symbol) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -858,7 +1002,7 @@ type RegisterDefs struct {
 func (m *RegisterDefs) Reset()      { *m = RegisterDefs{} }
 func (*RegisterDefs) ProtoMessage() {}
 func (*RegisterDefs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{6}
+	return fileDescriptor_e4a0eb974cf54c93, []int{8}
 }
 func (m *RegisterDefs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -959,7 +1103,7 @@ type AttrSpec struct {
 func (m *AttrSpec) Reset()      { *m = AttrSpec{} }
 func (*AttrSpec) ProtoMessage() {}
 func (*AttrSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{7}
+	return fileDescriptor_e4a0eb974cf54c93, []int{9}
 }
 func (m *AttrSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1023,9 +1167,10 @@ func (m *AttrSpec) GetAttrName() uint32 {
 	return 0
 }
 
-// A CellSpec describes this cell's attrs as a child and when this cell is pinned.
-// Two cells with matching CellSpec descriptor are the same "type" of cell.
+// A CellSpec fully describes this cell's attrs as a child and when this cell is pinned.
+// Two cells with a matching CellSpec descriptor are the same "type" of cell.
 type CellSpec struct {
+	// DefID is used to reference this CellSpec and can be regarded as a type ID since it is a canonic descriptor.
 	// Composite expression / invocation of this CellSpec in the form:
 	//      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)"
 	//
@@ -1040,7 +1185,7 @@ type CellSpec struct {
 func (m *CellSpec) Reset()      { *m = CellSpec{} }
 func (*CellSpec) ProtoMessage() {}
 func (*CellSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{8}
+	return fileDescriptor_e4a0eb974cf54c93, []int{10}
 }
 func (m *CellSpec) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1090,6 +1235,8 @@ func (m *CellSpec) GetPinnedAttrs() []uint32 {
 	return nil
 }
 
+// SymbolSet
+// SymbolSelector?
 // ItemSelector selects / filters a srt of items (e.g. CellSpec or AttrSpec descriptors)
 type ItemSelector struct {
 	// Composite expression of this ItemSelector in the form:
@@ -1105,7 +1252,7 @@ type ItemSelector struct {
 func (m *ItemSelector) Reset()      { *m = ItemSelector{} }
 func (*ItemSelector) ProtoMessage() {}
 func (*ItemSelector) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{9}
+	return fileDescriptor_e4a0eb974cf54c93, []int{11}
 }
 func (m *ItemSelector) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1155,65 +1302,6 @@ func (m *ItemSelector) GetExclude() []uint32 {
 	return nil
 }
 
-type KwArg struct {
-	Key    string `protobuf:"bytes,1,opt,name=Key,proto3" json:"Key,omitempty"`
-	Val    string `protobuf:"bytes,5,opt,name=Val,proto3" json:"Val,omitempty"`
-	ValBuf []byte `protobuf:"bytes,6,opt,name=ValBuf,proto3" json:"ValBuf,omitempty"`
-}
-
-func (m *KwArg) Reset()      { *m = KwArg{} }
-func (*KwArg) ProtoMessage() {}
-func (*KwArg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{10}
-}
-func (m *KwArg) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *KwArg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_KwArg.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *KwArg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_KwArg.Merge(m, src)
-}
-func (m *KwArg) XXX_Size() int {
-	return m.Size()
-}
-func (m *KwArg) XXX_DiscardUnknown() {
-	xxx_messageInfo_KwArg.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_KwArg proto.InternalMessageInfo
-
-func (m *KwArg) GetKey() string {
-	if m != nil {
-		return m.Key
-	}
-	return ""
-}
-
-func (m *KwArg) GetVal() string {
-	if m != nil {
-		return m.Val
-	}
-	return ""
-}
-
-func (m *KwArg) GetValBuf() []byte {
-	if m != nil {
-		return m.ValBuf
-	}
-	return nil
-}
-
 type HandleURI struct {
 	URI string `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
 }
@@ -1221,7 +1309,7 @@ type HandleURI struct {
 func (m *HandleURI) Reset()      { *m = HandleURI{} }
 func (*HandleURI) ProtoMessage() {}
 func (*HandleURI) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{11}
+	return fileDescriptor_e4a0eb974cf54c93, []int{12}
 }
 func (m *HandleURI) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1257,36 +1345,35 @@ func (m *HandleURI) GetURI() string {
 	return ""
 }
 
-// PinReq is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.
-type PinReq struct {
-	// ParentReqID specifies the request ID that pushed PinReq.ResolveCell (as a child), providing context.
-	// Set to 0 if PinCell and/or PinURI implies that no parent req exists.
+// PinRequest is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.
+type PinRequest struct {
+	// ParentReqID, if set, provides context for this request and is typically needed when pinning a cell by ID alone.
+	// Not set if PinURI and/or PinCellID implies that no parent req exists.
 	ParentReqID uint64 `protobuf:"varint,1,opt,name=ParentReqID,proto3" json:"ParentReqID,omitempty"`
-	// URI specifying the cell to be pinned and whose child cells are to be pushed.
+	// URL specifying the cell to be pinned and whose child cells are to be pushed.
 	// Typically: [[arc://]arc-app-uri/]cell-uri..
-	PinURI string `protobuf:"bytes,2,opt,name=PinURI,proto3" json:"PinURI,omitempty"`
-	// Cell ID to be pinned (or 0 if PinURI does not require a cell ID)
-	PinCell int64 `protobuf:"varint,3,opt,name=PinCell,proto3" json:"PinCell,omitempty"`
+	PinURL string `protobuf:"bytes,2,opt,name=PinURL,proto3" json:"PinURL,omitempty"`
+	// PinCellID is an explicit cell ID be pinned (or 0 if PinURI does not require a cell ID)
+	PinCellID int64 `protobuf:"varint,3,opt,name=PinCellID,proto3" json:"PinCellID,omitempty"`
 	// If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
 	ParentAttrSelector uint32 `protobuf:"varint,5,opt,name=ParentAttrSelector,proto3" json:"ParentAttrSelector,omitempty"`
 	// If set, specifies an ItemSelector that filters which child cells are pushed to the client.
 	ChildCellSelector uint32 `protobuf:"varint,6,opt,name=ChildCellSelector,proto3" json:"ChildCellSelector,omitempty"`
-	// AutoClose, if set, causes this request to close once state is pushed.
-	// If false, the request will remains open and the client will continue to receive state updates until request is explicitly closed.
-	AutoClose bool `protobuf:"varint,8,opt,name=AutoClose,proto3" json:"AutoClose,omitempty"`
+	// Flags specifies options.
+	Flags PinFlags `protobuf:"varint,7,opt,name=Flags,proto3,enum=arc.PinFlags" json:"Flags,omitempty"`
 }
 
-func (m *PinReq) Reset()      { *m = PinReq{} }
-func (*PinReq) ProtoMessage() {}
-func (*PinReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{12}
+func (m *PinRequest) Reset()      { *m = PinRequest{} }
+func (*PinRequest) ProtoMessage() {}
+func (*PinRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{13}
 }
-func (m *PinReq) XXX_Unmarshal(b []byte) error {
+func (m *PinRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PinReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *PinRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_PinReq.Marshal(b, m, deterministic)
+		return xxx_messageInfo_PinRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -1296,163 +1383,58 @@ func (m *PinReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *PinReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PinReq.Merge(m, src)
+func (m *PinRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PinRequest.Merge(m, src)
 }
-func (m *PinReq) XXX_Size() int {
+func (m *PinRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *PinReq) XXX_DiscardUnknown() {
-	xxx_messageInfo_PinReq.DiscardUnknown(m)
+func (m *PinRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_PinRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_PinReq proto.InternalMessageInfo
+var xxx_messageInfo_PinRequest proto.InternalMessageInfo
 
-func (m *PinReq) GetParentReqID() uint64 {
+func (m *PinRequest) GetParentReqID() uint64 {
 	if m != nil {
 		return m.ParentReqID
 	}
 	return 0
 }
 
-func (m *PinReq) GetPinURI() string {
+func (m *PinRequest) GetPinURL() string {
 	if m != nil {
-		return m.PinURI
+		return m.PinURL
 	}
 	return ""
 }
 
-func (m *PinReq) GetPinCell() int64 {
+func (m *PinRequest) GetPinCellID() int64 {
 	if m != nil {
-		return m.PinCell
+		return m.PinCellID
 	}
 	return 0
 }
 
-func (m *PinReq) GetParentAttrSelector() uint32 {
+func (m *PinRequest) GetParentAttrSelector() uint32 {
 	if m != nil {
 		return m.ParentAttrSelector
 	}
 	return 0
 }
 
-func (m *PinReq) GetChildCellSelector() uint32 {
+func (m *PinRequest) GetChildCellSelector() uint32 {
 	if m != nil {
 		return m.ChildCellSelector
 	}
 	return 0
 }
 
-func (m *PinReq) GetAutoClose() bool {
+func (m *PinRequest) GetFlags() PinFlags {
 	if m != nil {
-		return m.AutoClose
+		return m.Flags
 	}
-	return false
-}
-
-type AttrRange struct {
-	// Specifies what time series index to start and stop reading at (inclusive).
-	SI_SeekTo uint64 `protobuf:"varint,24,opt,name=SI_SeekTo,json=SISeekTo,proto3" json:"SI_SeekTo,omitempty"`
-	SI_StopAt uint64 `protobuf:"varint,25,opt,name=SI_StopAt,json=SIStopAt,proto3" json:"SI_StopAt,omitempty"`
-	// If set, this limits the number of entries returned for each unique from.cell.attr.  (0 denotes unlimited)
-	SI_BatchLimit uint64 `protobuf:"varint,27,opt,name=SI_BatchLimit,json=SIBatchLimit,proto3" json:"SI_BatchLimit,omitempty"`
-}
-
-func (m *AttrRange) Reset()      { *m = AttrRange{} }
-func (*AttrRange) ProtoMessage() {}
-func (*AttrRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{13}
-}
-func (m *AttrRange) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AttrRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AttrRange.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AttrRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AttrRange.Merge(m, src)
-}
-func (m *AttrRange) XXX_Size() int {
-	return m.Size()
-}
-func (m *AttrRange) XXX_DiscardUnknown() {
-	xxx_messageInfo_AttrRange.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AttrRange proto.InternalMessageInfo
-
-func (m *AttrRange) GetSI_SeekTo() uint64 {
-	if m != nil {
-		return m.SI_SeekTo
-	}
-	return 0
-}
-
-func (m *AttrRange) GetSI_StopAt() uint64 {
-	if m != nil {
-		return m.SI_StopAt
-	}
-	return 0
-}
-
-func (m *AttrRange) GetSI_BatchLimit() uint64 {
-	if m != nil {
-		return m.SI_BatchLimit
-	}
-	return 0
-}
-
-// This is a work in progress
-type Txn struct {
-	Msgs []*Msg `protobuf:"bytes,1,rep,name=Msgs,proto3" json:"Msgs,omitempty"`
-}
-
-func (m *Txn) Reset()      { *m = Txn{} }
-func (*Txn) ProtoMessage() {}
-func (*Txn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{14}
-}
-func (m *Txn) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Txn) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Txn.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Txn) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Txn.Merge(m, src)
-}
-func (m *Txn) XXX_Size() int {
-	return m.Size()
-}
-func (m *Txn) XXX_DiscardUnknown() {
-	xxx_messageInfo_Txn.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Txn proto.InternalMessageInfo
-
-func (m *Txn) GetMsgs() []*Msg {
-	if m != nil {
-		return m.Msgs
-	}
-	return nil
+	return PinFlags_None
 }
 
 // Position describes a position in space and/or time using a given coordinate system.
@@ -1467,7 +1449,7 @@ type Position struct {
 func (m *Position) Reset()      { *m = Position{} }
 func (*Position) ProtoMessage() {}
 func (*Position) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{15}
+	return fileDescriptor_e4a0eb974cf54c93, []int{14}
 }
 func (m *Position) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1545,7 +1527,7 @@ type AssetRef struct {
 func (m *AssetRef) Reset()      { *m = AssetRef{} }
 func (*AssetRef) ProtoMessage() {}
 func (*AssetRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{16}
+	return fileDescriptor_e4a0eb974cf54c93, []int{15}
 }
 func (m *AssetRef) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1641,7 +1623,7 @@ type Content struct {
 func (m *Content) Reset()      { *m = Content{} }
 func (*Content) ProtoMessage() {}
 func (*Content) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{17}
+	return fileDescriptor_e4a0eb974cf54c93, []int{16}
 }
 func (m *Content) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1706,7 +1688,7 @@ type CryptoKey struct {
 func (m *CryptoKey) Reset()      { *m = CryptoKey{} }
 func (*CryptoKey) ProtoMessage() {}
 func (*CryptoKey) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{18}
+	return fileDescriptor_e4a0eb974cf54c93, []int{17}
 }
 func (m *CryptoKey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1751,10 +1733,6 @@ func (m *CryptoKey) GetKeyBytes() []byte {
 
 // CellInfo is the standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
 type CellInfo struct {
-	// CellDefID references a CellSpec definition, fully describing this cell's common and pinned attrs.
-	// This typically corresponds 1:1 to a cell's purpose / function.
-	// See message CellSpec
-	CellDefID  uint32    `protobuf:"varint,1,opt,name=CellDefID,proto3" json:"CellDefID,omitempty"`
 	Title      string    `protobuf:"bytes,4,opt,name=Title,proto3" json:"Title,omitempty"`
 	Subtitle   string    `protobuf:"bytes,5,opt,name=Subtitle,proto3" json:"Subtitle,omitempty"`
 	About      string    `protobuf:"bytes,6,opt,name=About,proto3" json:"About,omitempty"`
@@ -1768,7 +1746,7 @@ type CellInfo struct {
 func (m *CellInfo) Reset()      { *m = CellInfo{} }
 func (*CellInfo) ProtoMessage() {}
 func (*CellInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{19}
+	return fileDescriptor_e4a0eb974cf54c93, []int{18}
 }
 func (m *CellInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1796,13 +1774,6 @@ func (m *CellInfo) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_CellInfo proto.InternalMessageInfo
-
-func (m *CellInfo) GetCellDefID() uint32 {
-	if m != nil {
-		return m.CellDefID
-	}
-	return 0
-}
 
 func (m *CellInfo) GetTitle() string {
 	if m != nil {
@@ -1871,7 +1842,7 @@ type AuthToken struct {
 func (m *AuthToken) Reset()      { *m = AuthToken{} }
 func (*AuthToken) ProtoMessage() {}
 func (*AuthToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{20}
+	return fileDescriptor_e4a0eb974cf54c93, []int{19}
 }
 func (m *AuthToken) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1953,7 +1924,7 @@ type TRS struct {
 func (m *TRS) Reset()      { *m = TRS{} }
 func (*TRS) ProtoMessage() {}
 func (*TRS) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{21}
+	return fileDescriptor_e4a0eb974cf54c93, []int{20}
 }
 func (m *TRS) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2060,7 +2031,7 @@ type FeedParams struct {
 func (m *FeedParams) Reset()      { *m = FeedParams{} }
 func (*FeedParams) ProtoMessage() {}
 func (*FeedParams) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{22}
+	return fileDescriptor_e4a0eb974cf54c93, []int{21}
 }
 func (m *FeedParams) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2114,7 +2085,7 @@ type DataSegment struct {
 func (m *DataSegment) Reset()      { *m = DataSegment{} }
 func (*DataSegment) ProtoMessage() {}
 func (*DataSegment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{23}
+	return fileDescriptor_e4a0eb974cf54c93, []int{22}
 }
 func (m *DataSegment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2178,18 +2149,20 @@ func (m *DataSegment) GetBlobID() int64 {
 	return 0
 }
 
-// Err wraps errors and is typically used in conjunction with MsgOps.ReqCancel
+// Err is a general purpose error / warning / log message.
 type Err struct {
-	// ErrCode specifying how/why the request was canceled.
+	// Identifies the type of error.
 	Code ErrCode `protobuf:"varint,1,opt,name=Code,proto3,enum=arc.ErrCode" json:"Code,omitempty"`
-	// Msg is a human-readable info string that offers amplifying info about the given error.
-	Msg string `protobuf:"bytes,2,opt,name=Msg,proto3" json:"Msg,omitempty"`
+	// Severity level
+	Level LogLevel `protobuf:"varint,2,opt,name=Level,proto3,enum=arc.LogLevel" json:"Level,omitempty"`
+	// human-readable info
+	Msg string `protobuf:"bytes,4,opt,name=Msg,proto3" json:"Msg,omitempty"`
 }
 
 func (m *Err) Reset()      { *m = Err{} }
 func (*Err) ProtoMessage() {}
 func (*Err) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{24}
+	return fileDescriptor_e4a0eb974cf54c93, []int{23}
 }
 func (m *Err) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -2225,6 +2198,13 @@ func (m *Err) GetCode() ErrCode {
 	return ErrCode_NoErr
 }
 
+func (m *Err) GetLevel() LogLevel {
+	if m != nil {
+		return m.Level
+	}
+	return LogLevel_Error
+}
+
 func (m *Err) GetMsg() string {
 	if m != nil {
 		return m.Msg
@@ -2235,15 +2215,19 @@ func (m *Err) GetMsg() string {
 func init() {
 	proto.RegisterEnum("arc.Const", Const_name, Const_value)
 	proto.RegisterEnum("arc.ConstSymbol", ConstSymbol_name, ConstSymbol_value)
-	proto.RegisterEnum("arc.MsgOp", MsgOp_name, MsgOp_value)
-	proto.RegisterEnum("arc.MsgFlags", MsgFlags_name, MsgFlags_value)
+	proto.RegisterEnum("arc.ReqStatus", ReqStatus_name, ReqStatus_value)
+	proto.RegisterEnum("arc.CellTxOp", CellTxOp_name, CellTxOp_value)
 	proto.RegisterEnum("arc.SeriesIndexType", SeriesIndexType_name, SeriesIndexType_value)
+	proto.RegisterEnum("arc.PinFlags", PinFlags_name, PinFlags_value)
 	proto.RegisterEnum("arc.CordType", CordType_name, CordType_value)
 	proto.RegisterEnum("arc.URIScheme", URIScheme_name, URIScheme_value)
 	proto.RegisterEnum("arc.CryptoKitID", CryptoKitID_name, CryptoKitID_value)
 	proto.RegisterEnum("arc.ErrCode", ErrCode_name, ErrCode_value)
+	proto.RegisterEnum("arc.LogLevel", LogLevel_name, LogLevel_value)
 	proto.RegisterEnum("arc.TRS_VisualScaleMode", TRS_VisualScaleMode_name, TRS_VisualScaleMode_value)
 	proto.RegisterType((*Msg)(nil), "arc.Msg")
+	proto.RegisterType((*CellTxPb)(nil), "arc.CellTxPb")
+	proto.RegisterType((*AttrElemPb)(nil), "arc.AttrElemPb")
 	proto.RegisterType((*PlanetEpoch)(nil), "arc.PlanetEpoch")
 	proto.RegisterType((*Login)(nil), "arc.Login")
 	proto.RegisterType((*LoginChallenge)(nil), "arc.LoginChallenge")
@@ -2253,11 +2237,8 @@ func init() {
 	proto.RegisterType((*AttrSpec)(nil), "arc.AttrSpec")
 	proto.RegisterType((*CellSpec)(nil), "arc.CellSpec")
 	proto.RegisterType((*ItemSelector)(nil), "arc.ItemSelector")
-	proto.RegisterType((*KwArg)(nil), "arc.KwArg")
 	proto.RegisterType((*HandleURI)(nil), "arc.HandleURI")
-	proto.RegisterType((*PinReq)(nil), "arc.PinReq")
-	proto.RegisterType((*AttrRange)(nil), "arc.AttrRange")
-	proto.RegisterType((*Txn)(nil), "arc.Txn")
+	proto.RegisterType((*PinRequest)(nil), "arc.PinRequest")
 	proto.RegisterType((*Position)(nil), "arc.Position")
 	proto.RegisterType((*AssetRef)(nil), "arc.AssetRef")
 	proto.RegisterType((*Content)(nil), "arc.Content")
@@ -2273,167 +2254,170 @@ func init() {
 func init() { proto.RegisterFile("apis/arc/arc.proto", fileDescriptor_e4a0eb974cf54c93) }
 
 var fileDescriptor_e4a0eb974cf54c93 = []byte{
-	// 2548 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x58, 0xcd, 0x6f, 0x24, 0xc5,
-	0xf9, 0x76, 0x8f, 0x3f, 0xd6, 0x53, 0xfe, 0xd8, 0xda, 0xc2, 0x5e, 0x9a, 0xdd, 0x65, 0x30, 0x03,
-	0xfc, 0xc6, 0x18, 0x7e, 0x0b, 0x6b, 0x43, 0x14, 0x0e, 0x01, 0xd9, 0x33, 0xde, 0x75, 0x0b, 0x7f,
-	0x8c, 0xaa, 0xc7, 0x5e, 0xa4, 0x1c, 0x46, 0xb5, 0xd3, 0x35, 0x33, 0x95, 0xed, 0xa9, 0xee, 0xed,
-	0xae, 0x59, 0x66, 0x90, 0x50, 0x38, 0x44, 0xca, 0x27, 0x84, 0x44, 0x4a, 0x4e, 0x21, 0x97, 0x48,
-	0x09, 0x41, 0x39, 0x70, 0x48, 0xa4, 0x28, 0xdf, 0x4a, 0x2e, 0x28, 0x27, 0x8e, 0x1c, 0x83, 0x91,
-	0xa2, 0x1c, 0x12, 0x89, 0xbf, 0x20, 0x8a, 0xde, 0xaa, 0xee, 0x9e, 0x6e, 0x7b, 0x39, 0x58, 0xaa,
-	0xe7, 0x79, 0xde, 0xae, 0x7a, 0xeb, 0xad, 0xf7, 0x7d, 0xab, 0xc6, 0x88, 0xb0, 0x50, 0xc4, 0xcf,
-	0xb1, 0xa8, 0x03, 0x7f, 0xd7, 0xc3, 0x28, 0x50, 0x01, 0x99, 0x66, 0x51, 0xa7, 0xfa, 0x6b, 0x0b,
-	0x4d, 0x1f, 0xc4, 0x3d, 0x72, 0x05, 0x95, 0x8e, 0x42, 0xdb, 0x5a, 0xb3, 0xd6, 0x97, 0x37, 0xd1,
-	0x75, 0x30, 0x3a, 0x88, 0x7b, 0x47, 0x21, 0x2d, 0x1d, 0x85, 0x64, 0x05, 0xcd, 0x52, 0x7e, 0xcf,
-	0x69, 0xd8, 0xa5, 0x35, 0x6b, 0x7d, 0x86, 0x1a, 0x40, 0x2e, 0xa3, 0xb9, 0x3a, 0xf7, 0x7d, 0xa7,
-	0x61, 0xcf, 0xac, 0x59, 0xeb, 0xd3, 0x34, 0x41, 0xc0, 0x6f, 0x2b, 0x15, 0x39, 0x0d, 0x7b, 0x6e,
-	0xcd, 0x5a, 0x5f, 0xa2, 0x09, 0x22, 0xcb, 0xa8, 0xe4, 0x3a, 0xf6, 0xbc, 0xb6, 0x2d, 0xb9, 0x0e,
-	0xd8, 0x9d, 0x30, 0x7f, 0x67, 0xd8, 0xb5, 0xd1, 0x9a, 0xb5, 0xbe, 0x48, 0x13, 0x44, 0x9e, 0x40,
-	0xb3, 0x37, 0x7d, 0xd6, 0x8b, 0xed, 0x45, 0xed, 0xcc, 0x52, 0xea, 0x8c, 0x26, 0xa9, 0xd1, 0xaa,
-	0xaf, 0xa3, 0x85, 0xa6, 0xcf, 0x24, 0x57, 0xbb, 0x61, 0xd0, 0xe9, 0x93, 0x2b, 0x68, 0x5e, 0x0f,
-	0x5a, 0x4e, 0x43, 0xef, 0x61, 0x91, 0x66, 0x98, 0x3c, 0x8b, 0x16, 0xf5, 0x78, 0x57, 0xaa, 0x48,
-	0xf0, 0xd8, 0x2e, 0xad, 0x4d, 0xaf, 0x2f, 0x6c, 0xce, 0xa7, 0xd3, 0xd2, 0x82, 0x4a, 0x2a, 0x08,
-	0xd5, 0x83, 0xc1, 0x20, 0x90, 0x87, 0x6c, 0xc0, 0xed, 0xe9, 0x35, 0x6b, 0xbd, 0x4c, 0x73, 0x4c,
-	0xf5, 0x4d, 0x34, 0xbb, 0x1f, 0xf4, 0x84, 0x24, 0x36, 0xba, 0x70, 0x1c, 0xf3, 0xe8, 0x38, 0x59,
-	0xb1, 0x4c, 0x53, 0x08, 0xce, 0xec, 0x05, 0xb1, 0xda, 0xf6, 0xbc, 0x48, 0x47, 0xac, 0x4c, 0x33,
-	0x4c, 0xd6, 0xd0, 0x42, 0x83, 0xdf, 0x17, 0x1d, 0xbe, 0xcf, 0xee, 0x70, 0x5f, 0x47, 0xa3, 0x4c,
-	0xf3, 0x14, 0xb9, 0x86, 0xca, 0x06, 0xc2, 0xcc, 0x65, 0xad, 0x4f, 0x88, 0xea, 0x93, 0x68, 0x59,
-	0x2f, 0x5f, 0xef, 0x33, 0xdf, 0xe7, 0xb2, 0xc7, 0x09, 0x41, 0x33, 0x7b, 0x2c, 0xee, 0x27, 0xdb,
-	0xd6, 0xe3, 0xea, 0x33, 0x68, 0x49, 0x5b, 0x51, 0x1e, 0x87, 0x81, 0x8c, 0xb9, 0x76, 0x89, 0xc5,
-	0x7d, 0xc0, 0x69, 0x7c, 0x52, 0x5c, 0x7d, 0x16, 0xcd, 0xb9, 0xe3, 0xc1, 0x9d, 0xc0, 0x87, 0x13,
-	0x4a, 0x76, 0xb3, 0x44, 0x4b, 0x4e, 0x03, 0xa6, 0xd6, 0x51, 0x28, 0x99, 0xa9, 0xf5, 0xfe, 0x3f,
-	0xb4, 0xd0, 0x22, 0xe5, 0x3d, 0x11, 0x2b, 0x1e, 0x35, 0x78, 0x37, 0x26, 0x4f, 0xa1, 0x0b, 0xe6,
-	0xf3, 0xd8, 0xb6, 0x74, 0x64, 0x17, 0x74, 0x64, 0x0d, 0x47, 0x53, 0x0d, 0x4e, 0x15, 0xf2, 0x20,
-	0x0d, 0xbf, 0x39, 0x55, 0x60, 0xdc, 0x90, 0x77, 0xa8, 0xd1, 0xc0, 0x08, 0x92, 0x28, 0xb6, 0xa7,
-	0x73, 0x46, 0xc0, 0x18, 0x23, 0xad, 0x91, 0xe7, 0x50, 0xd9, 0xe5, 0x3e, 0xef, 0xa8, 0x20, 0x8a,
-	0xed, 0x19, 0x6d, 0x78, 0x49, 0x1b, 0x3a, 0x8a, 0x0f, 0x52, 0x85, 0x4e, 0x6c, 0xaa, 0xbf, 0xb5,
-	0xd0, 0x7c, 0xba, 0x12, 0xe4, 0x72, 0x83, 0x77, 0xb3, 0x6d, 0x1a, 0xa0, 0xf3, 0xc7, 0xe7, 0x83,
-	0xd6, 0x38, 0x34, 0x67, 0xbe, 0x44, 0x33, 0x0c, 0x19, 0xe1, 0x72, 0xc8, 0x0d, 0xf8, 0x5e, 0xe7,
-	0xfa, 0x12, 0xcd, 0x31, 0xe4, 0x65, 0x74, 0xd1, 0x20, 0x47, 0x7a, 0x7c, 0xa4, 0xa7, 0x98, 0xd5,
-	0x99, 0xbb, 0x62, 0x02, 0x51, 0xd4, 0xe8, 0x59, 0x63, 0x58, 0x1b, 0xbc, 0xd3, 0x91, 0x36, 0x15,
-	0x93, 0xe1, 0xaa, 0x87, 0xe6, 0xd3, 0xed, 0x7f, 0x81, 0xe7, 0x6b, 0x68, 0xc1, 0x64, 0xa7, 0x89,
-	0x2e, 0xc4, 0x63, 0x89, 0xe6, 0x29, 0xb0, 0x68, 0x0a, 0x29, 0xb9, 0x67, 0x2c, 0x66, 0x8d, 0x45,
-	0x8e, 0xaa, 0xbe, 0x86, 0x16, 0xf3, 0xb1, 0xfb, 0x82, 0x95, 0x6c, 0x74, 0xc1, 0x91, 0x1d, 0x7f,
-	0xe8, 0xf1, 0x64, 0x95, 0x14, 0x82, 0xb2, 0x3b, 0x32, 0x8a, 0x99, 0x3d, 0x85, 0xd5, 0x3a, 0x9a,
-	0x7d, 0xf5, 0xf5, 0xed, 0xa8, 0x47, 0x30, 0x9a, 0x7e, 0x95, 0x8f, 0x93, 0x4a, 0x81, 0x21, 0x30,
-	0x27, 0xcc, 0xd7, 0xa1, 0x2a, 0x53, 0x18, 0xe6, 0x1a, 0xc2, 0x5c, 0xbe, 0x21, 0x54, 0x1f, 0x45,
-	0xe5, 0x3d, 0x26, 0x3d, 0x9f, 0x1f, 0x53, 0x07, 0x3e, 0x3b, 0xa6, 0x4e, 0x3a, 0xd1, 0x31, 0x75,
-	0xaa, 0x9f, 0x58, 0x68, 0xae, 0x09, 0xb9, 0x7e, 0x4f, 0x6f, 0x95, 0x45, 0x5c, 0x2a, 0xd3, 0xae,
-	0x2c, 0xdd, 0xae, 0xf2, 0x14, 0xac, 0xd1, 0x14, 0x12, 0x66, 0x30, 0x95, 0x99, 0x20, 0xd8, 0x42,
-	0x53, 0x48, 0x88, 0xb5, 0x3e, 0xff, 0x69, 0x9a, 0x42, 0x72, 0x1d, 0x11, 0x33, 0x81, 0x4e, 0xa1,
-	0x24, 0x44, 0xda, 0xed, 0x25, 0xfa, 0x00, 0x85, 0x3c, 0x8b, 0x2e, 0xd5, 0xfb, 0xc2, 0xf7, 0xf4,
-	0xb9, 0xa5, 0xe6, 0xe6, 0x5c, 0xcf, 0x0b, 0x50, 0xed, 0xdb, 0x43, 0x15, 0xd4, 0xfd, 0x20, 0xe6,
-	0xba, 0x1b, 0xcc, 0xd3, 0x09, 0x51, 0xfd, 0x1a, 0x2a, 0xc3, 0xdc, 0x94, 0x41, 0xa1, 0x5f, 0x45,
-	0x65, 0xd7, 0x69, 0xbb, 0x9c, 0xdf, 0x6d, 0x05, 0xb6, 0xad, 0xb7, 0x36, 0xef, 0x3a, 0x06, 0xa7,
-	0xa2, 0x0a, 0xc2, 0x6d, 0x65, 0x3f, 0x92, 0x89, 0x1a, 0x93, 0x27, 0xd0, 0x92, 0xeb, 0xb4, 0x77,
-	0x98, 0xea, 0xf4, 0xf7, 0xc5, 0x40, 0x28, 0xfb, 0xaa, 0x36, 0x58, 0x74, 0x9d, 0x09, 0x57, 0x7d,
-	0x02, 0x4d, 0xb7, 0x46, 0x92, 0x5c, 0x43, 0x33, 0x07, 0x71, 0x2f, 0xad, 0xe5, 0x49, 0x97, 0xd4,
-	0x6c, 0xf5, 0x1e, 0x9a, 0x6f, 0x06, 0xb1, 0x50, 0x22, 0x90, 0xe4, 0x69, 0x34, 0x5f, 0x0f, 0x22,
-	0x4f, 0x27, 0xbc, 0x95, 0x6b, 0xd5, 0x29, 0x49, 0x33, 0x99, 0x2c, 0x22, 0xeb, 0x58, 0xc7, 0xd5,
-	0xa2, 0xd6, 0x31, 0xa0, 0x13, 0x5d, 0x47, 0x16, 0xb5, 0x4e, 0x00, 0xdd, 0xd6, 0xe1, 0xb4, 0xa8,
-	0x75, 0x1b, 0x8e, 0x97, 0x1e, 0x1d, 0xeb, 0x78, 0x95, 0x28, 0x0c, 0xab, 0x9f, 0x43, 0xf5, 0xc6,
-	0x31, 0x57, 0x94, 0x77, 0x21, 0x33, 0x4d, 0xe3, 0x34, 0xe7, 0x3f, 0x9b, 0xb5, 0xcc, 0x03, 0xee,
-	0x09, 0x96, 0x95, 0x6f, 0x99, 0x4e, 0x08, 0xf2, 0x7f, 0x68, 0xce, 0xed, 0xf4, 0xf9, 0x20, 0x2d,
-	0xcb, 0x65, 0xed, 0xe5, 0x31, 0x75, 0x0c, 0x4b, 0x13, 0x35, 0xcd, 0xac, 0xb9, 0x2c, 0xb3, 0xa0,
-	0x32, 0x9b, 0x62, 0x74, 0x5b, 0x78, 0xaa, 0xaf, 0xef, 0xa8, 0x59, 0x9a, 0x61, 0x58, 0xb3, 0x29,
-	0x46, 0x7b, 0x5c, 0xf4, 0xfa, 0xca, 0x5e, 0xd0, 0xe2, 0x84, 0xd0, 0x6a, 0x7f, 0x1c, 0x9b, 0x4f,
-	0x17, 0xf5, 0x66, 0x26, 0x04, 0x74, 0x14, 0x00, 0xc9, 0xc7, 0x4b, 0x5a, 0xce, 0x31, 0xd5, 0x1f,
-	0x59, 0xe8, 0x42, 0x3d, 0x90, 0x8a, 0x4b, 0x65, 0xea, 0x5b, 0x0f, 0x1b, 0x4c, 0x31, 0xbd, 0xbb,
-	0x45, 0x9a, 0xa7, 0x72, 0x16, 0x7a, 0xff, 0x33, 0xe6, 0x4a, 0xc9, 0x51, 0xe4, 0x49, 0xb4, 0x94,
-	0x83, 0x4e, 0x43, 0x07, 0x62, 0x9a, 0x16, 0x49, 0x98, 0x67, 0x5f, 0xc8, 0xbb, 0x71, 0x72, 0xa9,
-	0x23, 0x6d, 0x93, 0xa7, 0xaa, 0x5f, 0x45, 0xe5, 0x7a, 0x34, 0x0e, 0x55, 0x00, 0xf5, 0xbb, 0x89,
-	0x16, 0x12, 0x20, 0x54, 0x52, 0x6b, 0xcb, 0x9b, 0xd8, 0x64, 0xc0, 0x84, 0xa7, 0x79, 0x23, 0x08,
-	0xe8, 0xab, 0x7c, 0xbc, 0x33, 0x56, 0x3c, 0xd6, 0x7e, 0x2e, 0xd2, 0x0c, 0x57, 0xdf, 0x2b, 0x99,
-	0x5e, 0xe7, 0xc8, 0x6e, 0x00, 0xf1, 0x83, 0x71, 0xbe, 0x0b, 0x4d, 0x08, 0xc8, 0x82, 0x96, 0x50,
-	0x7e, 0xba, 0x57, 0x03, 0x60, 0x72, 0x77, 0x78, 0x47, 0x69, 0xc1, 0x74, 0x95, 0x0c, 0xc3, 0x17,
-	0xdb, 0x77, 0x82, 0xa1, 0x4a, 0x4e, 0xd7, 0x00, 0xb8, 0x6e, 0x6e, 0xf9, 0xe3, 0xd0, 0x1c, 0x6e,
-	0x76, 0x27, 0x25, 0xb9, 0x46, 0x8d, 0x46, 0xfe, 0x1f, 0x21, 0x3d, 0xd8, 0x67, 0x51, 0x8f, 0xeb,
-	0xb3, 0x3c, 0x67, 0x99, 0x33, 0x20, 0x8f, 0xa3, 0x19, 0x08, 0x99, 0xbd, 0xfc, 0x20, 0x43, 0x2d,
-	0x41, 0xaf, 0xa9, 0x47, 0x9c, 0x29, 0xee, 0xd9, 0x2b, 0xa6, 0xd7, 0x24, 0x10, 0xb6, 0x70, 0x10,
-	0x78, 0xa2, 0x2b, 0xb8, 0x67, 0xaf, 0x6a, 0x29, 0xc3, 0xd5, 0x6f, 0x5a, 0xba, 0x55, 0xf4, 0x5b,
-	0xc1, 0x5d, 0x2e, 0xe1, 0xb0, 0xb6, 0x3b, 0x1d, 0x1e, 0xc7, 0x1a, 0x26, 0xe5, 0x90, 0xa7, 0x20,
-	0x84, 0x7a, 0xa0, 0x93, 0xc2, 0x34, 0xbb, 0x09, 0x41, 0xaa, 0x70, 0x8b, 0x77, 0x23, 0x1e, 0x9b,
-	0xf9, 0x92, 0xaa, 0x29, 0x70, 0xd0, 0x2b, 0x77, 0x47, 0xa1, 0x88, 0xc6, 0xe9, 0x03, 0xcf, 0xa0,
-	0xea, 0x6f, 0x4a, 0x68, 0xba, 0x45, 0x5d, 0x78, 0x2e, 0xbc, 0x76, 0xc3, 0x7e, 0x5a, 0x97, 0x6e,
-	0xe9, 0xb5, 0x1b, 0x1a, 0x6f, 0xda, 0x1b, 0x09, 0xde, 0xd4, 0x78, 0xcb, 0x7e, 0x26, 0xc1, 0x5b,
-	0xe4, 0x4b, 0xa8, 0xec, 0x76, 0x98, 0xcf, 0x0f, 0x02, 0x8f, 0xdb, 0x9b, 0x3a, 0x5f, 0x6c, 0x1d,
-	0x9f, 0x16, 0x75, 0xaf, 0x9f, 0x88, 0x78, 0xc8, 0xfc, 0x4c, 0xa7, 0x13, 0x53, 0xf0, 0x43, 0x83,
-	0x1b, 0xf6, 0x96, 0x2e, 0x95, 0x04, 0x65, 0xfc, 0xa6, 0xfd, 0x42, 0x8e, 0xdf, 0xcc, 0xf8, 0x2d,
-	0xfb, 0xc5, 0x1c, 0xbf, 0x05, 0x71, 0xa7, 0x81, 0x62, 0x8a, 0xdf, 0xb0, 0xbf, 0xa2, 0x85, 0x14,
-	0x4e, 0x94, 0x4d, 0xfb, 0xe5, 0xbc, 0xb2, 0x39, 0x51, 0xb6, 0xec, 0x57, 0xf2, 0xca, 0x56, 0xf5,
-	0x79, 0x74, 0xf1, 0x8c, 0xcf, 0x64, 0xc9, 0x34, 0x73, 0x4d, 0xe0, 0x29, 0xb2, 0x8c, 0xd0, 0x4d,
-	0x31, 0xe2, 0x9e, 0xc1, 0x56, 0xb5, 0x8f, 0xd0, 0x4d, 0xce, 0xbd, 0x26, 0x8b, 0xd8, 0x20, 0x86,
-	0x7b, 0xe2, 0x38, 0xf4, 0x98, 0xe2, 0x8e, 0x54, 0x3c, 0xba, 0xcf, 0xfc, 0x03, 0x21, 0xf5, 0x39,
-	0x95, 0xe8, 0x79, 0xe1, 0x01, 0xd6, 0x6c, 0xa4, 0x0f, 0xed, 0xbc, 0x35, 0x1b, 0x41, 0x03, 0x59,
-	0x80, 0xde, 0xe0, 0xf2, 0xde, 0x00, 0x9a, 0x88, 0x8d, 0x2e, 0x40, 0x91, 0x1d, 0x75, 0x63, 0x5d,
-	0x19, 0x33, 0x34, 0x85, 0x10, 0x2b, 0x18, 0xba, 0x6f, 0xe8, 0xca, 0x98, 0xa1, 0x09, 0x82, 0x16,
-	0xe5, 0x48, 0x5f, 0x48, 0xae, 0xbb, 0xce, 0x05, 0x5d, 0xab, 0x39, 0x06, 0xb2, 0xcb, 0x55, 0x11,
-	0x67, 0x03, 0x68, 0x99, 0xc9, 0x2b, 0x35, 0x23, 0xf4, 0xac, 0x7e, 0x70, 0x27, 0xeb, 0x22, 0x09,
-	0xaa, 0xbe, 0x84, 0xa6, 0x77, 0x23, 0x78, 0x04, 0xcf, 0xd4, 0x21, 0x07, 0x4c, 0xcf, 0x58, 0xd4,
-	0x39, 0xb0, 0x1b, 0x45, 0xc0, 0x51, 0xad, 0x40, 0x2f, 0x3e, 0x88, 0x7b, 0x49, 0xda, 0xc2, 0x70,
-	0xe3, 0x1b, 0x16, 0x9a, 0xad, 0x07, 0x32, 0x56, 0x10, 0x56, 0x3d, 0x68, 0xc3, 0xf3, 0x13, 0x4f,
-	0x91, 0xcb, 0x88, 0x18, 0xdc, 0x72, 0x1a, 0x3b, 0x42, 0xb2, 0x68, 0xbc, 0xcf, 0x25, 0x5e, 0x2b,
-	0xf0, 0xae, 0x8a, 0x84, 0xec, 0x01, 0xff, 0x02, 0xb1, 0xd1, 0x4a, 0xc6, 0xb7, 0xc4, 0x80, 0xc7,
-	0x8a, 0x0d, 0x42, 0xf7, 0x0d, 0x3c, 0x4f, 0x1e, 0x47, 0xd7, 0xb2, 0x99, 0xd9, 0xd0, 0x57, 0xb7,
-	0xa2, 0xb0, 0xe3, 0xf2, 0x08, 0xde, 0xde, 0xcd, 0x20, 0x52, 0xf8, 0xa3, 0xf5, 0x8d, 0x7f, 0x5a,
-	0xba, 0xdb, 0xc6, 0x2a, 0x79, 0x32, 0x3f, 0x84, 0x2e, 0xe6, 0x60, 0x5b, 0x0a, 0x1f, 0x4f, 0x9d,
-	0x25, 0x77, 0xa3, 0x08, 0xcf, 0x91, 0x6b, 0xc8, 0xce, 0x93, 0xf9, 0x37, 0x34, 0x46, 0xe4, 0x11,
-	0xb4, 0x9a, 0x57, 0xb3, 0xf7, 0x0e, 0x5e, 0x20, 0xab, 0xe8, 0x52, 0x5e, 0xd2, 0x0f, 0x7b, 0xbc,
-	0x42, 0x2a, 0xe8, 0xca, 0x39, 0x3a, 0xfb, 0x55, 0x80, 0x57, 0xc9, 0xa3, 0xe8, 0x91, 0x73, 0x7a,
-	0xfa, 0x7b, 0x00, 0x5f, 0x26, 0x95, 0xa2, 0xec, 0xc4, 0xf1, 0x90, 0x47, 0x8e, 0x14, 0x2a, 0xde,
-	0x56, 0xf8, 0xad, 0xd2, 0xc6, 0x9b, 0x68, 0x56, 0xff, 0x00, 0x84, 0x70, 0xeb, 0x41, 0xfb, 0x30,
-	0x38, 0x0a, 0xf1, 0x14, 0x21, 0x68, 0xd9, 0xe0, 0x03, 0xae, 0x18, 0xbc, 0x4e, 0xf0, 0x0c, 0xb9,
-	0x84, 0x96, 0x0c, 0x97, 0x3c, 0x9a, 0xf0, 0x1c, 0x44, 0x3f, 0xa1, 0x86, 0x71, 0x1f, 0xcc, 0xe0,
-	0x3d, 0x8d, 0x11, 0x59, 0x41, 0xd8, 0xf0, 0xf5, 0x3e, 0xef, 0xdc, 0x0d, 0x03, 0x21, 0x15, 0xb6,
-	0xc9, 0x45, 0xb4, 0x90, 0xb0, 0xf0, 0xee, 0xc1, 0x5f, 0xdf, 0x70, 0xd1, 0x7c, 0xfa, 0x93, 0x2f,
-	0x99, 0x5d, 0x8f, 0xdb, 0x87, 0x81, 0x84, 0xd2, 0xb2, 0xd1, 0x4a, 0x46, 0x99, 0x7b, 0xc1, 0xe7,
-	0x8a, 0x7b, 0xb8, 0x44, 0xae, 0xa0, 0xd5, 0x4c, 0x31, 0xef, 0x47, 0xb7, 0xcf, 0x22, 0xee, 0xc1,
-	0x9e, 0xf6, 0xce, 0xbd, 0xd4, 0xc9, 0x55, 0xf4, 0xf0, 0x19, 0xaa, 0xbd, 0x2f, 0x14, 0x8f, 0x98,
-	0x6f, 0x56, 0x39, 0x2b, 0xc2, 0xab, 0x1c, 0x5b, 0x1b, 0x1f, 0x58, 0x93, 0xc7, 0x8f, 0x49, 0x28,
-	0x33, 0x6e, 0x1f, 0xcb, 0x38, 0xe4, 0x1d, 0xdd, 0xb1, 0xf1, 0x14, 0x6c, 0x36, 0x53, 0x8e, 0x22,
-	0x8f, 0x83, 0x1f, 0x96, 0xc9, 0x84, 0x84, 0xd5, 0x3f, 0x62, 0xdb, 0x75, 0x16, 0x29, 0x1e, 0x0b,
-	0x26, 0xf1, 0x2c, 0x78, 0x74, 0x46, 0xdd, 0xe3, 0xa3, 0xdd, 0xfb, 0x5c, 0x52, 0x3c, 0x67, 0xd2,
-	0x24, 0x11, 0x6f, 0xf1, 0x40, 0x78, 0x6d, 0x37, 0xec, 0xf3, 0x88, 0x63, 0x54, 0xf0, 0xc2, 0x48,
-	0xb7, 0x6f, 0xb9, 0x5f, 0x7e, 0x01, 0x2f, 0x6c, 0xfc, 0xcc, 0x42, 0xe5, 0xec, 0xb9, 0x03, 0xd1,
-	0xcc, 0x40, 0x7b, 0x5b, 0x8e, 0xcd, 0x91, 0x4e, 0x28, 0x28, 0x6f, 0x6c, 0x15, 0xb9, 0xbd, 0x56,
-	0xab, 0x89, 0x4b, 0x45, 0xee, 0xa6, 0xf0, 0x39, 0x9e, 0x3d, 0x33, 0x5d, 0xd4, 0xd1, 0x4e, 0xae,
-	0x4c, 0xa8, 0x7a, 0xc4, 0x14, 0xd7, 0x17, 0x20, 0x7e, 0x7b, 0xf5, 0x8c, 0x04, 0x0f, 0x61, 0x18,
-	0x32, 0xfc, 0xce, 0xea, 0xc6, 0x8f, 0xad, 0xc2, 0x83, 0x02, 0x26, 0xce, 0x60, 0xfb, 0x50, 0xd7,
-	0x15, 0x04, 0x2e, 0xa3, 0x5c, 0xde, 0x89, 0xb8, 0xda, 0x09, 0x46, 0xed, 0x43, 0x56, 0xf7, 0x31,
-	0x5c, 0x9e, 0x97, 0x27, 0xea, 0x76, 0x3c, 0x1e, 0x1c, 0xc4, 0x3d, 0xa3, 0xf1, 0xa2, 0xe6, 0x8a,
-	0x9e, 0x14, 0x32, 0xd1, 0xba, 0xba, 0x12, 0xce, 0x69, 0xbb, 0x8d, 0xcd, 0x17, 0x5f, 0xbc, 0xf1,
-	0x12, 0xfe, 0xbb, 0xb5, 0xf1, 0xdf, 0x39, 0x74, 0x21, 0xe9, 0x4e, 0xe0, 0x54, 0x32, 0x6c, 0x1f,
-	0x06, 0x50, 0xd7, 0x53, 0xe4, 0x61, 0x44, 0x52, 0xea, 0x58, 0x4a, 0x36, 0xe0, 0x1e, 0xf0, 0xdf,
-	0xaa, 0x11, 0x1b, 0x3d, 0x94, 0x0a, 0xba, 0x37, 0x4b, 0xe6, 0x83, 0xf2, 0xed, 0x1a, 0xe4, 0xe8,
-	0xe4, 0x93, 0x78, 0x18, 0x86, 0x41, 0xa4, 0xb8, 0x77, 0x14, 0xe2, 0xef, 0x9c, 0xd1, 0xc4, 0x20,
-	0xf4, 0x39, 0x74, 0x70, 0xee, 0xe1, 0xef, 0xd6, 0xc8, 0x0a, 0xba, 0x98, 0x6a, 0xd0, 0xb8, 0x82,
-	0xa1, 0xc2, 0xdf, 0xab, 0x41, 0x4c, 0x53, 0xd6, 0xed, 0x0f, 0x95, 0x12, 0xb2, 0xd7, 0x08, 0x5e,
-	0x97, 0xf8, 0xed, 0x82, 0x74, 0x18, 0xa8, 0x7a, 0x20, 0x25, 0xef, 0xc0, 0x5c, 0xef, 0xd4, 0xf2,
-	0x6e, 0xc3, 0xab, 0xe2, 0x26, 0x13, 0x3e, 0xf7, 0xf0, 0xf7, 0x0b, 0x6e, 0xeb, 0x9e, 0x91, 0x28,
-	0xef, 0xd6, 0xc8, 0x55, 0x74, 0x39, 0x5b, 0x88, 0xc7, 0xb1, 0x08, 0xa4, 0x7e, 0x10, 0x70, 0x0f,
-	0xff, 0xa0, 0xf0, 0x19, 0xe5, 0xf7, 0x0e, 0x03, 0x75, 0x33, 0x18, 0x4a, 0x0f, 0xff, 0xb0, 0xb0,
-	0x92, 0x23, 0xef, 0x33, 0x5f, 0x78, 0x94, 0xdf, 0xc3, 0x3f, 0x79, 0x90, 0x00, 0x0d, 0xef, 0xbd,
-	0x1a, 0x59, 0x45, 0x38, 0x15, 0x76, 0x98, 0x77, 0xc2, 0xfc, 0x21, 0xc7, 0x3f, 0xad, 0x91, 0x6b,
-	0xe8, 0xe1, 0xdc, 0x6e, 0xfa, 0x42, 0xf6, 0x5a, 0x01, 0xfc, 0xd0, 0x15, 0x0a, 0xff, 0xbc, 0xb0,
-	0x57, 0x43, 0x26, 0x8e, 0xff, 0xa2, 0xe0, 0xb8, 0xf9, 0xa7, 0x51, 0xe6, 0xde, 0xfb, 0x85, 0x80,
-	0x1b, 0x11, 0xbe, 0x1b, 0x46, 0x1c, 0xff, 0xb2, 0xb0, 0xa9, 0xed, 0x30, 0xcc, 0xbe, 0xfa, 0xa0,
-	0xa0, 0x34, 0x78, 0x37, 0x53, 0x7e, 0x55, 0x50, 0x0e, 0x98, 0xdf, 0x0d, 0xa2, 0x01, 0xf7, 0x5a,
-	0x23, 0xfc, 0x61, 0xc1, 0x43, 0xa8, 0xd2, 0xec, 0xa3, 0xdf, 0xd5, 0x20, 0x07, 0xcf, 0x48, 0xe9,
-	0xfd, 0xc0, 0x3d, 0xfc, 0xfb, 0x1a, 0xb9, 0x8c, 0x2e, 0xe5, 0x22, 0x92, 0x14, 0xcd, 0x1f, 0x8a,
-	0x6e, 0x30, 0xc5, 0x52, 0xd7, 0xff, 0x58, 0xf8, 0x62, 0x77, 0x04, 0x09, 0x06, 0xb9, 0xf7, 0xa7,
-	0x02, 0xdf, 0xcc, 0x0e, 0xf7, 0xcf, 0x35, 0xf2, 0x28, 0xb2, 0x73, 0xbc, 0xfe, 0x65, 0x30, 0x52,
-	0xba, 0x1b, 0x7b, 0xf8, 0x2f, 0xc5, 0xe8, 0x72, 0xdf, 0xcf, 0x7c, 0xff, 0x6b, 0xc1, 0x87, 0x66,
-	0x14, 0xdc, 0x17, 0x1e, 0x8f, 0x60, 0xad, 0xbf, 0xd5, 0xc8, 0x63, 0xe8, 0x4a, 0xaa, 0x9c, 0x88,
-	0xc0, 0x67, 0x8a, 0xc7, 0xdb, 0x61, 0xc8, 0xa5, 0x77, 0x24, 0xfd, 0x31, 0xfe, 0x77, 0x8d, 0x3c,
-	0x89, 0x1e, 0x9b, 0x64, 0x40, 0x3c, 0xec, 0x76, 0x45, 0x47, 0x70, 0xa9, 0x9a, 0x3c, 0x1a, 0x08,
-	0x9d, 0x60, 0x31, 0xfe, 0x4f, 0x6d, 0xf3, 0x86, 0xf9, 0x7f, 0x1a, 0xdc, 0xc6, 0xe4, 0x29, 0xb4,
-	0x00, 0xe3, 0x24, 0xff, 0x48, 0xf6, 0xfb, 0xf4, 0x4a, 0x36, 0x5a, 0xb7, 0x9e, 0xb7, 0x76, 0x5e,
-	0xf9, 0xf8, 0xd3, 0xca, 0xd4, 0x27, 0x9f, 0x56, 0xa6, 0x3e, 0xff, 0xb4, 0x62, 0xbd, 0x75, 0x5a,
-	0xb1, 0xde, 0x3f, 0xad, 0x58, 0x1f, 0x9d, 0x56, 0xac, 0x8f, 0x4f, 0x2b, 0xd6, 0x3f, 0x4e, 0x2b,
-	0xd6, 0xbf, 0x4e, 0x2b, 0x53, 0x9f, 0x9f, 0x56, 0xac, 0x77, 0x3f, 0xab, 0x4c, 0x7d, 0xfc, 0x59,
-	0x65, 0xea, 0x93, 0xcf, 0x2a, 0x53, 0x1f, 0x94, 0xe6, 0xb7, 0xa3, 0x4e, 0x1c, 0xb2, 0x0e, 0xbf,
-	0x33, 0xa7, 0xff, 0x45, 0xba, 0xf5, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xec, 0xb7, 0x3f, 0x6c,
-	0x38, 0x15, 0x00, 0x00,
+	// 2604 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x58, 0xcd, 0x6f, 0xe3, 0xc6,
+	0x15, 0x37, 0x65, 0xcb, 0xb6, 0xc6, 0x96, 0x77, 0x76, 0x62, 0x6f, 0x98, 0xcd, 0xae, 0xe2, 0xa8,
+	0x49, 0xe5, 0x38, 0xe9, 0x26, 0x96, 0x93, 0xa0, 0x3d, 0x34, 0x81, 0x57, 0xf2, 0xae, 0x85, 0xf8,
+	0x43, 0x18, 0x49, 0xbb, 0x01, 0x0a, 0x54, 0xa0, 0xc5, 0x91, 0x44, 0x84, 0x1a, 0x72, 0xc9, 0x91,
+	0x23, 0x05, 0x28, 0x10, 0x14, 0x05, 0xfa, 0x99, 0x34, 0x2d, 0xd0, 0x9e, 0xda, 0x5e, 0x0a, 0xb4,
+	0x69, 0xd0, 0x43, 0x2e, 0x05, 0x8a, 0x7e, 0xa3, 0xbd, 0x04, 0x3d, 0xe5, 0x98, 0x63, 0xb3, 0x39,
+	0xb4, 0x87, 0x16, 0xc8, 0x5f, 0xd0, 0x16, 0xef, 0x0d, 0x49, 0x91, 0xf6, 0xe6, 0x20, 0x60, 0x7e,
+	0xbf, 0xdf, 0x7c, 0xbc, 0x79, 0xf3, 0xde, 0x9b, 0xa1, 0x08, 0xb3, 0x7c, 0x27, 0x7c, 0xd6, 0x0a,
+	0x7a, 0xf0, 0xbb, 0xe1, 0x07, 0x9e, 0xf2, 0xd8, 0xbc, 0x15, 0xf4, 0xca, 0x2e, 0x99, 0x3f, 0x0a,
+	0x07, 0x6c, 0x9d, 0xe4, 0xb9, 0xb8, 0xd7, 0xa8, 0x9b, 0xc6, 0xa6, 0xb1, 0xb5, 0xc0, 0x35, 0x60,
+	0x15, 0xb2, 0x54, 0x13, 0xae, 0xdb, 0x9e, 0x84, 0x66, 0x7e, 0x73, 0x7e, 0x6b, 0xa5, 0x5a, 0xbc,
+	0x01, 0xc3, 0x35, 0xd7, 0x3c, 0xe5, 0xb1, 0xca, 0x3e, 0x4f, 0x16, 0x5b, 0xca, 0x52, 0xe3, 0xd0,
+	0x9c, 0xdf, 0x34, 0xb6, 0xd6, 0xaa, 0x6b, 0xd8, 0x8f, 0x8b, 0x7b, 0x9a, 0xe5, 0x91, 0x5a, 0x7e,
+	0x33, 0x47, 0x96, 0xe3, 0xd1, 0xec, 0x3a, 0xc9, 0x9d, 0xf8, 0xb8, 0xe0, 0x5a, 0x66, 0xe2, 0x13,
+	0x9f, 0xe7, 0x4e, 0x7c, 0x76, 0x55, 0x77, 0x6d, 0xf9, 0xa2, 0x67, 0xe6, 0x36, 0x8d, 0xad, 0x22,
+	0x4f, 0x30, 0x7b, 0x94, 0x14, 0xda, 0x8d, 0x7a, 0xb7, 0xd3, 0xae, 0xed, 0xbc, 0x68, 0x2e, 0x6e,
+	0x1a, 0x5b, 0x8b, 0x7c, 0xb9, 0xdd, 0xa8, 0x23, 0x8e, 0xc5, 0x83, 0xbd, 0xd6, 0xc1, 0x8e, 0xb9,
+	0x94, 0x88, 0x88, 0xd3, 0x62, 0xd5, 0x5c, 0xce, 0x88, 0xd5, 0xb4, 0xb8, 0x6b, 0x16, 0x32, 0xe2,
+	0x2e, 0x2b, 0x11, 0xd2, 0xb6, 0x82, 0x81, 0x50, 0x60, 0x05, 0xee, 0x73, 0x9e, 0xa7, 0x18, 0xf6,
+	0x24, 0xc9, 0xef, 0xbb, 0x62, 0x14, 0x9a, 0x0b, 0xe8, 0xaa, 0x4b, 0xb8, 0xa3, 0x3d, 0xa5, 0x02,
+	0x60, 0x9b, 0xa7, 0x5c, 0xab, 0xe5, 0x43, 0x42, 0x66, 0x24, 0xbb, 0x42, 0x16, 0x01, 0x25, 0x8e,
+	0x8f, 0x10, 0xf0, 0x77, 0x2c, 0xf7, 0xe6, 0xb8, 0x8f, 0x5b, 0x5f, 0xe5, 0x11, 0x62, 0x6b, 0x24,
+	0xd7, 0x6a, 0x44, 0x8b, 0xe7, 0x5a, 0x8d, 0xf2, 0xeb, 0x64, 0xa5, 0xe9, 0x5a, 0x52, 0xa8, 0x7d,
+	0xdf, 0xeb, 0x0d, 0xc1, 0x67, 0xd8, 0x68, 0x47, 0x13, 0xae, 0xf2, 0x04, 0xb3, 0x67, 0xc8, 0x2a,
+	0xb6, 0xf7, 0xa5, 0x0a, 0x1c, 0x11, 0x9a, 0x39, 0x34, 0x73, 0x19, 0xcd, 0x3c, 0x0a, 0x07, 0x3c,
+	0xa3, 0xc2, 0x6e, 0x6b, 0xde, 0x68, 0xe4, 0xc9, 0x63, 0x6b, 0x24, 0x70, 0xc1, 0x02, 0x4f, 0x31,
+	0xe5, 0xaf, 0x91, 0xfc, 0xa1, 0x37, 0x70, 0x24, 0x33, 0xc9, 0x52, 0x27, 0x14, 0x41, 0x27, 0x5a,
+	0xb1, 0xc0, 0x63, 0x08, 0xc6, 0x1c, 0x78, 0xa1, 0xda, 0xb3, 0xed, 0x00, 0x77, 0x51, 0xe0, 0x09,
+	0x66, 0x9b, 0x64, 0xa5, 0x2e, 0xce, 0x9c, 0x9e, 0x38, 0xb4, 0x4e, 0x85, 0x8b, 0x07, 0x51, 0xe0,
+	0x69, 0x8a, 0x5d, 0x23, 0x05, 0x0d, 0x61, 0xe6, 0x02, 0xea, 0x33, 0xa2, 0xfc, 0x04, 0x59, 0xc3,
+	0xe5, 0x6b, 0x43, 0xcb, 0x75, 0x85, 0x1c, 0x08, 0xc6, 0xc8, 0xc2, 0x81, 0x15, 0x0e, 0xa3, 0x6d,
+	0x63, 0xbb, 0xfc, 0x34, 0x29, 0x62, 0x2f, 0x2e, 0x42, 0xdf, 0x93, 0xa1, 0x40, 0x93, 0xac, 0x70,
+	0x08, 0x38, 0xf6, 0x4f, 0x8c, 0xcb, 0xcf, 0x90, 0xc5, 0xd6, 0x74, 0x74, 0xea, 0xb9, 0xe0, 0xe4,
+	0x68, 0x37, 0x45, 0x9e, 0x6b, 0xd4, 0x61, 0x6a, 0xf4, 0x82, 0x3e, 0x0a, 0x6c, 0x97, 0xdf, 0x37,
+	0xc8, 0x2a, 0x17, 0x03, 0x27, 0x54, 0x22, 0xa8, 0x8b, 0x7e, 0xc8, 0x9e, 0x24, 0x4b, 0x7a, 0x78,
+	0x68, 0x1a, 0xe8, 0xd9, 0x15, 0xf4, 0xac, 0xe6, 0x78, 0xac, 0xb1, 0xcf, 0x91, 0x3c, 0x1c, 0x71,
+	0xec, 0xfe, 0x62, 0x12, 0x25, 0x10, 0xd7, 0x5c, 0x6b, 0xd0, 0x09, 0x42, 0x0a, 0xb2, 0x29, 0x9b,
+	0x75, 0xba, 0x13, 0x6a, 0xec, 0x59, 0x52, 0x68, 0x09, 0x57, 0xf4, 0x94, 0x17, 0xc4, 0x31, 0x77,
+	0x19, 0x3b, 0x36, 0x94, 0x18, 0xc5, 0x0a, 0x9f, 0xf5, 0x29, 0xff, 0xd6, 0x20, 0xcb, 0xf1, 0x4a,
+	0x90, 0xf0, 0x75, 0xd1, 0x4f, 0xb6, 0xa9, 0x01, 0xc6, 0x8f, 0x2b, 0x46, 0xed, 0xa9, 0xaf, 0xcf,
+	0xbc, 0xc8, 0x13, 0x0c, 0x11, 0xd1, 0x12, 0x10, 0x1b, 0x98, 0x91, 0x0b, 0xa8, 0xa6, 0x18, 0xf6,
+	0x12, 0xb9, 0xa4, 0x51, 0x43, 0xda, 0x62, 0x82, 0x53, 0xe4, 0x31, 0xb7, 0xd7, 0xb5, 0x23, 0xb2,
+	0x1a, 0x3f, 0xdf, 0x19, 0xd6, 0x06, 0xeb, 0xd0, 0xd3, 0x8b, 0x7a, 0xed, 0x18, 0x97, 0xed, 0x59,
+	0x2d, 0xf8, 0x0c, 0xcb, 0x37, 0xc9, 0x8a, 0x8e, 0x4e, 0xed, 0x5d, 0xf0, 0x47, 0x91, 0xa7, 0x29,
+	0xe8, 0xd1, 0x74, 0xa4, 0x14, 0xb6, 0xee, 0x91, 0xd7, 0x3d, 0x52, 0x54, 0xf9, 0x55, 0xb2, 0x9a,
+	0xf6, 0xdd, 0x67, 0xac, 0x64, 0x92, 0xa5, 0x86, 0xec, 0xb9, 0x63, 0x5b, 0x44, 0xab, 0xc4, 0x10,
+	0x94, 0xfd, 0x89, 0x56, 0xf4, 0xec, 0x31, 0x2c, 0x5f, 0x27, 0x85, 0x03, 0x4b, 0xda, 0xae, 0xe8,
+	0xf0, 0x06, 0xa3, 0x64, 0xbe, 0xc3, 0x1b, 0x51, 0xb6, 0x40, 0xb3, 0xfc, 0x4f, 0x83, 0x90, 0x26,
+	0x84, 0xe9, 0xbd, 0xb1, 0x08, 0x15, 0x5a, 0x6a, 0x05, 0x42, 0xaa, 0x74, 0x49, 0x4e, 0x53, 0x50,
+	0x1e, 0x9a, 0x8e, 0xec, 0xf0, 0xc3, 0x28, 0xb1, 0x22, 0x04, 0x49, 0xd3, 0x74, 0x24, 0xb8, 0xaa,
+	0x51, 0x8f, 0xaa, 0xc4, 0x8c, 0x60, 0x37, 0x08, 0xd3, 0x93, 0x60, 0x14, 0x44, 0xbb, 0xc4, 0x43,
+	0x2a, 0xf2, 0x07, 0x28, 0xec, 0x19, 0x72, 0xb9, 0x36, 0x74, 0x5c, 0x1b, 0x5d, 0x1f, 0x77, 0xd7,
+	0x47, 0x73, 0x51, 0x80, 0xa0, 0xbd, 0xe5, 0x5a, 0x83, 0x10, 0x4b, 0x6e, 0x5c, 0xd1, 0x9b, 0x8e,
+	0x44, 0x92, 0x6b, 0xad, 0x7c, 0x8f, 0x2c, 0x37, 0xbd, 0xd0, 0x51, 0x8e, 0x27, 0xd9, 0x53, 0x64,
+	0xb9, 0xe6, 0x05, 0x36, 0x46, 0x4a, 0xe6, 0x16, 0x88, 0x48, 0x9e, 0xc8, 0x6c, 0x95, 0x18, 0x1d,
+	0xdc, 0x8f, 0xc1, 0x8d, 0x0e, 0xa0, 0x3b, 0x18, 0x80, 0x06, 0x37, 0xee, 0x00, 0xba, 0x8b, 0x9b,
+	0x30, 0xb8, 0x71, 0x17, 0x9c, 0xcb, 0x4f, 0x3a, 0x68, 0x65, 0x8e, 0x43, 0xb3, 0xfc, 0x29, 0x84,
+	0x7d, 0x18, 0x0a, 0xc5, 0x45, 0x1f, 0x8e, 0x54, 0x57, 0x1c, 0xed, 0xfd, 0x7c, 0x52, 0x6b, 0x8e,
+	0x84, 0xed, 0x58, 0x49, 0xdc, 0x17, 0xf8, 0x8c, 0xc0, 0xcb, 0xad, 0x37, 0x14, 0xa3, 0x38, 0x9e,
+	0xf5, 0xe5, 0xd6, 0xe1, 0x0d, 0xcd, 0xf2, 0x48, 0x8d, 0xcf, 0x75, 0x31, 0x39, 0x57, 0x08, 0xe9,
+	0xa6, 0x33, 0xb9, 0xeb, 0xd8, 0x6a, 0x68, 0x92, 0x4d, 0x63, 0x2b, 0xcf, 0x13, 0xac, 0x8f, 0x6a,
+	0x72, 0x20, 0x9c, 0xc1, 0x50, 0x99, 0x2b, 0x28, 0xce, 0x08, 0x54, 0x87, 0xd3, 0x50, 0x0f, 0x5d,
+	0xc5, 0xcd, 0xcc, 0x08, 0x48, 0x45, 0x00, 0xd1, 0xe0, 0x22, 0xca, 0x29, 0xa6, 0xfc, 0x23, 0x83,
+	0x2c, 0xd5, 0x3c, 0xa9, 0x84, 0x54, 0x3a, 0x31, 0xb0, 0x59, 0xb7, 0x94, 0x85, 0xbb, 0x5b, 0xe5,
+	0x69, 0x2a, 0xd5, 0x03, 0xf7, 0xbf, 0xa0, 0x6b, 0x71, 0x8a, 0x62, 0x4f, 0x90, 0x62, 0x0a, 0x36,
+	0xea, 0xe8, 0x88, 0x79, 0x9e, 0x25, 0x61, 0x9e, 0x43, 0x47, 0xbe, 0x16, 0x46, 0xe1, 0x47, 0xb0,
+	0x4f, 0x9a, 0x2a, 0x7f, 0x85, 0x14, 0x6a, 0xc1, 0xd4, 0x57, 0xde, 0x2b, 0x62, 0xca, 0xaa, 0x64,
+	0x25, 0x02, 0x8e, 0x8a, 0xa2, 0x7c, 0xad, 0x4a, 0x75, 0x04, 0xcc, 0x78, 0x9e, 0xee, 0x04, 0x0e,
+	0x7d, 0x45, 0x4c, 0x6f, 0x4e, 0x95, 0x08, 0xd1, 0xce, 0x55, 0x9e, 0xe0, 0xf2, 0xff, 0x0c, 0x5d,
+	0x24, 0x1a, 0xb2, 0xef, 0xc1, 0x39, 0xb7, 0x1d, 0xe5, 0xc6, 0xbb, 0xd1, 0x00, 0x86, 0xb7, 0xc6,
+	0xa7, 0x0a, 0x85, 0xbc, 0xbe, 0x91, 0x62, 0x0c, 0x23, 0xf6, 0x4e, 0xbd, 0xb1, 0x8a, 0xce, 0x4f,
+	0x03, 0x08, 0xea, 0xdb, 0xee, 0xd4, 0xd7, 0xc7, 0x97, 0x94, 0xeb, 0x28, 0x9a, 0xb8, 0xd6, 0xd8,
+	0x17, 0x08, 0xc1, 0xc6, 0x21, 0x3c, 0x06, 0xf0, 0xb4, 0x2e, 0xf4, 0x4c, 0x75, 0x60, 0x8f, 0x93,
+	0x05, 0x70, 0x8a, 0xb9, 0xf6, 0xa0, 0x8e, 0x28, 0x41, 0x25, 0xa9, 0x05, 0xc2, 0x52, 0xc2, 0x36,
+	0xd7, 0xd1, 0x8d, 0x31, 0x84, 0x2d, 0x1c, 0x79, 0xb6, 0xd3, 0x77, 0x84, 0x6d, 0x6e, 0xa0, 0x94,
+	0xe0, 0xf2, 0x37, 0x0d, 0x52, 0xd8, 0x1b, 0xab, 0x61, 0xdb, 0x7b, 0x4d, 0x48, 0x38, 0x8e, 0xbd,
+	0x5e, 0x4f, 0x84, 0x21, 0xc2, 0x28, 0xe0, 0xd3, 0x14, 0x04, 0x19, 0x36, 0xf0, 0xd8, 0x75, 0x21,
+	0x99, 0x11, 0xac, 0x0c, 0x17, 0x5c, 0x3f, 0x10, 0xa1, 0x9e, 0x2f, 0xca, 0x8b, 0x0c, 0x07, 0x75,
+	0x68, 0x7f, 0xe2, 0x3b, 0xc1, 0x14, 0xfd, 0x3c, 0xcf, 0x23, 0x54, 0xfe, 0x4d, 0x8e, 0xcc, 0xb7,
+	0x79, 0x0b, 0x6e, 0xd2, 0x57, 0x77, 0xcc, 0xa7, 0x30, 0x39, 0x73, 0xaf, 0xee, 0x20, 0xae, 0x9a,
+	0xdb, 0x11, 0xae, 0x22, 0xde, 0x35, 0x9f, 0x8e, 0xf0, 0x2e, 0x7b, 0x91, 0x14, 0x5a, 0x3d, 0xcb,
+	0x15, 0x47, 0x9e, 0x2d, 0xcc, 0x2a, 0x46, 0x84, 0x89, 0xfe, 0x69, 0xf3, 0xd6, 0x8d, 0x3b, 0x4e,
+	0x38, 0xb6, 0xdc, 0x44, 0xe7, 0xb3, 0xae, 0x60, 0x07, 0x82, 0x1d, 0x73, 0x17, 0x93, 0x21, 0x42,
+	0x09, 0x5f, 0x35, 0x9f, 0x4f, 0xf1, 0xd5, 0x84, 0xdf, 0x35, 0x5f, 0x48, 0xf1, 0xbb, 0xe0, 0x77,
+	0xee, 0x29, 0x4b, 0x89, 0x1d, 0xf3, 0xcb, 0x28, 0xc4, 0x70, 0xa6, 0x54, 0xcd, 0x97, 0xd2, 0x4a,
+	0x75, 0xa6, 0xec, 0x9a, 0x2f, 0xa7, 0x95, 0xdd, 0xf2, 0x73, 0xe4, 0xd2, 0x39, 0x9b, 0x59, 0x11,
+	0x4f, 0xc8, 0x43, 0x82, 0xce, 0xb1, 0x35, 0x42, 0x6e, 0x39, 0x13, 0x61, 0x6b, 0x6c, 0x94, 0x87,
+	0x84, 0xdc, 0x12, 0xc2, 0x6e, 0x5a, 0x81, 0x35, 0x0a, 0xa1, 0xfe, 0x76, 0x7c, 0xdb, 0x52, 0xa2,
+	0x21, 0x95, 0x08, 0xce, 0x2c, 0xf7, 0xc8, 0x91, 0x78, 0x4e, 0x39, 0x7e, 0x51, 0x78, 0x40, 0x6f,
+	0x6b, 0x82, 0x87, 0x76, 0xb1, 0xb7, 0x35, 0x81, 0x12, 0xb1, 0x02, 0xd9, 0xdf, 0x12, 0x83, 0x11,
+	0x94, 0x09, 0x93, 0x2c, 0x41, 0x1a, 0x9d, 0xf4, 0x43, 0xcc, 0x8c, 0x05, 0x1e, 0x43, 0xf0, 0x15,
+	0x34, 0x5b, 0x6f, 0x60, 0x66, 0x2c, 0xf0, 0x08, 0x41, 0x11, 0x6a, 0x48, 0xd7, 0x91, 0x02, 0xeb,
+	0xca, 0x12, 0x66, 0x63, 0x8a, 0x81, 0xe8, 0x6a, 0xa9, 0x40, 0x58, 0x23, 0x28, 0x8a, 0xd1, 0x03,
+	0x2e, 0x21, 0x70, 0x56, 0xd7, 0x3b, 0x4d, 0xea, 0x44, 0x84, 0xca, 0x5f, 0x25, 0xf3, 0xfb, 0x01,
+	0xbc, 0x0f, 0x17, 0x6a, 0x10, 0x03, 0xba, 0x2a, 0xac, 0x62, 0x0c, 0xec, 0x07, 0x01, 0x70, 0x1c,
+	0x15, 0xc8, 0xcc, 0x43, 0x71, 0x26, 0x5c, 0x74, 0x48, 0x7c, 0x75, 0x1c, 0x7a, 0x03, 0x24, 0xb9,
+	0xd6, 0xa0, 0x24, 0x1f, 0x85, 0x83, 0xa8, 0x08, 0x40, 0x73, 0xfb, 0x1b, 0x06, 0xc9, 0xd7, 0x3c,
+	0x19, 0x2a, 0xf0, 0x3d, 0x36, 0xba, 0xf0, 0x7c, 0xa3, 0x73, 0xec, 0x0a, 0x61, 0x1a, 0xb7, 0x1b,
+	0xf5, 0x9b, 0x8e, 0xb4, 0x82, 0xe9, 0xa1, 0x90, 0x74, 0x33, 0xc3, 0xb7, 0x54, 0xe0, 0xc8, 0x01,
+	0xf0, 0xcf, 0x33, 0x93, 0xac, 0x27, 0x7c, 0xdb, 0x19, 0x89, 0x50, 0x59, 0x23, 0xbf, 0xf5, 0x06,
+	0x5d, 0x66, 0x8f, 0x93, 0x6b, 0xc9, 0xcc, 0xd6, 0xd8, 0x55, 0xb7, 0x03, 0xbf, 0xd7, 0x12, 0x01,
+	0xbc, 0x5d, 0x9b, 0x5e, 0xa0, 0xe8, 0x07, 0x5b, 0xdb, 0x5f, 0xcf, 0x61, 0xd1, 0x0d, 0x55, 0xf4,
+	0xe4, 0x7c, 0x88, 0x5c, 0x4a, 0xc1, 0xae, 0x74, 0x5c, 0x3a, 0x77, 0x9e, 0xdc, 0x0f, 0x02, 0x4a,
+	0xd8, 0x35, 0x62, 0xa6, 0xc9, 0xf4, 0x1b, 0x94, 0xae, 0xb0, 0x47, 0xc8, 0x46, 0x5a, 0x4d, 0x1e,
+	0x1d, 0x74, 0x95, 0x5d, 0x25, 0x57, 0xd2, 0xd2, 0xec, 0xbd, 0x41, 0x8b, 0x6c, 0x83, 0x5c, 0x4e,
+	0x6b, 0xf8, 0x68, 0xa6, 0xeb, 0xac, 0x44, 0xae, 0x5e, 0xa0, 0x93, 0x17, 0x37, 0xdd, 0x60, 0xd7,
+	0xc9, 0x23, 0x17, 0xf4, 0xf8, 0xad, 0x4d, 0xaf, 0xb0, 0x52, 0x56, 0x6e, 0x84, 0xe1, 0x58, 0x04,
+	0x0d, 0xe9, 0xa8, 0x70, 0x4f, 0xd1, 0x37, 0x73, 0xdb, 0xc7, 0xa4, 0x90, 0x7c, 0x22, 0x82, 0x09,
+	0x09, 0xe8, 0xb6, 0xa6, 0xb2, 0xe7, 0xc8, 0x01, 0x9d, 0x63, 0xeb, 0x84, 0x66, 0x69, 0x61, 0x53,
+	0x23, 0xcb, 0xd6, 0x5c, 0x2f, 0x14, 0x36, 0xdd, 0xdc, 0x76, 0xe3, 0x8f, 0xcb, 0x13, 0x1f, 0x77,
+	0x14, 0xb5, 0xbb, 0x47, 0x42, 0x59, 0xf0, 0xb0, 0xa1, 0x73, 0xec, 0x61, 0xf2, 0x50, 0x42, 0x37,
+	0x64, 0x28, 0x02, 0xfc, 0x76, 0xa3, 0x46, 0x46, 0xd0, 0xd9, 0x82, 0x42, 0x2e, 0x23, 0x70, 0x31,
+	0xf2, 0xce, 0xb4, 0x30, 0xbf, 0x7d, 0x70, 0xe1, 0xbd, 0xcb, 0x1e, 0x25, 0x0f, 0x9f, 0xa3, 0xba,
+	0x87, 0x8e, 0x12, 0x81, 0x05, 0xa7, 0x69, 0x92, 0xf5, 0xf3, 0x22, 0xbc, 0x6d, 0xa9, 0xb1, 0xfd,
+	0x1a, 0x3c, 0x13, 0xf4, 0x3b, 0x89, 0x5d, 0x26, 0xc5, 0xb8, 0xdd, 0x3d, 0xf6, 0x24, 0x14, 0x89,
+	0xeb, 0xe4, 0x91, 0x84, 0xea, 0x84, 0xe2, 0xd8, 0x52, 0xce, 0x99, 0x88, 0xbe, 0x27, 0xa8, 0x01,
+	0xf3, 0x26, 0x32, 0xba, 0xe2, 0x44, 0x82, 0x9f, 0xe8, 0x02, 0xc4, 0x4f, 0x6a, 0x2e, 0x24, 0x97,
+	0xb7, 0xdf, 0x33, 0x66, 0xcf, 0x2e, 0x1d, 0xc3, 0xba, 0xdd, 0xed, 0xc8, 0xd0, 0x17, 0x3d, 0xbc,
+	0x49, 0xb4, 0xdf, 0x13, 0xe5, 0x24, 0xb0, 0x45, 0x80, 0x7e, 0xc7, 0xe0, 0x8b, 0x58, 0xfc, 0xee,
+	0xec, 0xd6, 0xac, 0x40, 0x89, 0xd0, 0xb1, 0x24, 0xcd, 0xc3, 0xf6, 0xcf, 0xa9, 0x07, 0x62, 0xb2,
+	0x7f, 0x26, 0x24, 0xa7, 0x8b, 0x3a, 0x32, 0x23, 0xf1, 0xb6, 0xf0, 0x1c, 0xbb, 0xdb, 0xf2, 0x87,
+	0x22, 0x10, 0x94, 0x64, 0xac, 0xd0, 0xd2, 0xdd, 0xdb, 0xad, 0x2f, 0x3e, 0x4f, 0x57, 0xb6, 0x7f,
+	0x6e, 0x90, 0x42, 0xf2, 0xd0, 0x02, 0xdf, 0x24, 0xa0, 0xbb, 0x27, 0xa7, 0x74, 0x8e, 0x31, 0xb2,
+	0x36, 0xa3, 0xa0, 0xec, 0x50, 0x23, 0xcb, 0x1d, 0xb4, 0xdb, 0x4d, 0x9a, 0xcb, 0x72, 0xb7, 0x1c,
+	0x57, 0xd0, 0xfc, 0xb9, 0xe9, 0x82, 0x1e, 0x1a, 0xb9, 0x3e, 0xa3, 0x6a, 0x81, 0xa5, 0x04, 0x5e,
+	0xcc, 0xf4, 0xad, 0x8d, 0x73, 0x12, 0x3c, 0x7c, 0xa1, 0x69, 0xd1, 0xb7, 0x37, 0xb6, 0x7f, 0x6c,
+	0x64, 0x9e, 0x32, 0x30, 0x71, 0x02, 0xbb, 0xc7, 0x98, 0xca, 0xe0, 0xb8, 0x84, 0x6a, 0x89, 0x5e,
+	0x20, 0xd4, 0x4d, 0x6f, 0xd2, 0x3d, 0xb6, 0x6a, 0x2e, 0xb5, 0x31, 0x35, 0x13, 0x75, 0x2f, 0x9c,
+	0x8e, 0x8e, 0xc2, 0x81, 0xd6, 0x44, 0x56, 0x6b, 0x39, 0x03, 0xe9, 0xc8, 0x48, 0xeb, 0x63, 0x82,
+	0x5d, 0xd0, 0xf6, 0xeb, 0xd5, 0x17, 0x5e, 0xd8, 0xf9, 0x12, 0xfd, 0xbb, 0xb1, 0xfd, 0xdf, 0x45,
+	0xb2, 0x14, 0x55, 0x4d, 0x30, 0x2a, 0x6a, 0x76, 0x8f, 0x3d, 0x28, 0x25, 0x90, 0x0c, 0x2c, 0xa6,
+	0x3a, 0x52, 0x5a, 0x23, 0x61, 0x03, 0xff, 0xad, 0x0a, 0x33, 0xc9, 0x43, 0xb1, 0x80, 0x77, 0x86,
+	0xb4, 0x5c, 0x50, 0xbe, 0x5d, 0x61, 0x57, 0xc9, 0xc6, 0x6c, 0x48, 0x38, 0xf6, 0x7d, 0x2f, 0x50,
+	0xc2, 0x3e, 0xf1, 0xe9, 0x77, 0xce, 0x69, 0xce, 0xc8, 0x77, 0x05, 0xdc, 0x2c, 0xc2, 0xa6, 0xdf,
+	0xad, 0xb0, 0x75, 0x72, 0x29, 0xd6, 0xa0, 0x56, 0x7a, 0x63, 0x45, 0xbf, 0x57, 0x01, 0x9f, 0xc6,
+	0x6c, 0x6b, 0x38, 0x56, 0xca, 0x91, 0x83, 0xba, 0xf7, 0xba, 0xa4, 0x6f, 0x65, 0xa4, 0x63, 0x4f,
+	0xd5, 0x3c, 0x29, 0x45, 0x0f, 0xe6, 0x7a, 0xbb, 0x92, 0x36, 0x1b, 0x5e, 0x3b, 0xb7, 0x2c, 0xc7,
+	0x15, 0x36, 0xfd, 0x7e, 0xc6, 0x6c, 0x2c, 0x45, 0x91, 0xf2, 0x4e, 0x85, 0x3d, 0x4a, 0xae, 0x24,
+	0x0b, 0x89, 0x30, 0x74, 0x3c, 0x89, 0x0f, 0x15, 0x61, 0xd3, 0x1f, 0x64, 0x86, 0x71, 0x71, 0xef,
+	0xd8, 0x53, 0xb7, 0xbc, 0xb1, 0xb4, 0xe9, 0x0f, 0x33, 0x2b, 0x35, 0xe4, 0x99, 0xe5, 0x3a, 0x36,
+	0x17, 0xf7, 0xe8, 0x4f, 0x1e, 0x24, 0x40, 0x8d, 0xfd, 0x69, 0x85, 0x6d, 0x10, 0x1a, 0x0b, 0x37,
+	0x2d, 0xfb, 0x8e, 0xe5, 0x8e, 0x05, 0xfd, 0x59, 0x85, 0x5d, 0x23, 0x0f, 0xa7, 0x76, 0x33, 0x74,
+	0xe4, 0xa0, 0xed, 0xc1, 0xb7, 0xa9, 0xa3, 0xe8, 0x2f, 0x32, 0x7b, 0xd5, 0x64, 0x64, 0xf8, 0x2f,
+	0x33, 0x86, 0xeb, 0xff, 0x79, 0x12, 0xf3, 0xde, 0xcd, 0x38, 0x5c, 0x8b, 0x30, 0x6e, 0x1c, 0x08,
+	0xfa, 0xab, 0xcc, 0xa6, 0xf6, 0x7c, 0x3f, 0x19, 0xf5, 0x5e, 0x46, 0xa9, 0x8b, 0x7e, 0xa2, 0xfc,
+	0x3a, 0xa3, 0x1c, 0x59, 0x6e, 0xdf, 0x0b, 0x46, 0xc2, 0x6e, 0x4f, 0xe8, 0xfb, 0x19, 0x0b, 0x21,
+	0x4b, 0x93, 0x41, 0xbf, 0xab, 0x40, 0x0c, 0x9e, 0x93, 0xe2, 0x2b, 0x49, 0xd8, 0xf4, 0xf7, 0x15,
+	0x76, 0x85, 0x5c, 0x4e, 0x79, 0x24, 0x4a, 0x9a, 0x3f, 0x64, 0xcd, 0xb0, 0x94, 0x15, 0x9b, 0xfe,
+	0xc7, 0xcc, 0x88, 0xfd, 0x09, 0x04, 0x18, 0xc4, 0xde, 0x9f, 0x32, 0x7c, 0x33, 0x39, 0xdc, 0x3f,
+	0x57, 0xd8, 0x75, 0x62, 0xa6, 0x78, 0xfc, 0x26, 0x99, 0xa8, 0xe8, 0x52, 0xf8, 0x4b, 0xd6, 0xbb,
+	0xc2, 0x75, 0x13, 0xdb, 0xff, 0x9a, 0xb1, 0xa1, 0x19, 0x78, 0x67, 0x8e, 0x2d, 0x02, 0x58, 0xeb,
+	0x6f, 0x15, 0xf6, 0x18, 0xb9, 0x1a, 0x2b, 0x77, 0x1c, 0xcf, 0xb5, 0x94, 0x08, 0xf7, 0x7c, 0x5f,
+	0x48, 0xfb, 0x44, 0xba, 0x53, 0xfa, 0xef, 0x0a, 0x7b, 0x82, 0x3c, 0x36, 0x8b, 0x80, 0x70, 0xdc,
+	0xef, 0x3b, 0x3d, 0x47, 0x48, 0xd5, 0x14, 0xc1, 0xc8, 0xc1, 0x00, 0x0b, 0xe9, 0x7f, 0x2a, 0xdb,
+	0x75, 0xb2, 0x1c, 0x3f, 0x49, 0xa0, 0x04, 0xc5, 0x6d, 0xb8, 0xca, 0x3d, 0xc8, 0xc0, 0xcb, 0xf8,
+	0x07, 0x95, 0xe6, 0xee, 0x5a, 0x81, 0xa4, 0xb9, 0x0c, 0x05, 0x9f, 0x32, 0x74, 0xa1, 0xba, 0xa3,
+	0xff, 0x48, 0x83, 0x67, 0x04, 0x7b, 0x92, 0xac, 0x40, 0x3b, 0x8a, 0x62, 0x96, 0xfc, 0x7d, 0x77,
+	0x35, 0x69, 0x6d, 0x19, 0xcf, 0x19, 0x37, 0x5f, 0xfe, 0xf0, 0xe3, 0xd2, 0xdc, 0x47, 0x1f, 0x97,
+	0xe6, 0x3e, 0xfd, 0xb8, 0x64, 0xbc, 0x79, 0xbf, 0x64, 0xbc, 0x7b, 0xbf, 0x64, 0x7c, 0x70, 0xbf,
+	0x64, 0x7c, 0x78, 0xbf, 0x64, 0xfc, 0xe3, 0x7e, 0xc9, 0xf8, 0xd7, 0xfd, 0xd2, 0xdc, 0xa7, 0xf7,
+	0x4b, 0xc6, 0x3b, 0x9f, 0x94, 0xe6, 0x3e, 0xfc, 0xa4, 0x34, 0xf7, 0xd1, 0x27, 0xa5, 0xb9, 0xf7,
+	0x72, 0xcb, 0x7b, 0x41, 0x2f, 0xf4, 0xad, 0x9e, 0x38, 0x5d, 0xc4, 0xff, 0x88, 0x77, 0xff, 0x1f,
+	0x00, 0x00, 0xff, 0xff, 0xd3, 0xa8, 0x9e, 0x97, 0x39, 0x16, 0x00, 0x00,
 }
 
 func (x Const) String() string {
@@ -2450,15 +2434,15 @@ func (x ConstSymbol) String() string {
 	}
 	return strconv.Itoa(int(x))
 }
-func (x MsgOp) String() string {
-	s, ok := MsgOp_name[int32(x)]
+func (x ReqStatus) String() string {
+	s, ok := ReqStatus_name[int32(x)]
 	if ok {
 		return s
 	}
 	return strconv.Itoa(int(x))
 }
-func (x MsgFlags) String() string {
-	s, ok := MsgFlags_name[int32(x)]
+func (x CellTxOp) String() string {
+	s, ok := CellTxOp_name[int32(x)]
 	if ok {
 		return s
 	}
@@ -2466,6 +2450,13 @@ func (x MsgFlags) String() string {
 }
 func (x SeriesIndexType) String() string {
 	s, ok := SeriesIndexType_name[int32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
+func (x PinFlags) String() string {
+	s, ok := PinFlags_name[int32(x)]
 	if ok {
 		return s
 	}
@@ -2499,6 +2490,13 @@ func (x ErrCode) String() string {
 	}
 	return strconv.Itoa(int(x))
 }
+func (x LogLevel) String() string {
+	s, ok := LogLevel_name[int32(x)]
+	if ok {
+		return s
+	}
+	return strconv.Itoa(int(x))
+}
 func (x TRS_VisualScaleMode) String() string {
 	s, ok := TRS_VisualScaleMode_name[int32(x)]
 	if ok {
@@ -2525,25 +2523,98 @@ func (this *Msg) Equal(that interface{}) bool {
 	} else if this == nil {
 		return false
 	}
-	if this.Op != that1.Op {
-		return false
-	}
 	if this.ReqID != that1.ReqID {
 		return false
 	}
-	if this.CellID != that1.CellID {
+	if len(this.CellTxs) != len(that1.CellTxs) {
+		return false
+	}
+	for i := range this.CellTxs {
+		if !this.CellTxs[i].Equal(that1.CellTxs[i]) {
+			return false
+		}
+	}
+	if this.Status != that1.Status {
+		return false
+	}
+	return true
+}
+func (this *CellTxPb) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*CellTxPb)
+	if !ok {
+		that2, ok := that.(CellTxPb)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Op != that1.Op {
+		return false
+	}
+	if this.CellSpec != that1.CellSpec {
+		return false
+	}
+	if this.TID_UTC16 != that1.TID_UTC16 {
+		return false
+	}
+	if this.TID_HASH1 != that1.TID_HASH1 {
+		return false
+	}
+	if this.TID_HASH2 != that1.TID_HASH2 {
+		return false
+	}
+	if this.TID_HASH3 != that1.TID_HASH3 {
+		return false
+	}
+	if this.TargetCell != that1.TargetCell {
+		return false
+	}
+	if len(this.Elems) != len(that1.Elems) {
+		return false
+	}
+	for i := range this.Elems {
+		if !this.Elems[i].Equal(that1.Elems[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *AttrElemPb) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*AttrElemPb)
+	if !ok {
+		that2, ok := that.(AttrElemPb)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
 		return false
 	}
 	if this.AttrID != that1.AttrID {
 		return false
 	}
-	if this.SI != that1.SI {
-		return false
-	}
 	if !bytes.Equal(this.ValBuf, that1.ValBuf) {
 		return false
 	}
-	if this.Flags != that1.Flags {
+	if this.SI != that1.SI {
 		return false
 	}
 	return true
@@ -2860,36 +2931,6 @@ func (this *ItemSelector) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *KwArg) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*KwArg)
-	if !ok {
-		that2, ok := that.(KwArg)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Key != that1.Key {
-		return false
-	}
-	if this.Val != that1.Val {
-		return false
-	}
-	if !bytes.Equal(this.ValBuf, that1.ValBuf) {
-		return false
-	}
-	return true
-}
 func (this *HandleURI) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
@@ -2914,14 +2955,14 @@ func (this *HandleURI) Equal(that interface{}) bool {
 	}
 	return true
 }
-func (this *PinReq) Equal(that interface{}) bool {
+func (this *PinRequest) Equal(that interface{}) bool {
 	if that == nil {
 		return this == nil
 	}
 
-	that1, ok := that.(*PinReq)
+	that1, ok := that.(*PinRequest)
 	if !ok {
-		that2, ok := that.(PinReq)
+		that2, ok := that.(PinRequest)
 		if ok {
 			that1 = &that2
 		} else {
@@ -2936,10 +2977,10 @@ func (this *PinReq) Equal(that interface{}) bool {
 	if this.ParentReqID != that1.ParentReqID {
 		return false
 	}
-	if this.PinURI != that1.PinURI {
+	if this.PinURL != that1.PinURL {
 		return false
 	}
-	if this.PinCell != that1.PinCell {
+	if this.PinCellID != that1.PinCellID {
 		return false
 	}
 	if this.ParentAttrSelector != that1.ParentAttrSelector {
@@ -2948,67 +2989,8 @@ func (this *PinReq) Equal(that interface{}) bool {
 	if this.ChildCellSelector != that1.ChildCellSelector {
 		return false
 	}
-	if this.AutoClose != that1.AutoClose {
+	if this.Flags != that1.Flags {
 		return false
-	}
-	return true
-}
-func (this *AttrRange) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*AttrRange)
-	if !ok {
-		that2, ok := that.(AttrRange)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.SI_SeekTo != that1.SI_SeekTo {
-		return false
-	}
-	if this.SI_StopAt != that1.SI_StopAt {
-		return false
-	}
-	if this.SI_BatchLimit != that1.SI_BatchLimit {
-		return false
-	}
-	return true
-}
-func (this *Txn) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Txn)
-	if !ok {
-		that2, ok := that.(Txn)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if len(this.Msgs) != len(that1.Msgs) {
-		return false
-	}
-	for i := range this.Msgs {
-		if !this.Msgs[i].Equal(that1.Msgs[i]) {
-			return false
-		}
 	}
 	return true
 }
@@ -3170,9 +3152,6 @@ func (this *CellInfo) Equal(that interface{}) bool {
 	if that1 == nil {
 		return this == nil
 	} else if this == nil {
-		return false
-	}
-	if this.CellDefID != that1.CellDefID {
 		return false
 	}
 	if this.Title != that1.Title {
@@ -3370,6 +3349,9 @@ func (this *Err) Equal(that interface{}) bool {
 	if this.Code != that1.Code {
 		return false
 	}
+	if this.Level != that1.Level {
+		return false
+	}
 	if this.Msg != that1.Msg {
 		return false
 	}
@@ -3379,15 +3361,44 @@ func (this *Msg) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 11)
+	s := make([]string, 0, 7)
 	s = append(s, "&arc.Msg{")
-	s = append(s, "Op: "+fmt.Sprintf("%#v", this.Op)+",\n")
 	s = append(s, "ReqID: "+fmt.Sprintf("%#v", this.ReqID)+",\n")
-	s = append(s, "CellID: "+fmt.Sprintf("%#v", this.CellID)+",\n")
+	if this.CellTxs != nil {
+		s = append(s, "CellTxs: "+fmt.Sprintf("%#v", this.CellTxs)+",\n")
+	}
+	s = append(s, "Status: "+fmt.Sprintf("%#v", this.Status)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *CellTxPb) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 12)
+	s = append(s, "&arc.CellTxPb{")
+	s = append(s, "Op: "+fmt.Sprintf("%#v", this.Op)+",\n")
+	s = append(s, "CellSpec: "+fmt.Sprintf("%#v", this.CellSpec)+",\n")
+	s = append(s, "TID_UTC16: "+fmt.Sprintf("%#v", this.TID_UTC16)+",\n")
+	s = append(s, "TID_HASH1: "+fmt.Sprintf("%#v", this.TID_HASH1)+",\n")
+	s = append(s, "TID_HASH2: "+fmt.Sprintf("%#v", this.TID_HASH2)+",\n")
+	s = append(s, "TID_HASH3: "+fmt.Sprintf("%#v", this.TID_HASH3)+",\n")
+	s = append(s, "TargetCell: "+fmt.Sprintf("%#v", this.TargetCell)+",\n")
+	if this.Elems != nil {
+		s = append(s, "Elems: "+fmt.Sprintf("%#v", this.Elems)+",\n")
+	}
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *AttrElemPb) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 7)
+	s = append(s, "&arc.AttrElemPb{")
 	s = append(s, "AttrID: "+fmt.Sprintf("%#v", this.AttrID)+",\n")
-	s = append(s, "SI: "+fmt.Sprintf("%#v", this.SI)+",\n")
 	s = append(s, "ValBuf: "+fmt.Sprintf("%#v", this.ValBuf)+",\n")
-	s = append(s, "Flags: "+fmt.Sprintf("%#v", this.Flags)+",\n")
+	s = append(s, "SI: "+fmt.Sprintf("%#v", this.SI)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3508,18 +3519,6 @@ func (this *ItemSelector) GoString() string {
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
-func (this *KwArg) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 7)
-	s = append(s, "&arc.KwArg{")
-	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
-	s = append(s, "Val: "+fmt.Sprintf("%#v", this.Val)+",\n")
-	s = append(s, "ValBuf: "+fmt.Sprintf("%#v", this.ValBuf)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
 func (this *HandleURI) GoString() string {
 	if this == nil {
 		return "nil"
@@ -3530,42 +3529,18 @@ func (this *HandleURI) GoString() string {
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
-func (this *PinReq) GoString() string {
+func (this *PinRequest) GoString() string {
 	if this == nil {
 		return "nil"
 	}
 	s := make([]string, 0, 10)
-	s = append(s, "&arc.PinReq{")
+	s = append(s, "&arc.PinRequest{")
 	s = append(s, "ParentReqID: "+fmt.Sprintf("%#v", this.ParentReqID)+",\n")
-	s = append(s, "PinURI: "+fmt.Sprintf("%#v", this.PinURI)+",\n")
-	s = append(s, "PinCell: "+fmt.Sprintf("%#v", this.PinCell)+",\n")
+	s = append(s, "PinURL: "+fmt.Sprintf("%#v", this.PinURL)+",\n")
+	s = append(s, "PinCellID: "+fmt.Sprintf("%#v", this.PinCellID)+",\n")
 	s = append(s, "ParentAttrSelector: "+fmt.Sprintf("%#v", this.ParentAttrSelector)+",\n")
 	s = append(s, "ChildCellSelector: "+fmt.Sprintf("%#v", this.ChildCellSelector)+",\n")
-	s = append(s, "AutoClose: "+fmt.Sprintf("%#v", this.AutoClose)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *AttrRange) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 7)
-	s = append(s, "&arc.AttrRange{")
-	s = append(s, "SI_SeekTo: "+fmt.Sprintf("%#v", this.SI_SeekTo)+",\n")
-	s = append(s, "SI_StopAt: "+fmt.Sprintf("%#v", this.SI_StopAt)+",\n")
-	s = append(s, "SI_BatchLimit: "+fmt.Sprintf("%#v", this.SI_BatchLimit)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *Txn) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 5)
-	s = append(s, "&arc.Txn{")
-	if this.Msgs != nil {
-		s = append(s, "Msgs: "+fmt.Sprintf("%#v", this.Msgs)+",\n")
-	}
+	s = append(s, "Flags: "+fmt.Sprintf("%#v", this.Flags)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -3628,9 +3603,8 @@ func (this *CellInfo) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 13)
+	s := make([]string, 0, 12)
 	s = append(s, "&arc.CellInfo{")
-	s = append(s, "CellDefID: "+fmt.Sprintf("%#v", this.CellDefID)+",\n")
 	s = append(s, "Title: "+fmt.Sprintf("%#v", this.Title)+",\n")
 	s = append(s, "Subtitle: "+fmt.Sprintf("%#v", this.Subtitle)+",\n")
 	s = append(s, "About: "+fmt.Sprintf("%#v", this.About)+",\n")
@@ -3709,9 +3683,10 @@ func (this *Err) GoString() string {
 	if this == nil {
 		return "nil"
 	}
-	s := make([]string, 0, 6)
+	s := make([]string, 0, 7)
 	s = append(s, "&arc.Err{")
 	s = append(s, "Code: "+fmt.Sprintf("%#v", this.Code)+",\n")
+	s = append(s, "Level: "+fmt.Sprintf("%#v", this.Level)+",\n")
 	s = append(s, "Msg: "+fmt.Sprintf("%#v", this.Msg)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
@@ -3861,40 +3836,143 @@ func (m *Msg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.Flags != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.Flags))
+	if len(m.CellTxs) > 0 {
+		for iNdEx := len(m.CellTxs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.CellTxs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintArc(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
+	if m.Status != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.Status))
 		i--
-		dAtA[i] = 0x60
+		dAtA[i] = 0x18
+	}
+	if m.ReqID != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.ReqID))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CellTxPb) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CellTxPb) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CellTxPb) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.TID_HASH3 != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(m.TID_HASH3))
+		i--
+		dAtA[i] = 0x49
+	}
+	if m.TID_HASH2 != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(m.TID_HASH2))
+		i--
+		dAtA[i] = 0x41
+	}
+	if m.TID_HASH1 != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(m.TID_HASH1))
+		i--
+		dAtA[i] = 0x39
+	}
+	if m.TID_UTC16 != 0 {
+		i -= 8
+		encoding_binary.LittleEndian.PutUint64(dAtA[i:], uint64(m.TID_UTC16))
+		i--
+		dAtA[i] = 0x31
+	}
+	if len(m.Elems) > 0 {
+		for iNdEx := len(m.Elems) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Elems[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintArc(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if m.TargetCell != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.TargetCell))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.CellSpec != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.CellSpec))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Op != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.Op))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *AttrElemPb) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AttrElemPb) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AttrElemPb) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.SI != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.SI))
+		i--
+		dAtA[i] = 0x18
 	}
 	if len(m.ValBuf) > 0 {
 		i -= len(m.ValBuf)
 		copy(dAtA[i:], m.ValBuf)
 		i = encodeVarintArc(dAtA, i, uint64(len(m.ValBuf)))
 		i--
-		dAtA[i] = 0x52
-	}
-	if m.SI != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.SI))
-		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x12
 	}
 	if m.AttrID != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.AttrID))
-		i--
-		dAtA[i] = 0x30
-	}
-	if m.CellID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.CellID))
-		i--
-		dAtA[i] = 0x20
-	}
-	if m.ReqID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.ReqID))
-		i--
-		dAtA[i] = 0x10
-	}
-	if m.Op != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.Op))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -4353,50 +4431,6 @@ func (m *ItemSelector) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *KwArg) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *KwArg) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *KwArg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.ValBuf) > 0 {
-		i -= len(m.ValBuf)
-		copy(dAtA[i:], m.ValBuf)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.ValBuf)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.Val) > 0 {
-		i -= len(m.Val)
-		copy(dAtA[i:], m.Val)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.Val)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.Key) > 0 {
-		i -= len(m.Key)
-		copy(dAtA[i:], m.Key)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.Key)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *HandleURI) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -4427,7 +4461,7 @@ func (m *HandleURI) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *PinReq) Marshal() (dAtA []byte, err error) {
+func (m *PinRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -4437,25 +4471,20 @@ func (m *PinReq) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *PinReq) MarshalTo(dAtA []byte) (int, error) {
+func (m *PinRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *PinReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *PinRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.AutoClose {
+	if m.Flags != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.Flags))
 		i--
-		if m.AutoClose {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x38
 	}
 	if m.ChildCellSelector != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.ChildCellSelector))
@@ -4467,15 +4496,15 @@ func (m *PinReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x28
 	}
-	if m.PinCell != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.PinCell))
+	if m.PinCellID != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.PinCellID))
 		i--
 		dAtA[i] = 0x18
 	}
-	if len(m.PinURI) > 0 {
-		i -= len(m.PinURI)
-		copy(dAtA[i:], m.PinURI)
-		i = encodeVarintArc(dAtA, i, uint64(len(m.PinURI)))
+	if len(m.PinURL) > 0 {
+		i -= len(m.PinURL)
+		copy(dAtA[i:], m.PinURL)
+		i = encodeVarintArc(dAtA, i, uint64(len(m.PinURL)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -4483,87 +4512,6 @@ func (m *PinReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintArc(dAtA, i, uint64(m.ParentReqID))
 		i--
 		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *AttrRange) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AttrRange) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AttrRange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.SI_BatchLimit != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.SI_BatchLimit))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xd8
-	}
-	if m.SI_StopAt != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.SI_StopAt))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xc8
-	}
-	if m.SI_SeekTo != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.SI_SeekTo))
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0xc0
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *Txn) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *Txn) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *Txn) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Msgs) > 0 {
-		for iNdEx := len(m.Msgs) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Msgs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintArc(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -4864,11 +4812,6 @@ func (m *CellInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x22
 	}
-	if m.CellDefID != 0 {
-		i = encodeVarintArc(dAtA, i, uint64(m.CellDefID))
-		i--
-		dAtA[i] = 0x8
-	}
 	return len(dAtA) - i, nil
 }
 
@@ -5135,7 +5078,12 @@ func (m *Err) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Msg)
 		i = encodeVarintArc(dAtA, i, uint64(len(m.Msg)))
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x22
+	}
+	if m.Level != 0 {
+		i = encodeVarintArc(dAtA, i, uint64(m.Level))
+		i--
+		dAtA[i] = 0x10
 	}
 	if m.Code != 0 {
 		i = encodeVarintArc(dAtA, i, uint64(m.Code))
@@ -5162,27 +5110,72 @@ func (m *Msg) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Op != 0 {
-		n += 1 + sovArc(uint64(m.Op))
-	}
 	if m.ReqID != 0 {
 		n += 1 + sovArc(uint64(m.ReqID))
 	}
-	if m.CellID != 0 {
-		n += 1 + sovArc(uint64(m.CellID))
+	if m.Status != 0 {
+		n += 1 + sovArc(uint64(m.Status))
 	}
+	if len(m.CellTxs) > 0 {
+		for _, e := range m.CellTxs {
+			l = e.Size()
+			n += 1 + l + sovArc(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *CellTxPb) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Op != 0 {
+		n += 1 + sovArc(uint64(m.Op))
+	}
+	if m.CellSpec != 0 {
+		n += 1 + sovArc(uint64(m.CellSpec))
+	}
+	if m.TargetCell != 0 {
+		n += 1 + sovArc(uint64(m.TargetCell))
+	}
+	if len(m.Elems) > 0 {
+		for _, e := range m.Elems {
+			l = e.Size()
+			n += 1 + l + sovArc(uint64(l))
+		}
+	}
+	if m.TID_UTC16 != 0 {
+		n += 9
+	}
+	if m.TID_HASH1 != 0 {
+		n += 9
+	}
+	if m.TID_HASH2 != 0 {
+		n += 9
+	}
+	if m.TID_HASH3 != 0 {
+		n += 9
+	}
+	return n
+}
+
+func (m *AttrElemPb) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	if m.AttrID != 0 {
 		n += 1 + sovArc(uint64(m.AttrID))
-	}
-	if m.SI != 0 {
-		n += 1 + sovArc(uint64(m.SI))
 	}
 	l = len(m.ValBuf)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
 	}
-	if m.Flags != 0 {
-		n += 1 + sovArc(uint64(m.Flags))
+	if m.SI != 0 {
+		n += 1 + sovArc(uint64(m.SI))
 	}
 	return n
 }
@@ -5386,27 +5379,6 @@ func (m *ItemSelector) Size() (n int) {
 	return n
 }
 
-func (m *KwArg) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Key)
-	if l > 0 {
-		n += 1 + l + sovArc(uint64(l))
-	}
-	l = len(m.Val)
-	if l > 0 {
-		n += 1 + l + sovArc(uint64(l))
-	}
-	l = len(m.ValBuf)
-	if l > 0 {
-		n += 1 + l + sovArc(uint64(l))
-	}
-	return n
-}
-
 func (m *HandleURI) Size() (n int) {
 	if m == nil {
 		return 0
@@ -5420,7 +5392,7 @@ func (m *HandleURI) Size() (n int) {
 	return n
 }
 
-func (m *PinReq) Size() (n int) {
+func (m *PinRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5429,12 +5401,12 @@ func (m *PinReq) Size() (n int) {
 	if m.ParentReqID != 0 {
 		n += 1 + sovArc(uint64(m.ParentReqID))
 	}
-	l = len(m.PinURI)
+	l = len(m.PinURL)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
 	}
-	if m.PinCell != 0 {
-		n += 1 + sovArc(uint64(m.PinCell))
+	if m.PinCellID != 0 {
+		n += 1 + sovArc(uint64(m.PinCellID))
 	}
 	if m.ParentAttrSelector != 0 {
 		n += 1 + sovArc(uint64(m.ParentAttrSelector))
@@ -5442,41 +5414,8 @@ func (m *PinReq) Size() (n int) {
 	if m.ChildCellSelector != 0 {
 		n += 1 + sovArc(uint64(m.ChildCellSelector))
 	}
-	if m.AutoClose {
-		n += 2
-	}
-	return n
-}
-
-func (m *AttrRange) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.SI_SeekTo != 0 {
-		n += 2 + sovArc(uint64(m.SI_SeekTo))
-	}
-	if m.SI_StopAt != 0 {
-		n += 2 + sovArc(uint64(m.SI_StopAt))
-	}
-	if m.SI_BatchLimit != 0 {
-		n += 2 + sovArc(uint64(m.SI_BatchLimit))
-	}
-	return n
-}
-
-func (m *Txn) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Msgs) > 0 {
-		for _, e := range m.Msgs {
-			l = e.Size()
-			n += 1 + l + sovArc(uint64(l))
-		}
+	if m.Flags != 0 {
+		n += 1 + sovArc(uint64(m.Flags))
 	}
 	return n
 }
@@ -5586,9 +5525,6 @@ func (m *CellInfo) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.CellDefID != 0 {
-		n += 1 + sovArc(uint64(m.CellDefID))
-	}
 	l = len(m.Title)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
@@ -5735,6 +5671,9 @@ func (m *Err) Size() (n int) {
 	if m.Code != 0 {
 		n += 1 + sovArc(uint64(m.Code))
 	}
+	if m.Level != 0 {
+		n += 1 + sovArc(uint64(m.Level))
+	}
 	l = len(m.Msg)
 	if l > 0 {
 		n += 1 + l + sovArc(uint64(l))
@@ -5752,14 +5691,49 @@ func (this *Msg) String() string {
 	if this == nil {
 		return "nil"
 	}
+	repeatedStringForCellTxs := "[]*CellTxPb{"
+	for _, f := range this.CellTxs {
+		repeatedStringForCellTxs += strings.Replace(f.String(), "CellTxPb", "CellTxPb", 1) + ","
+	}
+	repeatedStringForCellTxs += "}"
 	s := strings.Join([]string{`&Msg{`,
-		`Op:` + fmt.Sprintf("%v", this.Op) + `,`,
 		`ReqID:` + fmt.Sprintf("%v", this.ReqID) + `,`,
-		`CellID:` + fmt.Sprintf("%v", this.CellID) + `,`,
+		`Status:` + fmt.Sprintf("%v", this.Status) + `,`,
+		`CellTxs:` + repeatedStringForCellTxs + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *CellTxPb) String() string {
+	if this == nil {
+		return "nil"
+	}
+	repeatedStringForElems := "[]*AttrElemPb{"
+	for _, f := range this.Elems {
+		repeatedStringForElems += strings.Replace(f.String(), "AttrElemPb", "AttrElemPb", 1) + ","
+	}
+	repeatedStringForElems += "}"
+	s := strings.Join([]string{`&CellTxPb{`,
+		`Op:` + fmt.Sprintf("%v", this.Op) + `,`,
+		`CellSpec:` + fmt.Sprintf("%v", this.CellSpec) + `,`,
+		`TargetCell:` + fmt.Sprintf("%v", this.TargetCell) + `,`,
+		`Elems:` + repeatedStringForElems + `,`,
+		`TID_UTC16:` + fmt.Sprintf("%v", this.TID_UTC16) + `,`,
+		`TID_HASH1:` + fmt.Sprintf("%v", this.TID_HASH1) + `,`,
+		`TID_HASH2:` + fmt.Sprintf("%v", this.TID_HASH2) + `,`,
+		`TID_HASH3:` + fmt.Sprintf("%v", this.TID_HASH3) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *AttrElemPb) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&AttrElemPb{`,
 		`AttrID:` + fmt.Sprintf("%v", this.AttrID) + `,`,
-		`SI:` + fmt.Sprintf("%v", this.SI) + `,`,
 		`ValBuf:` + fmt.Sprintf("%v", this.ValBuf) + `,`,
-		`Flags:` + fmt.Sprintf("%v", this.Flags) + `,`,
+		`SI:` + fmt.Sprintf("%v", this.SI) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5896,18 +5870,6 @@ func (this *ItemSelector) String() string {
 	}, "")
 	return s
 }
-func (this *KwArg) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&KwArg{`,
-		`Key:` + fmt.Sprintf("%v", this.Key) + `,`,
-		`Val:` + fmt.Sprintf("%v", this.Val) + `,`,
-		`ValBuf:` + fmt.Sprintf("%v", this.ValBuf) + `,`,
-		`}`,
-	}, "")
-	return s
-}
 func (this *HandleURI) String() string {
 	if this == nil {
 		return "nil"
@@ -5918,44 +5880,17 @@ func (this *HandleURI) String() string {
 	}, "")
 	return s
 }
-func (this *PinReq) String() string {
+func (this *PinRequest) String() string {
 	if this == nil {
 		return "nil"
 	}
-	s := strings.Join([]string{`&PinReq{`,
+	s := strings.Join([]string{`&PinRequest{`,
 		`ParentReqID:` + fmt.Sprintf("%v", this.ParentReqID) + `,`,
-		`PinURI:` + fmt.Sprintf("%v", this.PinURI) + `,`,
-		`PinCell:` + fmt.Sprintf("%v", this.PinCell) + `,`,
+		`PinURL:` + fmt.Sprintf("%v", this.PinURL) + `,`,
+		`PinCellID:` + fmt.Sprintf("%v", this.PinCellID) + `,`,
 		`ParentAttrSelector:` + fmt.Sprintf("%v", this.ParentAttrSelector) + `,`,
 		`ChildCellSelector:` + fmt.Sprintf("%v", this.ChildCellSelector) + `,`,
-		`AutoClose:` + fmt.Sprintf("%v", this.AutoClose) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *AttrRange) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&AttrRange{`,
-		`SI_SeekTo:` + fmt.Sprintf("%v", this.SI_SeekTo) + `,`,
-		`SI_StopAt:` + fmt.Sprintf("%v", this.SI_StopAt) + `,`,
-		`SI_BatchLimit:` + fmt.Sprintf("%v", this.SI_BatchLimit) + `,`,
-		`}`,
-	}, "")
-	return s
-}
-func (this *Txn) String() string {
-	if this == nil {
-		return "nil"
-	}
-	repeatedStringForMsgs := "[]*Msg{"
-	for _, f := range this.Msgs {
-		repeatedStringForMsgs += strings.Replace(f.String(), "Msg", "Msg", 1) + ","
-	}
-	repeatedStringForMsgs += "}"
-	s := strings.Join([]string{`&Txn{`,
-		`Msgs:` + repeatedStringForMsgs + `,`,
+		`Flags:` + fmt.Sprintf("%v", this.Flags) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -6020,7 +5955,6 @@ func (this *CellInfo) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&CellInfo{`,
-		`CellDefID:` + fmt.Sprintf("%v", this.CellDefID) + `,`,
 		`Title:` + fmt.Sprintf("%v", this.Title) + `,`,
 		`Subtitle:` + fmt.Sprintf("%v", this.Subtitle) + `,`,
 		`About:` + fmt.Sprintf("%v", this.About) + `,`,
@@ -6096,6 +6030,7 @@ func (this *Err) String() string {
 	}
 	s := strings.Join([]string{`&Err{`,
 		`Code:` + fmt.Sprintf("%v", this.Code) + `,`,
+		`Level:` + fmt.Sprintf("%v", this.Level) + `,`,
 		`Msg:` + fmt.Sprintf("%v", this.Msg) + `,`,
 		`}`,
 	}, "")
@@ -6140,25 +6075,6 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Op", wireType)
-			}
-			m.Op = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Op |= MsgOp(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ReqID", wireType)
 			}
 			m.ReqID = 0
@@ -6176,11 +6092,11 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 4:
+		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CellID", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
 			}
-			m.CellID = 0
+			m.Status = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -6190,12 +6106,277 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.CellID |= int64(b&0x7F) << shift
+				m.Status |= ReqStatus(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CellTxs", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthArc
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthArc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.CellTxs = append(m.CellTxs, &CellTxPb{})
+			if err := m.CellTxs[len(m.CellTxs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipArc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthArc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CellTxPb) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowArc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CellTxPb: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CellTxPb: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Op", wireType)
+			}
+			m.Op = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Op |= CellTxOp(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CellSpec", wireType)
+			}
+			m.CellSpec = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CellSpec |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TargetCell", wireType)
+			}
+			m.TargetCell = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TargetCell |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Elems", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthArc
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthArc
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Elems = append(m.Elems, &AttrElemPb{})
+			if err := m.Elems[len(m.Elems)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		case 6:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TID_UTC16", wireType)
+			}
+			m.TID_UTC16 = 0
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TID_UTC16 = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+		case 7:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TID_HASH1", wireType)
+			}
+			m.TID_HASH1 = 0
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TID_HASH1 = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+		case 8:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TID_HASH2", wireType)
+			}
+			m.TID_HASH2 = 0
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TID_HASH2 = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+		case 9:
+			if wireType != 1 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TID_HASH3", wireType)
+			}
+			m.TID_HASH3 = 0
+			if (iNdEx + 8) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TID_HASH3 = uint64(encoding_binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+			iNdEx += 8
+		default:
+			iNdEx = preIndex
+			skippy, err := skipArc(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthArc
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AttrElemPb) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowArc
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: AttrElemPb: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: AttrElemPb: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AttrID", wireType)
 			}
@@ -6209,31 +6390,12 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.AttrID |= uint32(b&0x7F) << shift
+				m.AttrID |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SI", wireType)
-			}
-			m.SI = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.SI |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 10:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ValBuf", wireType)
 			}
@@ -6267,11 +6429,11 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				m.ValBuf = []byte{}
 			}
 			iNdEx = postIndex
-		case 12:
+		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Flags", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field SI", wireType)
 			}
-			m.Flags = 0
+			m.SI = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -6281,7 +6443,7 @@ func (m *Msg) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Flags |= MsgFlags(b&0x7F) << shift
+				m.SI |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -7679,154 +7841,6 @@ func (m *ItemSelector) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *KwArg) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowArc
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: KwArg: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: KwArg: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Key = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Val", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Val = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValBuf", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ValBuf = append(m.ValBuf[:0], dAtA[iNdEx:postIndex]...)
-			if m.ValBuf == nil {
-				m.ValBuf = []byte{}
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipArc(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthArc
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *HandleURI) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7909,7 +7923,7 @@ func (m *HandleURI) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *PinReq) Unmarshal(dAtA []byte) error {
+func (m *PinRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7932,10 +7946,10 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: PinReq: wiretype end group for non-group")
+			return fmt.Errorf("proto: PinRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PinReq: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PinRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7959,7 +7973,7 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PinURI", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PinURL", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -7987,13 +8001,13 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.PinURI = string(dAtA[iNdEx:postIndex])
+			m.PinURL = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PinCell", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PinCellID", wireType)
 			}
-			m.PinCell = 0
+			m.PinCellID = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -8003,7 +8017,7 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.PinCell |= int64(b&0x7F) << shift
+				m.PinCellID |= int64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -8046,11 +8060,11 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 8:
+		case 7:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AutoClose", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Flags", wireType)
 			}
-			var v int
+			m.Flags = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowArc
@@ -8060,203 +8074,11 @@ func (m *PinReq) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.Flags |= PinFlags(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.AutoClose = bool(v != 0)
-		default:
-			iNdEx = preIndex
-			skippy, err := skipArc(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthArc
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AttrRange) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowArc
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AttrRange: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AttrRange: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 24:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SI_SeekTo", wireType)
-			}
-			m.SI_SeekTo = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.SI_SeekTo |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 25:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SI_StopAt", wireType)
-			}
-			m.SI_StopAt = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.SI_StopAt |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 27:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SI_BatchLimit", wireType)
-			}
-			m.SI_BatchLimit = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.SI_BatchLimit |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipArc(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthArc
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *Txn) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowArc
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Txn: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Txn: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Msgs", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthArc
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthArc
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Msgs = append(m.Msgs, &Msg{})
-			if err := m.Msgs[len(m.Msgs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipArc(dAtA[iNdEx:])
@@ -8902,25 +8724,6 @@ func (m *CellInfo) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: CellInfo: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CellDefID", wireType)
-			}
-			m.CellDefID = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowArc
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CellDefID |= uint32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Title", wireType)
@@ -9811,6 +9614,25 @@ func (m *Err) Unmarshal(dAtA []byte) error {
 				}
 			}
 		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
+			}
+			m.Level = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowArc
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Level |= LogLevel(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Msg", wireType)
 			}

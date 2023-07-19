@@ -53,9 +53,10 @@ enum Const {
 enum ConstSymbol {
     ConstSymbol_nil            = 0;
 
-    ConstSymbol_Err            = 6;
-    ConstSymbol_RegisterDefs   = 10;
-    ConstSymbol_HandleURI      = 11;
+    ConstSymbol_Err            = 10;
+    ConstSymbol_RegisterDefs   = 11;
+    ConstSymbol_HandleURI      = 12;
+    ConstSymbol_PinRequest     = 13;
     
     ConstSymbol_Login          = 20;
     ConstSymbol_LoginChallenge = 21;
@@ -80,193 +81,168 @@ enum ConstSymbol {
 
 
 
-// MsgOp tells a holder of a Msg how to interpret its purpose and fields.
-enum MsgOp {
-    MsgOp_NoOp = 0;
+// // MsgOp tells a holder of a Msg how to interpret its purpose and fields.
+// enum MsgOp {
+//     MsgOp_NoOp = 0;
 
-    /*
-    MsgOp.PinCell->   
-        <-MsgOp.PushAttr
-        ...
+//     /*
+//     MsgOp.PinCell->   
+//         <-MsgOp.PushAttr
+//         ...
         
-        <-MsgOp.InsertChildCell (child of pinned cell)
-        <-MsgOp.PushAttr
-        ...
+//         <-MsgOp.InsertChildCell (child of pinned cell)
+//         <-MsgOp.PushAttr
+//         ...
         
-        <-MsgOp.InsertChildCell (child of pinned cell)
-        <-MsgOp.PushAttr
-        ...
-    <-MsgOp.Commit
-    */
+//         <-MsgOp.InsertChildCell (child of pinned cell)
+//         <-MsgOp.PushAttr
+//         ...
+//     <-MsgOp.Commit
+//     */
 
-    // MsgOp_MetaAttr posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
-    //
-    // Params: 
-    //      Msg.ReqID:      originating request ID
-    //      Msg.ValBuf:     IAW with AttrID
-    MsgOp_MetaAttr = 4;
+//     // MsgOp_MetaAttr posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      originating request ID
+//     //      Msg.ValBuf:     IAW with AttrID
+//     //MsgOp_MetaAttr = 4;
 
 
-    // From client to host, this requests a given cell be pinned.
-    //
-    // Params: 
-    //      Msg.ReqID:      client-generated (unique) request ID 
-    //      Msg.CellID:     CellID being pinned     (host to client, otherwise 0)
-    //      Msg.ValBuf:     PinReq                  (client to host, otherwise nil)
-    MsgOp_PinCell = 6;
+//     // From client to host, this requests a given cell be pinned.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      client-generated (unique) request ID 
+//     //      Msg.CellID:     CellID being pinned     (host to client, otherwise 0)
+//     //      Msg.ValBuf:     PinReq                  (client to host, otherwise nil)
+//     MsgOp_PinCell = 1;
     
 
-    // Requests a given CellID to be pinned under a unique client-generated PinID
-    //
-    // Params: 
-    //      Msg.ReqID:      client-generated request ID 
-    //      Msg.CellID:     which cell
-    //MsgOp_PinAttrRange = 8;
+//     // Requests a given CellID to be pinned under a unique client-generated PinID
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      client-generated request ID 
+//     //      Msg.CellID:     which cell
+//     //MsgOp_PinAttrRange = 8;
     
-    // Params: 
-    //      Msg.ReqID:      originating MsgOp_PinCell request ID
-    //      Msg.CellID:     cell being inserted / updated
-    //      Msg.SI (hack):  CellSpecID of cell
-    //MsgOp_CellTx = 9;
+//     // Params: 
+//     //      Msg.ReqID:      originating MsgOp_PinCell request ID
+//     //      Msg.CellID:     cell being inserted / updated
+//     //      Msg.SI (hack):  CellSpecID of cell
+//     //MsgOp_CellTx = 9;
 
-    // Used to push attr element values.
-    //
-    // Params: 
-    //      Msg.ReqID:      originating MsgOp_PinCell request ID
-    //      Msg.CellID:     which cell is being updated
-    //      Msg.AttrID:     which attr is being updated
-    //      Msg.ValBuf:     IAW with AttrID
-    MsgOp_PushAttrElem = 10; // Atom?
+//     // Used to push attr element values.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      originating MsgOp_PinCell request ID
+//     //      Msg.CellID:     which cell is being updated
+//     //      Msg.AttrID:     which attr is being updated
+//     //      Msg.ValBuf:     serialized MultiTx (MultiTxPb)
+//     MsgOp_PushMultiTx = 2; // Atom?
     
-    // Signals the insertion of a new child cell into the pinned (parent) cell.
-    // After this message, zero or more MsgOp_PushAttr msgs follow.
-    //
-    // Params: 
-    //      Msg.ReqID:      originating MsgOp_PinCell request ID
-    //      Msg.CellID:     new cell being added
-    //      Msg.ValInt:     cell schema ID being pushed (specifies which Cell attribs are expected to follow)
-    //      Msg.ValStr:     cell local ID (if present)
-    //MsgOp_InsertChildCell = 14;
+//     // Signals the insertion of a new child cell into the pinned (parent) cell.
+//     // After this message, zero or more MsgOp_PushAttr msgs follow.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      originating MsgOp_PinCell request ID
+//     //      Msg.CellID:     new cell being added
+//     //      Msg.ValInt:     cell schema ID being pushed (specifies which Cell attribs are expected to follow)
+//     //      Msg.ValStr:     cell local ID (if present)
+//     //MsgOp_InsertChildCell = 14;
     
-    // Similar to InsertCell, except this auto-creates a new cell if it doesn't exist.
-    //
-    // Params: 
-    //      Msg.ReqID:      originating MsgOp_PinCell request ID (client to host)
-    //      Msg.CellID:     new cell that was added (set on host reply)
-    //      Msg.ValInt:     cell schema ID to be attached to the new cell
-    //      Msg.ValStr:     cell local ID (optional)
-    //MsgOp_UpsertCell = 15; 
+//     // Similar to InsertCell, except this auto-creates a new cell if it doesn't exist.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      originating MsgOp_PinCell request ID (client to host)
+//     //      Msg.CellID:     new cell that was added (set on host reply)
+//     //      Msg.ValInt:     cell schema ID to be attached to the new cell
+//     //      Msg.ValStr:     cell local ID (optional)
+//     //MsgOp_UpsertCell = 15; 
     
-    // Used by the sender to signal that the given cell's state push is up to date and can be processed by the recipient.
-    // This msg is typically used to drive UI updates or other aggregate cell dependencies.
-    //
-    // Params: 
-    //      Msg.ReqID:      originating request ID
-    //      Msg.CellID:     which cell is an an updated state
-    MsgOp_Checkpoint = 24;
+//     // Used by the sender to signal that the given cell's state push is up to date and can be processed by the recipient.
+//     // This msg is typically used to drive UI updates or other aggregate cell dependencies.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      originating request ID
+//     //      Msg.CellID:     which cell is an an updated state
+//     //MsgOp_Checkpoint = 24;
 
-    // From the client to host, this signals to cancel the operation(s) associated with the given request ID (PinID). 
-    // From the host to client, this signals that the given request ID has been canceled / discarded (and is now closed).
-    // if len(Msg.ValBuf) > 0, then an Err is serialized, offering amplifying info on why the request was closed.
-    //
-    // Params: 
-    //      Msg.ReqID:      parent request ID
-    MsgOp_Close = 127;
+//     // From the client to host, this signals to cancel the operation(s) associated with the given request ID (PinID). 
+//     // From the host to client, this signals that the given request ID has been canceled / discarded (and is now closed).
+//     // if len(Msg.ValBuf) > 0, then an Err is serialized, offering amplifying info on why the request was closed.
+//     //
+//     // Params: 
+//     //      Msg.ReqID:      parent request ID
+//     //      Msg.AttrID:     which attr is being updated
+//     MsgOp_Close = 127;
     
-}
-
-
-// enum BatchFlags {
-//     BatchFlags_None = 0;
-//     BatchFlags_CellReplace = 0x001; // full update
-//     BatchFlags_CellCheckpoint = 0x001; // partial update
-//     BatchFlags_CellDeleted    = 0x002;
 // }
 
-enum MsgFlags {
 
-    MsgFlags_None = 0;
-    
-   // MsgFlags_EndOfAttrBatch = 0;
 
-    // Used to signal that the attrs of Msg.CellID are in a stable state "checkpoint",
-    // This flag is applied on the last MsgOp_PushAttrElem of a batch of attr updates to a cell.
-    //MsgFlags_CellAttrsSynced  = 0x001;
-
-    
-    // Used to signal that Msg.CelID has been deleted
-    MsgFlags_CellDeleted  = 0x002;
-    
-     
-    // // CellCheckpoint signals that the cell referenced by this Msg is at a stable state "checkpoint", 
-    // MsgFlags_CellCheckpoint = 0x001;
-    
-    // // ReqCheckpoint signals that the request referenced ReqID is at a stable state "checkpoint",
-    // MsgFlags_ReqCheckpoint = 0x02;
-    
-    // ValBufShared signals that this Msg's ValBuf referenced elsewhere and is therefore READ ONLY.
-    // This used internally to support Msg pooling / recycling. 
-    // When marshaling, this flag is always cleared!
-    MsgFlags_ValBufShared = 0x100;
+enum ReqStatus {
+    ReqStatus_Syncing      = 0;
+    ReqStatus_Synced       = 1;
+    //ReqStatus_Canceled     = 0x10;
+    ReqStatus_Closed       = 0x20;
 }
 
-
-
 message Msg {
-    
-    // Describes how this Msg should be interpreted
-    MsgOp               Op              = 1;
-    
-    // ReqID specifies a request context. 
+
+    // ReqID names an originating request ID, issued by client using an atomic counter.
     //
     // When a client issues request-side MsgOp (e.g. ResolveCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
     // If this msg is a reply to a request, ReqID identifies the originating request op.
-    uint64              ReqID           = 2;
-    
-    // CellID identifies the cell associated with Msg.Op.
-    int64               CellID          = 4;
+    uint64              ReqID           = 1;
 
-    // CellID corresponding to a user or agent that authored the content of this Msg.
-    // uint32              FromID          = 11;
-    
-    // AttrID names the attribute associated with this Msg (used for MsgOp_PushAttr).
-    // This value corresponds to AttrSpec.DefID
-    uint32              AttrID          = 6;
-    
-    // SI ("Series Index") specifies how an int64 is interpreted as an attr element index value.
-    // See AttrSpec.SeriesSpec
-    int64               SI              = 8;    
+    repeated CellTxPb   CellTxs         = 5;
 
-    // ValBuf is interpreted according to AttrID 
-    bytes               ValBuf          = 10;
-
-    // Flags contains MsgFlags
-    MsgFlags            Flags           = 12;
-    
+    // Allows the sender to communicate a status or error to the recipient.
+    ReqStatus           Status          = 3;
 }
 
 
-/*
-message MultiCellTx {
-    uint64             ReqID           = 3;
-    repeated CellTxn   CellTx         = 4;
+
+message CellTxPb {
+    CellTxOp            Op          = 1;
+    uint32              CellSpec    = 2;
+    
+    // uint64              SelfAttrsSpec          = 2;
+    // uint64              CommonAttrsSpec          = 2;
+    // uint64              PinnedAttrsSpec          = 2;
+    
+    fixed64             TID_UTC16   = 6;
+    fixed64             TID_HASH1   = 7;
+    fixed64             TID_HASH2   = 8;
+    fixed64             TID_HASH3   = 9;
+    
+
+
+    int64               TargetCell      = 3;
+    repeated AttrElemPb Elems           = 4;
 }
 
-message CellTxn {
-    MsgOp                 Op              = 1;
-    int64                 CellID          = 2;
-    uint32                CellSpec        = 3;
-    repeated AttrElemTx   Attrs           = 4;
-}
 
-message AttrElemTx {
-    uint32              AttrID          = 1;
-    int64               SI              = 3;    
-    bytes               ValBuf          = 4;
+enum CellTxOp {
+    CellTxOp_MetaAttr          = 0; // CellSpec and TargetCell are ignored
+    CellTxOp_InsertCell        = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
+    CellTxOp_UpdateCell        = 2;
+    CellTxOp_RemoveCell        = 3;
 }
 
 
-*/
+// Serialization helper for AttrElem
+message AttrElemPb {
+
+    // AttrID of the attr being updated (64 bits for future proofing)
+    uint64              AttrID          = 1;
+    
+    // Serialized value of the attr element -- IAW AttrID
+    bytes               ValBuf          = 2;
+    
+    // Series index (if applicable)  
+    int64               SI              = 3;  
+}
+
 
 message PlanetEpoch {
 
@@ -383,11 +359,38 @@ enum SeriesIndexType  {
     //SeriesIndexTypeCellTID  = 2; // SI values correspond to Cell TIDs 
 }
 
+	
+enum PinFlags {
+    PinFlags_None             = 0;
+    
+    // If set, all symbol / attr ID are native symbol IDs.
+    // This is used for apps pinning cells and so are using native (not client) IDs.
+    PinFlags_UseNativeSymbols = 0x01; 
 
-// A CellSpec describes this cell's attrs as a child and when this cell is pinned.
-// Two cells with matching CellSpec descriptor are the same "type" of cell.
+	// If set, PinnedCell.ServeState() causes this request (PinContext) to automatically close once state is pushed and synchronized.
+	// Otherwise, the request remains open and the client will receive any state updates until closed.
+    // This is useful when only a snapshot of the cell is needed.
+    PinFlags_CloseOnSync      = 0x04;
+    
+    // If set, a pinned cell will not send any state updates to the client.
+    // This is useful when only writing to a cell and no state updates are needed.
+    PinFlags_NoSync           = 0x08;
+    
+}
+
+
+// A CellSpec fully describes this cell's attrs as a child and when this cell is pinned.
+// Two cells with a matching CellSpec descriptor are the same "type" of cell.
 message CellSpec {
 
+
+    // uint64              SelfAttrsSpec          = 2;
+    // uint64              CommonAttrsSpec          = 2;
+    // uint64              PinnedAttrsSpec          = 2;
+
+
+    
+    // DefID is used to reference this CellSpec and can be regarded as a type ID since it is a canonic descriptor.
     // Composite expression / invocation of this CellSpec in the form:
     //      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)" 
     //
@@ -402,8 +405,8 @@ message CellSpec {
 }
 
 
-
-
+// SymbolSet
+// SymbolSelector?
 // ItemSelector selects / filters a srt of items (e.g. CellSpec or AttrSpec descriptors)
 message ItemSelector {
 
@@ -439,31 +442,32 @@ message ItemSelector {
 
 }
 
-
+/*
 message KwArg {
     string              Key    = 1;
     string              Val    = 5;
     bytes               ValBuf = 6;
 }
+*/
 
 message HandleURI {
     string              URI = 1;
 }
 
 
-// PinReq is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.  
-message PinReq {
+// PinRequest is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.  
+message PinRequest {
 
-    // ParentReqID specifies the request ID that pushed PinReq.ResolveCell (as a child), providing context.
-    // Set to 0 if PinCell and/or PinURI implies that no parent req exists.
+    // ParentReqID, if set, provides context for this request and is typically needed when pinning a cell by ID alone.  
+    // Not set if PinURI and/or PinCellID implies that no parent req exists.
     uint64              ParentReqID = 1;
     
-    // URI specifying the cell to be pinned and whose child cells are to be pushed.
+    // URL specifying the cell to be pinned and whose child cells are to be pushed.
     // Typically: [[arc://]arc-app-uri/]cell-uri..
-    string              PinURI = 2;
+    string              PinURL = 2;
         
-    // Cell ID to be pinned (or 0 if PinURI does not require a cell ID)
-    int64               PinCell = 3;
+    // PinCellID is an explicit cell ID be pinned (or 0 if PinURI does not require a cell ID)
+    int64               PinCellID = 3;
 
 	// If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
 	uint32              ParentAttrSelector = 5;
@@ -471,11 +475,13 @@ message PinReq {
 	// If set, specifies an ItemSelector that filters which child cells are pushed to the client.
 	uint32              ChildCellSelector = 6;
 	
-	// AutoClose, if set, causes this request to close once state is pushed.
-	// If false, the request will remains open and the client will continue to receive state updates until request is explicitly closed.
-	bool                AutoClose = 8;
+	// Flags specifies options.
+	PinFlags            Flags = 7;
 	
 }
+
+/*
+
 
 
 message AttrRange {
@@ -505,7 +511,7 @@ message Txn {
 
     repeated Msg        Msgs = 1;
 }
-
+*/
 
 // CordType describes how to interpret coordinates contained in a Position.
 enum CordType {
@@ -595,11 +601,6 @@ message CryptoKey {
 // CellInfo is the standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
 message CellInfo {
 
-    // CellDefID references a CellSpec definition, fully describing this cell's common and pinned attrs.
-    // This typically corresponds 1:1 to a cell's purpose / function.
-    // See message CellSpec 
-    uint32              CellDefID     = 1;
-    
     
     string              Title         = 4;  // Title, name, or label
     string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label
@@ -752,14 +753,22 @@ enum ErrCode {
     ErrCode_InsufficientPermissions     = 5101;
 }
 
+enum LogLevel {
+    LogLevel_Error = 0;
+    LogLevel_Warn  = 2;
+    LogLevel_Info  = 4;
+}
 
-// Err wraps errors and is typically used in conjunction with MsgOps.ReqCancel
+
+// Err is a general purpose error / warning / log message.
 message Err {
 
-    // ErrCode specifying how/why the request was canceled.
-                ErrCode             Code                        = 1;
-
-    // Msg is a human-readable info string that offers amplifying info about the given error.
-                string              Msg                         = 2;
-
+    // Identifies the type of error.
+    ErrCode             Code                        = 1;
+    
+    // Severity level
+    LogLevel            Level                       = 2;
+    
+    // human-readable info
+    string              Msg                         = 4;
 }

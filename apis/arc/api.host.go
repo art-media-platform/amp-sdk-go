@@ -75,9 +75,13 @@ type HostSession interface {
 	// Returns info about this user and session
 	LoginInfo() Login
 
-	// Sends an unnamed attr to the client's session controller.
-	// If the reqID == 0, the attr is sent to the client's session controller.
-	PushMetaAttr(val ElemVal, reqID uint64) error
+	// Sends a readied Msg to the client for handling.
+	// If msg.ReqID == 0, the attr is sent to the client's session controller (for sending session meta messages).
+	// On exit, the given msg should not be referenced further.
+	SendMsg(msg *Msg) error
+
+	// PinCell resolves and pins a requested cell.
+	PinCell(req PinReq) (PinContext, error)
 
 	// Gets the currently running AppInstance for an AppID.
 	// If the requested app is not running and autoCreate is set, a new instance is created and started.
@@ -86,8 +90,11 @@ type HostSession interface {
 
 // SessionRegistry manages a HostSession's symbol and type definitions.
 type SessionRegistry interface {
+
+	// Returns the symbol table for a session.
+
 	ClientSymbols() symbol.Table
-	
+
 	// Translates a native symbol ID to a client symbol ID, returning false if not found.
 	NativeToClientID(nativeID uint32) (clientID uint32, found bool)
 
@@ -142,63 +149,30 @@ func NewRegistry() Registry {
 	return newRegistry()
 }
 
-type SIRange struct {
-	Lo uint64
-	Hi uint64
+// PinContext wraps a client request to receive a cell's state / updates.
+type PinContext interface {
+	task.Context // Started as a CHILD of the arc.PinnedCell returned by AppInstance.PinCell()
+
+	PinReq // Originating request info
+
+	// PushTx pushes the given tx to this PinContext
+	PushUpdate(tx *Msg) error
+
+	App() AppContext // Parent app of the cell associated with this context
 }
 
-type CellReq interface {
-	PinID() CellID
-	URL() *url.URL
+type PinReq interface {
+	Params() *PinReqParams
 	URLPath() []string
-	String() string
 }
 
-// FUTURE: type CellTID [2]uint64
-type CellID uint64
-
-type PbValue interface {
-	Size() int
-	MarshalToSizedBuffer(dAtA []byte) (int, error)
-	Unmarshal(dAtA []byte) error
-}
-
-type ElemVal interface {
-
-	// Returns the element type name (a degenerate AttrSpec).
-	TypeName() string
-
-	// Marshals this ElemVal to a buffer, reallocating if needed.
-	MarshalToBuf(dst *[]byte) error
-
-	// Unmarshals and merges value state from a buffer.
-	Unmarshal(src []byte) error
-
-	// Creates a default instance of this same ElemVal type
-	New() ElemVal
-}
-
-type AttrElem struct {
-	Val    ElemVal
-	SI     int64
-	AttrID uint32
-}
-
-type AttrDef struct {
-	Client AttrSpec
-	Native AttrSpec
-}
-
-type CellDef struct {
-	ClientDefID uint32    // READ-ONLY
-	NativeDefID uint32    // READ-ONLY
-	CommonAttrs []AttrDef // READ-ONLY
-	PinnedAttrs []AttrDef // READ-ONLY
-}
-
-// AttrTx?
-// FUTURE: write custom MarshalToBuf / Unmarshal that write multiple AttrElems to a single Msg
-type AttrBatch struct {
+// PinReqParams implements PinReq
+type PinReqParams struct {
+	PinReq PinRequest
+	URL    *url.URL
 	Target CellID
-	Attrs  []AttrElem
+	ReqID  uint64    // Request ID needed to route to the originator
+	Desc   string    // info string for debugging
+	Outlet chan *Msg // send to this channel to send to the originator
+
 }

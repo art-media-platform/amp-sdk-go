@@ -11,6 +11,7 @@ var (
 	ErrPinCtxClosed  = ErrCode_PinContextClosed.Error("pin context closed")
 	ErrNotPinnable   = ErrCode_PinFailed.Error("not pinnable")
 	ErrUnimplemented = ErrCode_PinFailed.Error("not implemented")
+	ErrBadCellTx     = ErrCode_MalformedTx.Error("missing cell spec / target cell")
 	ErrNothingToPin  = ErrCode_PinFailed.Error("nothing to pin")
 	ErrShuttingDown  = ErrCode_ShuttingDown.Error("shutting down")
 	ErrTimeout       = ErrCode_Timeout.Error("timeout")
@@ -28,7 +29,7 @@ func (err *Err) Error() string {
 		return codeStr
 	}
 
-	return err.Msg + " (" + codeStr + ")"
+	return err.Msg + " / " + codeStr
 }
 
 // Error returns an *Err with the given error code

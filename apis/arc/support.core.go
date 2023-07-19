@@ -2,20 +2,22 @@ package arc
 
 import (
 	"bytes"
-	"net/url"
 	strings "strings"
 	"time"
 
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
 
+// CellTID
+type CellTID uint64
+
 // TID identifies a specific planet, node, or transaction.
 //
 // Unless otherwise specified a TID in the wild should always be considered read-only.
 type TID []byte
 
-// TIDBuf is the blob version of a TID
-type TIDBuf [TIDBinaryLen]byte
+// TxID is embedded UTC16 value followed by a 24 byte hash.
+type TxID [TIDBinaryLen]byte
 
 // Byte size of a TID, a hash with a leading embedded big endian binary time index.
 const TIDBinaryLen = int(Const_TIDBinaryLen)
@@ -24,54 +26,52 @@ const TIDBinaryLen = int(Const_TIDBinaryLen)
 const TIDStringLen = int(Const_TIDStringLen)
 
 // nilTID is a zeroed TID that denotes a void/nil/zero value of a TID
-var nilTID = TIDBuf{}
+var nilTID = TxID{}
 
-// TimeFS is a signed int64 that stores a UTC in 1/2^16 sec ticks elapsed since Jan 1, 1970 UTC ("FS" = fractional seconds)
+// UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
 //
-// timeFS := TimeNowFS()
-//
-// Shifting this right 16 bits will yield standard Unix time.
-// This means there are 47 bits dedicated for seconds, implying max timestamp of 4.4 million years.
-type TimeFS int64
+// Shifting this value to the right 16 bits will yield standard Unix time.
+// This means there are 47 bits dedicated for seconds, implying a max timestamp of 4.4 million years.
+type UTC16 int64
 
 const (
-	SI_DistantFuture = TimeFS(0x7FFFFFFFFFFFFFFF)
+	SI_DistantFuture = UTC16(0x7FFFFFFFFFFFFFFF)
 )
 
-// TimeNowFS returns the current time (a standard unix UTC timestamp in 1/1<<16 seconds)
-func TimeNowFS() TimeFS {
-	return ConvertToTimeFS(time.Now())
+// TimeNow returns the current time (a standard unix UTC timestamp in 1/1<<16 seconds)
+func TimeNow() UTC16 {
+	return ConvertToUTC(time.Now())
 }
 
-// Converts a time.Time to a TimeFS.
-func ConvertToTimeFS(t time.Time) TimeFS {
-	timeFS := t.Unix() << 16
+// Converts a time.Time to a UTC16.
+func ConvertToUTC(t time.Time) UTC16 {
+	time16 := t.Unix() << 16
 	frac := uint16((2199 * (uint32(t.Nanosecond()) >> 10)) >> 15)
-	return TimeFS(timeFS | int64(frac))
+	return UTC16(time16 | int64(frac))
 }
 
-// Converts milliseconds to TimeFS.
-func ConvertMsToTimeFS(ms int64) TimeFS {
-	return TimeFS((ms << 16) / 1000)
+// Converts milliseconds to UTC16.
+func ConvertMsToUTC(ms int64) UTC16 {
+	return UTC16((ms << 16) / 1000)
 }
 
-// Converts TimeFS to a time.Time.
-func (t TimeFS) ToTime() time.Time {
+// Converts UTC16 to a time.Time.
+func (t UTC16) ToTime() time.Time {
 	return time.Unix(int64(t>>16), int64(t&0xFFFF)*15259)
 }
 
-// Converts TimeFS to milliseconds.
-func (t TimeFS) ToMs() int64 {
+// Converts UTC16 to milliseconds.
+func (t UTC16) ToMs() int64 {
 	return (int64(t>>8) * 1000) >> 8
 }
 
-// TID is a convenience function that returns the TID contained within this TIDBuf.
-func (tid *TIDBuf) TID() TID {
+// TID is a convenience function that returns the TID contained within this TxID.
+func (tid *TxID) TID() TID {
 	return tid[:]
 }
 
 // Base32 returns this TID in Base32 form.
-func (tid *TIDBuf) Base32() string {
+func (tid *TxID) Base32() string {
 	return bufs.Base32Encoding.EncodeToString(tid[:])
 }
 
@@ -95,9 +95,9 @@ func (tid TID) Clone() TID {
 	return dupe
 }
 
-// Buf is a convenience function that make a new TIDBuf from a TID byte slice.
-func (tid TID) Buf() TIDBuf {
-	var blob TIDBuf
+// Buf is a convenience function that make a new TxID from a TID byte slice.
+func (tid TID) Buf() TxID {
+	var blob TxID
 	copy(blob[:], tid)
 	return blob
 }
@@ -136,8 +136,8 @@ func (tid TID) SuffixStr() string {
 // SetTimeAndHash writes the given timestamp and the right-most part of inSig into this TID.
 //
 // See comments for TIDBinaryLen
-func (tid TID) SetTimeAndHash(time TimeFS, hash []byte) {
-	tid.SetTimeFS(time)
+func (tid TID) SetTimeAndHash(time UTC16, hash []byte) {
+	tid.SetUTC(time)
 	tid.SetHash(hash)
 }
 
@@ -154,8 +154,8 @@ func (tid TID) SetHash(hash []byte) {
 	}
 }
 
-// SetTimeFS writes the given timestamp into this TIS
-func (tid TID) SetTimeFS(t TimeFS) {
+// SetUTC16 writes the given UTC16 into this TID
+func (tid TID) SetUTC(t UTC16) {
 	tid[0] = byte(t >> 56)
 	tid[1] = byte(t >> 48)
 	tid[2] = byte(t >> 40)
@@ -166,8 +166,8 @@ func (tid TID) SetTimeFS(t TimeFS) {
 	tid[7] = byte(t)
 }
 
-// ExtractTimeFS returns the unix timestamp embedded in this TID (a unix timestamp in 1<<16 seconds UTC)
-func (tid TID) ExtractTimeFS() TimeFS {
+// ExtractUTC16 returns the unix timestamp embedded in this TID (a unix timestamp in 1<<16 seconds UTC)
+func (tid TID) ExtractUTC() UTC16 {
 	t := int64(tid[0])
 	t = (t << 8) | int64(tid[1])
 	t = (t << 8) | int64(tid[2])
@@ -177,7 +177,7 @@ func (tid TID) ExtractTimeFS() TimeFS {
 	t = (t << 8) | int64(tid[6])
 	t = (t << 8) | int64(tid[7])
 
-	return TimeFS(t)
+	return UTC16(t)
 }
 
 // ExtractTime returns the unix timestamp embedded in this TID (a unix timestamp in seconds UTC)
@@ -197,9 +197,9 @@ func (tid TID) ExtractTime() int64 {
 // If t is later than the time embedded in this TID, then this function has no effect and returns false.
 //
 // If t is earlier, then this TID is initialized to t (and the rest zeroed out) and returns true.
-func (tid TID) SelectEarlier(t TimeFS) bool {
+func (tid TID) SelectEarlier(t UTC16) bool {
 
-	TIDt := tid.ExtractTimeFS()
+	TIDt := tid.ExtractUTC()
 
 	// Timestamp of 0 is reserved and should only reflect an invalid/uninitialized TID.
 	if t < 0 {
@@ -207,7 +207,7 @@ func (tid TID) SelectEarlier(t TimeFS) bool {
 	}
 
 	if t < TIDt || t == 0 {
-		tid.SetTimeFS(t)
+		tid.SetUTC(t)
 		for i := 8; i < len(tid); i++ {
 			tid[i] = 0
 		}
@@ -230,63 +230,6 @@ func (tid TID) CopyNext(inTID TID) {
 
 func (id ConstSymbol) Ord() uint32 {
 	return uint32(id)
-}
-
-// AppBase is a helper for implementing AppInstance.
-// It is typically extended by embedding it into a struct that builds on top of it.
-type AppBase struct {
-	AppContext
-	LinkCellSpec uint32
-	CellInfoAttr uint32
-}
-
-func (app *AppBase) OnNew(ctx AppContext) error {
-	app.AppContext = ctx
-
-	var err error
-	if app.LinkCellSpec, err = app.ResolveAppCell(LinkCellSpec); err != nil {
-		return err
-	}
-
-	if app.CellInfoAttr, err = app.ResolveAppAttr((&CellInfo{}).TypeName()); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (app *AppBase) HandleURL(*url.URL) error {
-	return ErrUnimplemented
-}
-
-func (app *AppBase) OnClosing() {
-
-}
-
-// ResolveAppCell is a convenience function that resolves a cell spec into a CellSpec def ID.
-func (app *AppBase) ResolveAppCell(cellSpec string) (cellSpecID uint32, err error) {
-	cellDef, err := app.AppContext.Session().ResolveCellSpec(cellSpec)
-	if err != nil {
-		return
-	}
-	return cellDef.ClientDefID, nil
-}
-
-// ResolveAppAttr is a convenience function that resolves an attr spec intended to be sent to the client.
-func (app *AppBase) ResolveAppAttr(attrSpec string) (uint32, error) {
-	spec, err := app.AppContext.Session().ResolveAttrSpec(attrSpec, false)
-	if err != nil {
-		return 0, err
-	}
-	return spec.DefID, nil
-}
-
-func (app *AppBase) RegisterElemType(prototype ElemVal) error {
-	err := app.AppContext.Session().RegisterElemType(prototype)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Analyses an AttrSpec's SeriesSpec and returns the index class it uses.

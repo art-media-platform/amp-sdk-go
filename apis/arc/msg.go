@@ -221,42 +221,30 @@ func (tx *CellTx) MarshalToPb(dst *CellTxPb) error {
 }
 */
 
-func SendMetaAttr(sess HostSession, elem AttrElem) error {
-	tx, err := MarshalCellTx(sess, elem)
+// If reqID == 0, then this sends an attr to the client's session controller (vs a specific request)
+func SendClientMetaAttr(sess HostSession, reqID uint64, val ElemVal) error {
+	msg, err := FormClientMetaAttrMsg(sess, val.TypeName(), val)
+	msg.ReqID = reqID
 	if err != nil {
 		return err
 	}
-
-	msg := NewMsg()
-	msg.ReqID = 0 // signals a meta message
-	msg.CellTxs = append(msg.CellTxs, tx)
 	return sess.SendMsg(msg)
 }
 
-func (msg *Msg) SendReply(sess HostSession, val ElemVal) error {
-	tx, err := MarshalCellTx(sess, AttrElem{
-		Val: val,
-	})
+func FormClientMetaAttrMsg(reg SessionRegistry, attrSpec string, val ElemVal) (*Msg, error) {
+	spec, err := reg.ResolveAttrSpec(attrSpec, false)
 	if err != nil {
-		return err
-	}
-
-	msg.CellTxs = append(msg.CellTxs[:0], tx)
-	return sess.SendMsg(msg)
-}
-
-func MarshalCellTx(sess HostSession, elem AttrElem) (*CellTxPb, error) {
-	attrSpec, err := sess.ResolveAttrSpec(elem.Val.TypeName(), false)
-	if err != nil {
-		sess.Warnf("ResolveAttrSpec() error: %v", err)
 		return nil, err
 	}
 
+	return FormMetaAttrTx(spec, val)
+}
+
+func FormMetaAttrTx(attrSpec AttrSpec, val ElemVal) (*Msg, error) {
 	elemPb := &AttrElemPb{
 		AttrID: uint64(attrSpec.DefID),
-		SI:     elem.SI,
 	}
-	if err = elem.Val.MarshalToBuf(&elemPb.ValBuf); err != nil {
+	if err := val.MarshalToBuf(&elemPb.ValBuf); err != nil {
 		return nil, err
 	}
 
@@ -266,16 +254,13 @@ func MarshalCellTx(sess HostSession, elem AttrElem) (*CellTxPb, error) {
 			elemPb,
 		},
 	}
-	return tx, nil
-}
 
-// // Helper function for using HostSession.PushTx()
-// func (tx *CellTxPb) PushTx(to PinContext, reqID uint64) error {
-// 	msg := NewMsg()
-// 	msg.ReqID = reqID
-// 	msg.CellTxs = append(msg.CellTxs, tx)
-// 	return ctx.Session().SendMsg(msg)
-// }
+	msg := NewMsg()
+	msg.ReqID = 0 // signals a meta message
+	msg.Status = ReqStatus_Synced
+	msg.CellTxs = append(msg.CellTxs, tx)
+	return msg, nil
+}
 
 func (msg *Msg) GetMetaAttr() (attr *AttrElemPb, err error) {
 	if len(msg.CellTxs) == 0 || msg.CellTxs[0].Op != CellTxOp_MetaAttr || msg.CellTxs[0].Elems == nil || len(msg.CellTxs[0].Elems) == 0 {

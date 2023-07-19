@@ -89,11 +89,16 @@ type HostSession interface {
 }
 
 // SessionRegistry manages a HostSession's symbol and type definitions.
+// All calls are safe to call from multiple goroutines.
 type SessionRegistry interface {
 
 	// Returns the symbol table for a session.
-
 	ClientSymbols() symbol.Table
+
+	// Issues a monotonically increasing UTC16 timestamp (guaranteed never to have been issued before).
+	// This is often just the current timestamp, but when multiple timestamps are rapidly issued then the next available UTC16 is issued by adding a tick.
+	// This means even during intense TimeID issuance, TimeID will be unique and "caught up" after a negligible period of time.
+	IssueTimeID() TimeID
 
 	// Translates a native symbol ID to a client symbol ID, returning false if not found.
 	NativeToClientID(nativeID uint32) (clientID uint32, found bool)

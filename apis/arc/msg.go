@@ -10,9 +10,6 @@ type MsgBatch struct {
 	Msgs []*Msg
 }
 
-// Sets a reasonable size beyond which buffers should be shared rather than copied.
-const MsgValBufCopyLimit = 16 * 1024
-
 /*
 func NewMsgBatch() *MsgBatch {
 	return gMsgBatchPool.Get().(*MsgBatch)

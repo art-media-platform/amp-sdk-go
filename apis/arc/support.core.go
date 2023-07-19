@@ -8,8 +8,14 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
 
-// CellTID
-type CellTID uint64
+// TimeID is a locally unique UTC16 value -- see SessionRegistry.IssueTimeID()
+type TimeID UTC16
+
+// CellTID?
+// CellID is a uniquely issued CellID
+type CellID int64
+
+//type CellTID uint64
 
 // TID identifies a specific planet, node, or transaction.
 //
@@ -37,11 +43,6 @@ type UTC16 int64
 const (
 	SI_DistantFuture = UTC16(0x7FFFFFFFFFFFFFFF)
 )
-
-// TimeNow returns the current time (a standard unix UTC timestamp in 1/1<<16 seconds)
-func TimeNow() UTC16 {
-	return ConvertToUTC(time.Now())
-}
 
 // Converts a time.Time to a UTC16.
 func ConvertToUTC(t time.Time) UTC16 {

@@ -99,9 +99,6 @@ type PinnedCell interface {
 	MergeUpdate(tx *MultiTx) error
 }
 
-// FUTURE: type CellTID [2]uint64
-type CellID uint64
-
 type PbValue interface {
 	Size() int
 	MarshalToSizedBuffer(dAtA []byte) (int, error)

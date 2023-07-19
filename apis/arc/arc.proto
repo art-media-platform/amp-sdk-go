@@ -290,6 +290,7 @@ message LoginResponse {
 
 message Symbol {
     // A symbol ID is 32 bits and corresponds to a real-world const byte strings.
+    // FUTURE: IDs are int64, where client symbols IDs are < 0 and native symbols are > 0.
     uint32              ID              = 1;
     bytes               Name            = 2;
 }
@@ -394,10 +395,10 @@ message CellSpec {
     // Composite expression / invocation of this CellSpec in the form:
     //      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)" 
     //
-    // e.g. "(CellInfo,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
+    // e.g. "(CellLabels,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
-    // A sequence of attr IDs (attr descriptors) that are this Cell has as both a child and parent.
+    // A sequence of AttrSpecs (addr symbol descriptors) that are this Cell has as both a child and parent.
     repeated uint32     CommonAttrs    = 4;
     
     // A sequence of attr IDs cells specifying *additional* attrs this Cell has when pinned.
@@ -598,9 +599,8 @@ message CryptoKey {
 }
 
 
-// CellInfo is the standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
-message CellInfo {
-
+// CellLabels is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
+message CellLabels {
     
     string              Title         = 4;  // Title, name, or label
     string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label

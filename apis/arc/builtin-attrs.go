@@ -41,7 +41,7 @@ func RegisterBuiltInTypes(reg Registry) error {
 		&LoginResponse{},
 
 		&PinRequest{},
-		&CellInfo{},
+		&CellLabels{},
 		&AssetRef{},
 		&AuthToken{},
 		&Position{},
@@ -148,16 +148,16 @@ func (v *LoginResponse) New() ElemVal {
 	return &LoginResponse{}
 }
 
-func (v *CellInfo) MarshalToBuf(dst *[]byte) error {
+func (v *CellLabels) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *CellInfo) TypeName() string {
-	return "CellInfo"
+func (v *CellLabels) TypeName() string {
+	return "CellLabels"
 }
 
-func (v *CellInfo) New() ElemVal {
-	return &CellInfo{}
+func (v *CellLabels) New() ElemVal {
+	return &CellLabels{}
 }
 
 func (v *RegisterDefs) MarshalToBuf(dst *[]byte) error {

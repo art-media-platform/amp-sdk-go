@@ -78,12 +78,23 @@ type AppInstance interface {
 	OnClosing()
 }
 
+// Cell is an interface for an app Cell
+type Cell interface {
+
+	// Returns this cell's immutable info
+	Info() CellInfo
+}
+
 // PinnedCell is how your app encapsulates a pinned cell to the archost runtime and thus clients.
 type PinnedCell interface {
+	Cell
 
 	// Apps spawn a PinnedCell as a child task.Context of arc.AppContext.Context or as a child of another PinnedCell.
 	// This means an AppContext contains all its PinnedCells and thus Close() will close all PinnedCells.
 	Context() task.Context
+
+	// Info about this pinned cell
+	Info() CellInfo
 
 	// Pins the requested cell (typically a child cell).
 	PinCell(req PinReq) (PinnedCell, error)
@@ -96,7 +107,7 @@ type PinnedCell interface {
 	ServeState(ctx PinContext) error
 
 	// Merges a set of incoming changes into this pinned cell. -- "write" operation
-	MergeUpdate(tx *MultiTx) error
+	MergeUpdate(tx *Msg) error
 }
 
 type PbValue interface {
@@ -118,6 +129,12 @@ type ElemVal interface {
 
 	// Creates a default instance of this same ElemVal type
 	New() ElemVal
+}
+
+// CellInfo contains immutable info about a cell.
+type CellInfo struct {
+	CellID   CellID
+	CellSpec uint32
 }
 
 // MultiTx is a state update for a pinned cell or a container of meta attrs.

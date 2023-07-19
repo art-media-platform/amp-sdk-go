@@ -173,11 +173,11 @@ type PinReq interface {
 
 // PinReqParams implements PinReq
 type PinReqParams struct {
-	PinReq PinRequest
-	URL    *url.URL
-	Target CellID
-	ReqID  uint64    // Request ID needed to route to the originator
-	Desc   string    // info string for debugging
-	Outlet chan *Msg // send to this channel to send to the originator
+	PinReq   PinRequest
+	URL      *url.URL
+	Target   CellID
+	ReqID    uint64    // Request ID needed to route to the originator
+	LogLabel string    // info string for logging and debugging
+	Outlet   chan *Msg // send to this channel to send to the originator
 
 }

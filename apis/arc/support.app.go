@@ -10,7 +10,7 @@ import "net/url"
 type AppBase struct {
 	AppContext
 	LinkCellSpec uint32
-	CellInfoAttr uint32
+	CellLabelsAttr uint32
 }
 
 func (app *AppBase) OnNew(ctx AppContext) error {
@@ -21,7 +21,7 @@ func (app *AppBase) OnNew(ctx AppContext) error {
 		return err
 	}
 
-	if app.CellInfoAttr, err = app.ResolveAppAttr((&CellInfo{}).TypeName()); err != nil {
+	if app.CellLabelsAttr, err = app.ResolveAppAttr((&CellLabels{}).TypeName()); err != nil {
 		return err
 	}
 

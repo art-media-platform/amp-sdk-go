@@ -68,7 +68,19 @@ type logger struct {
 	logLabel  string
 }
 
-var longestLabel int
+var (
+	gLongestLabel int
+	gSpacing      = "                                                               "
+)
+
+func (l *logger) Padding() string {
+	labelLen := len(l.logLabel)
+	if labelLen >= gLongestLabel {
+		return " "
+	} else {
+		return gSpacing[:gLongestLabel-labelLen]
+	}
+}
 
 // NewLogger creates and inits a new Logger with the given label.
 func NewLogger(label string) Logger {
@@ -92,8 +104,24 @@ func (l *logger) SetLogLabel(inLabel string) {
 	l.hasPrefix = len(inLabel) > 0
 	if l.hasPrefix {
 		l.logPrefix = fmt.Sprintf("[%s] ", inLabel)
-		if len(l.logPrefix) > longestLabel {
-			longestLabel = len(l.logPrefix)
+
+		// Find length of longest line
+		{
+			longest := gLongestLabel
+			max := len(gSpacing) - 1
+			N := len(l.logPrefix)
+			for pos := 0; pos < N; {
+				lineEnd := strings.IndexByte(l.logPrefix[pos:], '\n')
+				if lineEnd < 0 {
+					pos = N
+				}
+				lineLen := min(max, 1+lineEnd-pos)
+				if lineLen > longest {
+					longest = lineLen
+					gLongestLabel = longest
+				}
+				pos += lineEnd + 1
+			}
 		}
 	}
 }
@@ -115,8 +143,7 @@ func (l *logger) LogV(inVerboseLevel int32) bool {
 
 func (l *logger) Debug(args ...interface{}) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.DebugDepth(1, l.logPrefix, padding, fmt.Sprint(args...))
+		klog.DebugDepth(1, l.logPrefix, l.Padding(), fmt.Sprint(args...))
 	} else {
 		klog.DebugDepth(1, args...)
 	}
@@ -124,8 +151,7 @@ func (l *logger) Debug(args ...interface{}) {
 
 func (l *logger) Debugf(inFormat string, args ...interface{}) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.DebugDepth(1, l.logPrefix, padding, fmt.Sprintf(inFormat, args...))
+		klog.DebugDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(inFormat, args...))
 	} else {
 		klog.DebugDepth(1, fmt.Sprintf(inFormat, args...))
 	}
@@ -133,8 +159,7 @@ func (l *logger) Debugf(inFormat string, args ...interface{}) {
 
 func (l *logger) Debugw(msg string, fields Fields) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.DebugDepth(1, l.logPrefix, padding, fmt.Sprintf(msg+" %v", fields))
+		klog.DebugDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(msg+" %v", fields))
 	} else {
 		klog.DebugDepth(1, fmt.Sprintf(msg+" %v", fields))
 	}
@@ -142,8 +167,7 @@ func (l *logger) Debugw(msg string, fields Fields) {
 
 func (l *logger) Success(args ...interface{}) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.SuccessDepth(1, l.logPrefix, padding, fmt.Sprint(args...))
+		klog.SuccessDepth(1, l.logPrefix, l.Padding(), fmt.Sprint(args...))
 	} else {
 		klog.SuccessDepth(1, args...)
 	}
@@ -151,8 +175,7 @@ func (l *logger) Success(args ...interface{}) {
 
 func (l *logger) Successf(inFormat string, args ...interface{}) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.SuccessDepth(1, l.logPrefix, padding, fmt.Sprintf(inFormat, args...))
+		klog.SuccessDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(inFormat, args...))
 	} else {
 		klog.SuccessDepth(1, fmt.Sprintf(inFormat, args...))
 	}
@@ -160,8 +183,7 @@ func (l *logger) Successf(inFormat string, args ...interface{}) {
 
 func (l *logger) Successw(msg string, fields Fields) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.SuccessDepth(1, l.logPrefix, padding, fmt.Sprintf(msg+" %v", fields))
+		klog.SuccessDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(msg+" %v", fields))
 	} else {
 		klog.SuccessDepth(1, fmt.Sprintf(msg+" %v", fields))
 	}
@@ -182,8 +204,7 @@ func (l *logger) Info(inVerboseLevel int32, args ...interface{}) {
 
 	if logIt {
 		if l.hasPrefix {
-			padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-			klog.InfoDepth(1, l.logPrefix, padding, fmt.Sprint(args...))
+			klog.InfoDepth(1, l.logPrefix, l.Padding(), fmt.Sprint(args...))
 		} else {
 			klog.InfoDepth(1, args...)
 		}
@@ -202,8 +223,7 @@ func (l *logger) Infof(inVerboseLevel int32, inFormat string, args ...interface{
 
 	if logIt {
 		if l.hasPrefix {
-			padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-			klog.InfoDepth(1, l.logPrefix, padding, fmt.Sprintf(inFormat, args...))
+			klog.InfoDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(inFormat, args...))
 		} else {
 			klog.InfoDepth(1, fmt.Sprintf(inFormat, args...))
 		}
@@ -212,8 +232,7 @@ func (l *logger) Infof(inVerboseLevel int32, inFormat string, args ...interface{
 
 func (l *logger) Infow(msg string, fields Fields) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.InfoDepth(1, l.logPrefix, padding, fmt.Sprintf(msg+" %v", fields))
+		klog.InfoDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(msg+" %v", fields))
 	} else {
 		klog.InfoDepth(1, fmt.Sprintf(msg+" %v", fields))
 	}
@@ -226,8 +245,7 @@ func (l *logger) Infow(msg string, fields Fields) {
 // won't result in a departure of specifications, correctness, or expected behavior.
 func (l *logger) Warn(args ...interface{}) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.WarningDepth(1, l.logPrefix, padding, fmt.Sprint(args...))
+		klog.WarningDepth(1, l.logPrefix, l.Padding(), fmt.Sprint(args...))
 	} else {
 		klog.WarningDepth(1, args...)
 	}
@@ -239,8 +257,7 @@ func (l *logger) Warn(args ...interface{}) {
 // See comments above for Warn() for guidelines on errors vs warnings.
 func (l *logger) Warnf(inFormat string, args ...interface{}) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.WarningDepth(1, l.logPrefix, padding, fmt.Sprintf(inFormat, args...))
+		klog.WarningDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(inFormat, args...))
 	} else {
 		klog.WarningDepth(1, fmt.Sprintf(inFormat, args...))
 	}
@@ -248,8 +265,7 @@ func (l *logger) Warnf(inFormat string, args ...interface{}) {
 
 func (l *logger) Warnw(msg string, fields Fields) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.WarningDepth(1, l.logPrefix, padding, fmt.Sprintf(msg+" %v", fields))
+		klog.WarningDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(msg+" %v", fields))
 	} else {
 		klog.WarningDepth(1, fmt.Sprintf(msg+" %v", fields))
 	}
@@ -264,8 +280,7 @@ func (l *logger) Warnw(msg string, fields Fields) {
 func (l *logger) Error(args ...interface{}) {
 	{
 		if l.hasPrefix {
-			padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-			klog.ErrorDepth(1, l.logPrefix, padding, fmt.Sprint(args...))
+			klog.ErrorDepth(1, l.logPrefix, l.Padding(), fmt.Sprint(args...))
 		} else {
 			klog.ErrorDepth(1, args...)
 		}
@@ -279,8 +294,7 @@ func (l *logger) Error(args ...interface{}) {
 func (l *logger) Errorf(inFormat string, args ...interface{}) {
 	{
 		if l.hasPrefix {
-			padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-			klog.ErrorDepth(1, l.logPrefix, padding, fmt.Sprintf(inFormat, args...))
+			klog.ErrorDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(inFormat, args...))
 		} else {
 			klog.ErrorDepth(1, fmt.Sprintf(inFormat, args...))
 		}
@@ -289,8 +303,7 @@ func (l *logger) Errorf(inFormat string, args ...interface{}) {
 
 func (l *logger) Errorw(msg string, fields Fields) {
 	if l.hasPrefix {
-		padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-		klog.ErrorDepth(1, l.logPrefix, padding, fmt.Sprintf(msg+" %v", fields))
+		klog.ErrorDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(msg+" %v", fields))
 	} else {
 		klog.ErrorDepth(1, fmt.Sprintf(msg+" %v", fields))
 	}
@@ -301,8 +314,7 @@ func (l *logger) Errorw(msg string, fields Fields) {
 func (l *logger) Fatalf(inFormat string, args ...interface{}) {
 	{
 		if l.hasPrefix {
-			padding := strings.Repeat(" ", longestLabel-len(l.logPrefix))
-			klog.FatalDepth(1, l.logPrefix, padding, fmt.Sprintf(inFormat, args...))
+			klog.FatalDepth(1, l.logPrefix, l.Padding(), fmt.Sprintf(inFormat, args...))
 		} else {
 			klog.FatalDepth(1, fmt.Sprintf(inFormat, args...))
 		}
@@ -350,4 +362,11 @@ func AwaitInterrupt() (
 
 	klog.InfoDepth(1, "To stop: \x1b[1m^C\x1b[0m  or  \x1b[1mkill -s SIGINT ", os.Getpid(), "\x1b[0m")
 	return onFirst, onRepeated
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

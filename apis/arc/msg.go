@@ -172,12 +172,6 @@ func (tx *CellTx) Marshal(attrID uint32, SI int64, val ElemVal) {
 	}
 
 	tx.ElemsPb = append(tx.ElemsPb, pb)
-	// tx.Elems = append(tx.Elems, AttrElem{
-	// 	SI:     SI,
-	// 	AttrID: attrID,
-	// 	Val:    val,
-	// })
-
 }
 
 func (tx *CellTx) Clear(op CellTxOp) {

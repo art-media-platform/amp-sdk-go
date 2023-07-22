@@ -69,9 +69,6 @@ enum ConstSymbol {
 
 
 
-
-
-
     // ValType_AttrSet            = 4; // .ValInt is a AttrSet CellID
     // ValType_NameSet            = 5; // CellID+AttrID+NameID     => Msg.(Type)          Values only 
     // ValType_CellSet            = 6; // CellID+AttrID+CellID     => Cell_NID            AttrSet NIDs only 
@@ -80,110 +77,16 @@ enum ConstSymbol {
     // ValType_CellSetID          = 21; // .ValInt is a CellSet ID (used for SetValType_CellSet)
 
 
-
-// // MsgOp tells a holder of a Msg how to interpret its purpose and fields.
-// enum MsgOp {
-//     MsgOp_NoOp = 0;
-
-//     /*
-//     MsgOp.PinCell->   
-//         <-MsgOp.PushAttr
-//         ...
-        
-//         <-MsgOp.InsertChildCell (child of pinned cell)
-//         <-MsgOp.PushAttr
-//         ...
-        
-//         <-MsgOp.InsertChildCell (child of pinned cell)
-//         <-MsgOp.PushAttr
-//         ...
-//     <-MsgOp.Commit
-//     */
-
-//     // MsgOp_MetaAttr posts a high-level event to the receiver, serving as a mechanism to send app-specific events.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      originating request ID
-//     //      Msg.ValBuf:     IAW with AttrID
-//     //MsgOp_MetaAttr = 4;
-
-
-//     // From client to host, this requests a given cell be pinned.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      client-generated (unique) request ID 
-//     //      Msg.CellID:     CellID being pinned     (host to client, otherwise 0)
-//     //      Msg.ValBuf:     PinReq                  (client to host, otherwise nil)
-//     MsgOp_PinCell = 1;
-    
-
-//     // Requests a given CellID to be pinned under a unique client-generated PinID
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      client-generated request ID 
-//     //      Msg.CellID:     which cell
-//     //MsgOp_PinAttrRange = 8;
-    
-//     // Params: 
-//     //      Msg.ReqID:      originating MsgOp_PinCell request ID
-//     //      Msg.CellID:     cell being inserted / updated
-//     //      Msg.SI (hack):  CellSpecID of cell
-//     //MsgOp_CellTx = 9;
-
-//     // Used to push attr element values.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      originating MsgOp_PinCell request ID
-//     //      Msg.CellID:     which cell is being updated
-//     //      Msg.AttrID:     which attr is being updated
-//     //      Msg.ValBuf:     serialized MultiTx (MultiTxPb)
-//     MsgOp_PushMultiTx = 2; // Atom?
-    
-//     // Signals the insertion of a new child cell into the pinned (parent) cell.
-//     // After this message, zero or more MsgOp_PushAttr msgs follow.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      originating MsgOp_PinCell request ID
-//     //      Msg.CellID:     new cell being added
-//     //      Msg.ValInt:     cell schema ID being pushed (specifies which Cell attribs are expected to follow)
-//     //      Msg.ValStr:     cell local ID (if present)
-//     //MsgOp_InsertChildCell = 14;
-    
-//     // Similar to InsertCell, except this auto-creates a new cell if it doesn't exist.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      originating MsgOp_PinCell request ID (client to host)
-//     //      Msg.CellID:     new cell that was added (set on host reply)
-//     //      Msg.ValInt:     cell schema ID to be attached to the new cell
-//     //      Msg.ValStr:     cell local ID (optional)
-//     //MsgOp_UpsertCell = 15; 
-    
-//     // Used by the sender to signal that the given cell's state push is up to date and can be processed by the recipient.
-//     // This msg is typically used to drive UI updates or other aggregate cell dependencies.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      originating request ID
-//     //      Msg.CellID:     which cell is an an updated state
-//     //MsgOp_Checkpoint = 24;
-
-//     // From the client to host, this signals to cancel the operation(s) associated with the given request ID (PinID). 
-//     // From the host to client, this signals that the given request ID has been canceled / discarded (and is now closed).
-//     // if len(Msg.ValBuf) > 0, then an Err is serialized, offering amplifying info on why the request was closed.
-//     //
-//     // Params: 
-//     //      Msg.ReqID:      parent request ID
-//     //      Msg.AttrID:     which attr is being updated
-//     MsgOp_Close = 127;
-    
-// }
-
-
-
 enum ReqStatus {
     ReqStatus_Syncing      = 0;
-    ReqStatus_Synced       = 1;
-    //ReqStatus_Canceled     = 0x10;
-    ReqStatus_Closed       = 0x20;
+    
+    // Sent by the host to signal that this ReqID up to date and the client state is stable / synchronized.
+    // This generally drives UI updates or other aggregate cell dependencies.
+    ReqStatus_Synced       = 0x01;
+    
+    // From the client to host, this signals to close / cancel the op associated with ReqID.
+    // From the host to client, this signals that the given request ID has been closed / discarded.
+    ReqStatus_Closed       = 0x10;
 }
 
 message Msg {
@@ -193,11 +96,12 @@ message Msg {
     // When a client issues request-side MsgOp (e.g. ResolveCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
     // If this msg is a reply to a request, ReqID identifies the originating request op.
     uint64              ReqID           = 1;
-
+    
+    // Communicates request status / completion.
+    ReqStatus           Status          = 2;
+    
     repeated CellTxPb   CellTxs         = 5;
-
-    // Allows the sender to communicate a status or error to the recipient.
-    ReqStatus           Status          = 3;
+    
 }
 
 
@@ -224,8 +128,7 @@ message CellTxPb {
 
 enum CellTxOp {
     CellTxOp_MetaAttr          = 0; // CellSpec and TargetCell are ignored
-    CellTxOp_InsertCell        = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
-    CellTxOp_UpdateCell        = 2;
+    CellTxOp_UpsertCell        = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
     CellTxOp_RemoveCell        = 3;
 }
 
@@ -357,7 +260,7 @@ message AttrSpec {
 enum SeriesIndexType  {
     SeriesIndexType_Literal = 0; // SeriesSpec has no suffix:      SI values are literal values (Int64, UTC16, GeoHash)
     SeriesIndexType_Name    = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
-    //SeriesIndexTypeCellTID  = 2; // SI values correspond to Cell TIDs 
+    //SeriesIndexTypeCellID  = 2; // SI values correspond to Cell TIDs 
 }
 
 	
@@ -384,11 +287,9 @@ enum PinFlags {
 // Two cells with a matching CellSpec descriptor are the same "type" of cell.
 message CellSpec {
 
-
     // uint64              SelfAttrsSpec          = 2;
     // uint64              CommonAttrsSpec          = 2;
     // uint64              PinnedAttrsSpec          = 2;
-
 
     
     // DefID is used to reference this CellSpec and can be regarded as a type ID since it is a canonic descriptor.
@@ -482,9 +383,6 @@ message PinRequest {
 }
 
 /*
-
-
-
 message AttrRange {
     
     // Explicit list of SI values to be pinned
@@ -507,11 +405,6 @@ message AttrRange {
     uint64              SI_BatchLimit   = 27;
 }
 
-// This is a work in progress 
-message Txn {
-
-    repeated Msg        Msgs = 1;
-}
 */
 
 // CordType describes how to interpret coordinates contained in a Position.
@@ -560,7 +453,7 @@ message AssetRef {
 }
 
 
-
+/*
 // Content is an extensible content wrapper, offering an optional accompanying MIME type.
 message Content {
 
@@ -578,7 +471,7 @@ message Content {
     //GeoFix              Location        = 11;
     
 }
-
+*/
 
 // CryptoKitID identifies an encryption suite that implements ski.CryptoKit
 enum CryptoKitID {
@@ -589,9 +482,6 @@ enum CryptoKitID {
     CryptoKit_Signing_ED25519 = 202;
 
 }
-
-
-
 
 message CryptoKey {
     CryptoKitID         CryptoKitID     = 1;

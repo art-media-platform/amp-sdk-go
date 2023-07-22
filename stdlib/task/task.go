@@ -168,13 +168,28 @@ func (p *ctx) Label() string {
 	return p.task.Label
 }
 
-func printContextTree(ctx Context, out *strings.Builder, depth int) {
-	out.WriteString(fmt.Sprintf("%04d%s ╘ %s\n", ctx.ContextID(), strings.Repeat("     ", depth), ctx.Label()))
+func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []rune, lastChild bool) {
+	icon := ' '
+	if depth > 0 {
+		icon = '┣'
+		if lastChild {
+			icon = '┗'
+		}
+	}
+	prefix = append(prefix, icon, ' ')
+		
+	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.ContextID(), string(prefix), ctx.Label()))
+	
+	icon = '┃'
+	if lastChild { 
+		icon = ' '
+	}
+	prefix = append(prefix[:len(prefix)-2], icon, ' ', ' ', ' ', ' ')
 
 	var subBuf [20]Context
 	children := ctx.GetChildren(subBuf[:0])
-	for _, ci := range children {
-		printContextTree(ci, out, depth+1)
+	for i, ci := range children {
+		printContextTree(ci, out, depth+1, prefix, i == len(children)-1)
 	}
 }
 

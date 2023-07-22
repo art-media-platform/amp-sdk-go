@@ -58,10 +58,10 @@ func PrintTreePeriodically(ctx Context, period time.Duration, verboseLevel int32
 // If out == nil, the text output is instead directed to this context's logger.Info()
 func PrintContextTree(ctx Context, out io.Writer, verboseLevel int32) {
 	buf := new(strings.Builder)
-
 	buf.WriteString("\n")
-	printContextTree(ctx, buf, 0)
 
+	var prefixBuf [256]rune
+	printContextTree(ctx, buf, 0, prefixBuf[:0], true)
 	outStr := buf.String()
 	if out != nil {
 		out.Write([]byte(outStr))

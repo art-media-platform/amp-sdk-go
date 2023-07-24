@@ -257,6 +257,19 @@ message AttrSpec {
 }
 
 
+enum AttrDomain {
+    AttrDomain_Common  = 0; // Attrs appearing in both pinned and unpinned cells
+    AttrDomain_Pinned  = 1; // Attrs appearing only when a cell is pinned
+    //AttrDomain_Self    = 6; // Attrs appearing only when a pinned cell is pinned again. 
+
+}
+
+enum CellDomain {
+    CellDomain_ParentCell = 0;
+    CellDomain_ChildCell  = 1; 
+}
+
+
 enum SeriesIndexType  {
     SeriesIndexType_Literal = 0; // SeriesSpec has no suffix:      SI values are literal values (Int64, UTC16, GeoHash)
     SeriesIndexType_Name    = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
@@ -488,6 +501,10 @@ message CryptoKey {
     bytes               KeyBytes        = 4;
 }
 
+
+message CellLayout {
+    // placeholder for future layout params & info
+}
 
 // CellLabels is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
 message CellLabels {

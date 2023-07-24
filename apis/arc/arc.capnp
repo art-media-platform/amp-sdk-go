@@ -13,7 +13,7 @@ struct AttrDefTest {
 }
 
 const linkCellSpec        :Text = "(CellLabels)()";
-#const linkCellSpec        :Text = "(CellLabels,[Locale.Name]Labels,[Purpose.Name]AssetRef:Glyphs[Surface.Name]Positions)()";
+#const linkCellSpec        :Text = "([Locale.Name]CellLabel,[Glyph.Name]AssetRef,[Surface.Name]Position)()";
 
 
 enum CellTxOp2 {

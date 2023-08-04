@@ -250,22 +250,20 @@ message AttrSpec {
 
 }
 
-enum AttrContext {
-    AttrContext_Nil           = 0;
-    //AttrContext_ChildOnly     = 0x01; // Attr appears only when cell is a child cell (rare)
-    AttrContext_Pinned        = 0x02; // Attr appears only when cell is pinned 
-    AttrContext_Common        = 0x03; // Attr appears when cell is a child *or* a pinned cell.
-    AttrContext_PinnedSelf    = 0x08; // Attr appears only when a pinned cell is pinned again.
+// enum AttrContext {
+//     AttrContext_Nil           = 0;
+//     //AttrContext_ChildOnly     = 0x01; // Attr appears only when cell is a child cell (rare)
+//     AttrContext_Pinned        = 0x02; // Attr appears only when cell is pinned 
+//     AttrContext_Common        = 0x03; // Attr appears when cell is a child *or* a pinned cell.
+//     AttrContext_PinnedSelf    = 0x08; // Attr appears only when a pinned cell is pinned again.
 
-}
+// }
 
-
-
-enum CellContext {
-    CellContext_Nil        = 0;
-    CellContext_PinnedCell = 1;
-    CellContext_ChildCell  = 2; 
-}
+// enum AttrContext {
+//     CellContext_Nil        = 0;
+//     CellContext_ParentCell = 1;
+//     CellContext_ChildCell  = 2; 
+// }
 
 
 enum SeriesIndexType  {

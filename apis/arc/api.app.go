@@ -134,7 +134,6 @@ type ElemVal interface {
 // CellInfo contains immutable info about a cell.
 type CellInfo struct {
 	CellID   CellID
-	CellSpec uint32
 }
 
 // MultiTx is a state update for a pinned cell or a container of meta attrs.
@@ -149,7 +148,6 @@ type MultiTx struct {
 // CellTx is a data super wrapper for arbitrary complexity and size data structures
 type CellTx struct {
 	Op         CellTxOp      // Op is the cell tx operation to perform
-	CellSpec   uint32        // CellSpec ID of the cell being modified -- See CellSpec
 	TargetCell CellID        // Target CellID of the cell being modified
 	ElemsPb    []*AttrElemPb // Attr element run (serialized)
 	//Elems      []AttrElem    // Attrs elements to/from target cell

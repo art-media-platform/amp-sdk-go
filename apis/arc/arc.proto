@@ -108,12 +108,7 @@ message Msg {
 
 message CellTxPb {
     CellTxOp            Op          = 1;
-    uint32              CellSpec    = 2;
-    
-    // uint64              SelfAttrsSpec          = 2;
-    // uint64              CommonAttrsSpec          = 2;
-    // uint64              PinnedAttrsSpec          = 2;
-    
+       
     fixed64             TID_UTC16   = 6;
     fixed64             TID_HASH1   = 7;
     fixed64             TID_HASH2   = 8;
@@ -202,7 +197,6 @@ message Symbol {
 message RegisterDefs {
     repeated Symbol        Symbols      = 1;
     repeated AttrSpec      Attrs        = 2;
-    repeated CellSpec      Cells        = 3;
     repeated ItemSelector  Selectors    = 4;
 }
 
@@ -256,17 +250,21 @@ message AttrSpec {
 
 }
 
-
-enum AttrDomain {
-    AttrDomain_Common  = 0; // Attrs appearing in both pinned and unpinned cells
-    AttrDomain_Pinned  = 1; // Attrs appearing only when a cell is pinned
-    //AttrDomain_Self    = 6; // Attrs appearing only when a pinned cell is pinned again. 
+enum AttrContext {
+    AttrContext_Nil           = 0;
+    //AttrContext_ChildOnly     = 0x01; // Attr appears only when cell is a child cell (rare)
+    AttrContext_Pinned        = 0x02; // Attr appears only when cell is pinned 
+    AttrContext_Common        = 0x03; // Attr appears when cell is a child *or* a pinned cell.
+    AttrContext_PinnedSelf    = 0x08; // Attr appears only when a pinned cell is pinned again.
 
 }
 
-enum CellDomain {
-    CellDomain_ParentCell = 0;
-    CellDomain_ChildCell  = 1; 
+
+
+enum CellContext {
+    CellContext_Nil        = 0;
+    CellContext_PinnedCell = 1;
+    CellContext_ChildCell  = 2; 
 }
 
 
@@ -295,8 +293,8 @@ enum PinFlags {
     
 }
 
-
-// A CellSpec fully describes this cell's attrs as a child and when this cell is pinned.
+/*
+// A CellSpec describes this cell's attrs as a child and when this cell is pinned.
 // Two cells with a matching CellSpec descriptor are the same "type" of cell.
 message CellSpec {
 
@@ -318,11 +316,11 @@ message CellSpec {
     // A sequence of attr IDs cells specifying *additional* attrs this Cell has when pinned.
     repeated uint32     PinnedAttrs    = 5;
 }
-
+*/
 
 // SymbolSet
 // SymbolSelector?
-// ItemSelector selects / filters a srt of items (e.g. CellSpec or AttrSpec descriptors)
+// ItemSelector selects / filters a srt of items (AttrSpec descriptors)
 message ItemSelector {
 
     // Composite expression of this ItemSelector in the form:
@@ -450,7 +448,6 @@ enum URIScheme {
     URIScheme_File          = 5;    // [file://]<unix-pathname>
     URIScheme_Arc           = 6;    // [arc://]<arc-app-uri/cell-uri..>
     URIScheme_CrateAsset    = 2701; // [crate-asset://]<crate-asset-uri>
-    URIScheme_CellSchema    = 2702; // [cell-schema://]<cell-schema-uri>
 }
 
 message AssetRef {
@@ -513,13 +510,23 @@ message CellLabels {
     string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label
     string              About         = 6;  // Additional phase information about this item (html or rtf ok)
     
-    AssetRef            Glyph         = 10;  // glyph sufficient for "10x10" viewing
-    AssetRef            GlyphLarge    = 12;  // detailed glyph for close-up viewing (but loaded more sparingly)
     AssetRef            Link          = 14;  // When an arc:// URL, meaning "pin this URI into a cell" -- but could be any URL or asset
     
     int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16)
     int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16)
 
+}
+
+message CellGlyphs {
+
+    // List items and icons -- resolution appropriate for 10-20mm sq.
+    AssetRef            Icon           = 1;
+    
+    // Small screens -- vicinity of 1200x720 resolution
+    AssetRef            Res720         = 2;
+
+    // Tablets, laptops -- vicinity of 1920x1080
+    AssetRef            Res1080        = 3;
 }
 
 // AuthToken is an oauth token -- see oauth2.Token

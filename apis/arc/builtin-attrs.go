@@ -42,6 +42,7 @@ func RegisterBuiltInTypes(reg Registry) error {
 
 		&PinRequest{},
 		&CellLabels{},
+		&CellGlyphs{},
 		&AssetRef{},
 		&AuthToken{},
 		&Position{},
@@ -158,6 +159,18 @@ func (v *CellLabels) TypeName() string {
 
 func (v *CellLabels) New() ElemVal {
 	return &CellLabels{}
+}
+
+func (v *CellGlyphs) MarshalToBuf(dst *[]byte) error {
+	return MarshalPbValueToBuf(v, dst)
+}
+
+func (v *CellGlyphs) TypeName() string {
+	return "CellGlyphs"
+}
+
+func (v *CellGlyphs) New() ElemVal {
+	return &CellGlyphs{}
 }
 
 func (v *RegisterDefs) MarshalToBuf(dst *[]byte) error {

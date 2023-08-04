@@ -179,7 +179,6 @@ func (tx *CellTx) Clear(op CellTxOp) {
 	tx.TargetCell = 0
 	//tx.Elems = tx.Elems[:0]
 	tx.ElemsPb = tx.ElemsPb[:0]
-	tx.CellSpec = 0
 }
 
 /*
@@ -299,7 +298,6 @@ func (tx *MultiTx) UnmarshalFrom(msg *Msg, reg SessionRegistry, native bool) err
 
 		tx.CellTxs[i] = CellTx{
 			Op:         cellTx.Op,
-			CellSpec:   cellTx.CellSpec,
 			TargetCell: CellID(cellTx.TargetCell),
 			//Elems:      elems,
 		}

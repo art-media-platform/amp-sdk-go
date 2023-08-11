@@ -41,8 +41,8 @@ func RegisterBuiltInTypes(reg Registry) error {
 		&LoginResponse{},
 
 		&PinRequest{},
-		&CellLabels{},
-		&CellGlyphs{},
+		&CellHeader{},
+		&CellText{},
 		&AssetRef{},
 		&AuthToken{},
 		&Position{},
@@ -149,28 +149,28 @@ func (v *LoginResponse) New() ElemVal {
 	return &LoginResponse{}
 }
 
-func (v *CellLabels) MarshalToBuf(dst *[]byte) error {
+func (v *CellText) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *CellLabels) TypeName() string {
-	return "CellLabels"
+func (v *CellText) TypeName() string {
+	return "CellText"
 }
 
-func (v *CellLabels) New() ElemVal {
-	return &CellLabels{}
+func (v *CellText) New() ElemVal {
+	return &CellText{}
 }
 
-func (v *CellGlyphs) MarshalToBuf(dst *[]byte) error {
+func (v *CellHeader) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *CellGlyphs) TypeName() string {
-	return "CellGlyphs"
+func (v *CellHeader) TypeName() string {
+	return "CellHeader"
 }
 
-func (v *CellGlyphs) New() ElemVal {
-	return &CellGlyphs{}
+func (v *CellHeader) New() ElemVal {
+	return &CellHeader{}
 }
 
 func (v *RegisterDefs) MarshalToBuf(dst *[]byte) error {

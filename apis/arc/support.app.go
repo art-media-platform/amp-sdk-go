@@ -9,8 +9,8 @@ import "net/url"
 // It is typically extended by embedding it into a struct that builds on top of it.
 type AppBase struct {
 	AppContext
-	CellLabelsAttr uint32
-	CellGlyphsAttr uint32
+	CellTextAttr   uint32
+	CellHeaderAttr uint32
 	CellPosAttr    uint32
 }
 
@@ -18,10 +18,10 @@ func (app *AppBase) OnNew(ctx AppContext) error {
 	app.AppContext = ctx
 
 	var err error
-	if app.CellLabelsAttr, err = app.ResolveAppAttr("[Locale.Name]CellLabels"); err != nil {
+	if app.CellHeaderAttr, err = app.ResolveAppAttr("CellHeader"); err != nil {
 		return err
 	}
-	if app.CellGlyphsAttr, err = app.ResolveAppAttr("[Glyph.Name]CellGlyphs"); err != nil {
+	if app.CellTextAttr, err = app.ResolveAppAttr("[Locale.Name]CellText"); err != nil {
 		return err
 	}
 	if app.CellPosAttr, err = app.ResolveAppAttr("[Surface.Name]Position"); err != nil {

@@ -292,27 +292,19 @@ enum PinFlags {
 }
 
 /*
-// A CellSpec describes this cell's attrs as a child and when this cell is pinned.
-// Two cells with a matching CellSpec descriptor are the same "type" of cell.
-message CellSpec {
+// A AttrSet specifies an ordered set of cell attrs.
+message AttrSet {
 
-    // uint64              SelfAttrsSpec          = 2;
-    // uint64              CommonAttrsSpec          = 2;
-    // uint64              PinnedAttrsSpec          = 2;
-
-    
     // DefID is used to reference this CellSpec and can be regarded as a type ID since it is a canonic descriptor.
     // Composite expression / invocation of this CellSpec in the form:
-    //      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)" 
+    //      "(Attrs[0],Attrs[1],..)" 
     //
-    // e.g. "(CellLabels,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
+    // e.g. "(CellHeader,CellText,ArtistTour)"
+    //      "(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
-    // A sequence of AttrSpecs (addr symbol descriptors) that are this Cell has as both a child and parent.
-    repeated uint32     CommonAttrs    = 4;
-    
-    // A sequence of attr IDs cells specifying *additional* attrs this Cell has when pinned.
-    repeated uint32     PinnedAttrs    = 5;
+    // Attrs is an ordered sequence of AttrSpecs (attr descriptors)
+    repeated uint32     Attrs          = 4;
 }
 */
 
@@ -426,6 +418,14 @@ enum CordType {
     CordType_Geoid_WGS84     = 11; // U is lat, V is long, W is altitude (m)
 }
 
+// message GridPos {    
+//     int64               U           = 3; 
+//     int64               V           = 4;
+//     int64               W           = 5;
+// }
+// message GeoPos {
+// }
+
 // Position describes a position in space and/or time using a given coordinate system.
 message Position {
     CordType            CordType    = 1; // CordType describing how to interpret U,V,W
@@ -497,35 +497,36 @@ message CryptoKey {
 }
 
 
-message CellLayout {
-    // placeholder for future layout params & info
+message CellHeader {
+    
+    // Problem 1: how does a plant cell (node) know its pinned attrs?
+    // Problem 2: if using an "AttrSet" model, what happens if the client hasn't registered one of the AttrSpec types?  
+    // uint32              PinnedAttrs    = 2;  // AttrSetID indicating the additional attrs this cell pushes if pinned (or 0 if none)
+
+    AssetRef            Icon           = 4;  // List items and icons -- resolution appropriate for ~10 sq mm
+    AssetRef            Icon720        = 5;  // Small screens -- vicinity of 1200x720 resolution
+    AssetRef            Icon1080       = 6;  // Tablets, laptops -- vicinity of 1920x1080
+    
+    // FUTURE: layout params?
+    // { }
+    
+    AssetRef            Link          = 10;  //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
+
+    int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    
 }
 
-// CellLabels is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
-message CellLabels {
+// CellText is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
+message CellText {
     
     string              Title         = 4;  // Title, name, or label
     string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label
     string              About         = 6;  // Additional phase information about this item (html or rtf ok)
-    
-    AssetRef            Link          = 14;  // When an arc:// URL, meaning "pin this URI into a cell" -- but could be any URL or asset
-    
-    int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16)
-    int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16)
+
 
 }
 
-message CellGlyphs {
-
-    // List items and icons -- resolution appropriate for 10-20mm sq.
-    AssetRef            Icon           = 1;
-    
-    // Small screens -- vicinity of 1200x720 resolution
-    AssetRef            Res720         = 2;
-
-    // Tablets, laptops -- vicinity of 1920x1080
-    AssetRef            Res1080        = 3;
-}
 
 // AuthToken is an oauth token -- see oauth2.Token
 message AuthToken {

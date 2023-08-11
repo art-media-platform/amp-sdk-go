@@ -12,8 +12,6 @@ struct AttrDefTest {
     typeID   @1 :Int32;   
 }
 
-const linkCellSpec        :Text = "([Locale.Name]CellLabels,[Glyph.Name]CellGlyphs,[Surface.Name]Position)()";
-
 
 enum CellTxOp2 {
     noOp @0;

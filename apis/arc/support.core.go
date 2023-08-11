@@ -11,11 +11,15 @@ import (
 // TimeID is a locally unique UTC16 value -- see SessionRegistry.IssueTimeID()
 type TimeID UTC16
 
-// CellTID?
-// CellID is a uniquely issued CellID
-type CellID int64
+// CellID is a uniquely issued TimeID (guaranteed to be globally unique) used to persistently identify a Cell.
+type CellID TimeID
 
-//type CellTID uint64
+type CellTID struct {
+	TID_UTC16 TimeID
+	TID_HASH1 uint64
+	TID_HASH2 uint64
+	TID_HASH3 uint64
+}
 
 // TID identifies a specific planet, node, or transaction.
 //

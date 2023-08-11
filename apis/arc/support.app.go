@@ -9,22 +9,24 @@ import "net/url"
 // It is typically extended by embedding it into a struct that builds on top of it.
 type AppBase struct {
 	AppContext
-	LinkCellSpec uint32
-	CellLabelsAttr uint32
+	CellTextAttr   uint32
+	CellHeaderAttr uint32
+	CellPosAttr    uint32
 }
 
 func (app *AppBase) OnNew(ctx AppContext) error {
 	app.AppContext = ctx
 
 	var err error
-	if app.LinkCellSpec, err = app.ResolveAppCell(LinkCellSpec); err != nil {
+	if app.CellHeaderAttr, err = app.ResolveAppAttr("CellHeader"); err != nil {
 		return err
 	}
-
-	if app.CellLabelsAttr, err = app.ResolveAppAttr((&CellLabels{}).TypeName()); err != nil {
+	if app.CellTextAttr, err = app.ResolveAppAttr("[Locale.Name]CellText"); err != nil {
 		return err
 	}
-
+	if app.CellPosAttr, err = app.ResolveAppAttr("[Surface.Name]Position"); err != nil {
+		return err
+	}
 	return nil
 }
 

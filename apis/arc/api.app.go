@@ -82,7 +82,7 @@ type AppInstance interface {
 type Cell interface {
 
 	// Returns this cell's immutable info
-	Info() CellInfo
+	Info() CellID
 }
 
 // PinnedCell is how your app encapsulates a pinned cell to the archost runtime and thus clients.
@@ -92,9 +92,6 @@ type PinnedCell interface {
 	// Apps spawn a PinnedCell as a child task.Context of arc.AppContext.Context or as a child of another PinnedCell.
 	// This means an AppContext contains all its PinnedCells and thus Close() will close all PinnedCells.
 	Context() task.Context
-
-	// Info about this pinned cell
-	Info() CellInfo
 
 	// Pins the requested cell (typically a child cell).
 	PinCell(req PinReq) (PinnedCell, error)
@@ -131,12 +128,6 @@ type ElemVal interface {
 	New() ElemVal
 }
 
-// CellInfo contains immutable info about a cell.
-type CellInfo struct {
-	CellID   CellID
-	CellSpec uint32
-}
-
 // MultiTx is a state update for a pinned cell or a container of meta attrs.
 type MultiTx struct {
 	ReqID   uint64 // allows replies to be routed to the originator
@@ -149,8 +140,7 @@ type MultiTx struct {
 // CellTx is a data super wrapper for arbitrary complexity and size data structures
 type CellTx struct {
 	Op         CellTxOp      // Op is the cell tx operation to perform
-	CellSpec   uint32        // CellSpec ID of the cell being modified -- See CellSpec
-	TargetCell CellID        // Target CellID of the cell being modified
+	TargetCell CellID        // Target ID of the cell being modified
 	ElemsPb    []*AttrElemPb // Attr element run (serialized)
 	//Elems      []AttrElem    // Attrs elements to/from target cell
 }

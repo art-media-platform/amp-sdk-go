@@ -108,12 +108,7 @@ message Msg {
 
 message CellTxPb {
     CellTxOp            Op          = 1;
-    uint32              CellSpec    = 2;
-    
-    // uint64              SelfAttrsSpec          = 2;
-    // uint64              CommonAttrsSpec          = 2;
-    // uint64              PinnedAttrsSpec          = 2;
-    
+       
     fixed64             TID_UTC16   = 6;
     fixed64             TID_HASH1   = 7;
     fixed64             TID_HASH2   = 8;
@@ -202,7 +197,6 @@ message Symbol {
 message RegisterDefs {
     repeated Symbol        Symbols      = 1;
     repeated AttrSpec      Attrs        = 2;
-    repeated CellSpec      Cells        = 3;
     repeated ItemSelector  Selectors    = 4;
 }
 
@@ -256,18 +250,20 @@ message AttrSpec {
 
 }
 
+// enum AttrContext {
+//     AttrContext_Nil           = 0;
+//     //AttrContext_ChildOnly     = 0x01; // Attr appears only when cell is a child cell (rare)
+//     AttrContext_Pinned        = 0x02; // Attr appears only when cell is pinned 
+//     AttrContext_Common        = 0x03; // Attr appears when cell is a child *or* a pinned cell.
+//     AttrContext_PinnedSelf    = 0x08; // Attr appears only when a pinned cell is pinned again.
 
-enum AttrDomain {
-    AttrDomain_Common  = 0; // Attrs appearing in both pinned and unpinned cells
-    AttrDomain_Pinned  = 1; // Attrs appearing only when a cell is pinned
-    //AttrDomain_Self    = 6; // Attrs appearing only when a pinned cell is pinned again. 
+// }
 
-}
-
-enum CellDomain {
-    CellDomain_ParentCell = 0;
-    CellDomain_ChildCell  = 1; 
-}
+// enum AttrContext {
+//     CellContext_Nil        = 0;
+//     CellContext_ParentCell = 1;
+//     CellContext_ChildCell  = 2; 
+// }
 
 
 enum SeriesIndexType  {
@@ -295,34 +291,26 @@ enum PinFlags {
     
 }
 
+/*
+// A AttrSet specifies an ordered set of cell attrs.
+message AttrSet {
 
-// A CellSpec fully describes this cell's attrs as a child and when this cell is pinned.
-// Two cells with a matching CellSpec descriptor are the same "type" of cell.
-message CellSpec {
-
-    // uint64              SelfAttrsSpec          = 2;
-    // uint64              CommonAttrsSpec          = 2;
-    // uint64              PinnedAttrsSpec          = 2;
-
-    
     // DefID is used to reference this CellSpec and can be regarded as a type ID since it is a canonic descriptor.
     // Composite expression / invocation of this CellSpec in the form:
-    //      "(CommonAttrs[0],CommonAttrs[1],..)(PinnedAttrs[0],PinnedAttrs[1],..)" 
+    //      "(Attrs[0],Attrs[1],..)" 
     //
-    // e.g. "(CellLabels,ArtistTour)(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
+    // e.g. "(CellHeader,CellText,ArtistTour)"
+    //      "(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
-    // A sequence of AttrSpecs (addr symbol descriptors) that are this Cell has as both a child and parent.
-    repeated uint32     CommonAttrs    = 4;
-    
-    // A sequence of attr IDs cells specifying *additional* attrs this Cell has when pinned.
-    repeated uint32     PinnedAttrs    = 5;
+    // Attrs is an ordered sequence of AttrSpecs (attr descriptors)
+    repeated uint32     Attrs          = 4;
 }
-
+*/
 
 // SymbolSet
 // SymbolSelector?
-// ItemSelector selects / filters a srt of items (e.g. CellSpec or AttrSpec descriptors)
+// ItemSelector selects / filters a srt of items (AttrSpec descriptors)
 message ItemSelector {
 
     // Composite expression of this ItemSelector in the form:
@@ -430,6 +418,14 @@ enum CordType {
     CordType_Geoid_WGS84     = 11; // U is lat, V is long, W is altitude (m)
 }
 
+// message GridPos {    
+//     int64               U           = 3; 
+//     int64               V           = 4;
+//     int64               W           = 5;
+// }
+// message GeoPos {
+// }
+
 // Position describes a position in space and/or time using a given coordinate system.
 message Position {
     CordType            CordType    = 1; // CordType describing how to interpret U,V,W
@@ -450,7 +446,6 @@ enum URIScheme {
     URIScheme_File          = 5;    // [file://]<unix-pathname>
     URIScheme_Arc           = 6;    // [arc://]<arc-app-uri/cell-uri..>
     URIScheme_CrateAsset    = 2701; // [crate-asset://]<crate-asset-uri>
-    URIScheme_CellSchema    = 2702; // [cell-schema://]<cell-schema-uri>
 }
 
 message AssetRef {
@@ -502,25 +497,36 @@ message CryptoKey {
 }
 
 
-message CellLayout {
-    // placeholder for future layout params & info
+message CellHeader {
+    
+    // Problem 1: how does a plant cell (node) know its pinned attrs?
+    // Problem 2: if using an "AttrSet" model, what happens if the client hasn't registered one of the AttrSpec types?  
+    // uint32              PinnedAttrs    = 2;  // AttrSetID indicating the additional attrs this cell pushes if pinned (or 0 if none)
+
+    AssetRef            Icon           = 4;  // List items and icons -- resolution appropriate for ~10 sq mm
+    AssetRef            Icon720        = 5;  // Small screens -- vicinity of 1200x720 resolution
+    AssetRef            Icon1080       = 6;  // Tablets, laptops -- vicinity of 1920x1080
+    
+    // FUTURE: layout params?
+    // { }
+    
+    AssetRef            Link          = 10;  //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
+
+    int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    
 }
 
-// CellLabels is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
-message CellLabels {
+// CellText is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
+message CellText {
     
     string              Title         = 4;  // Title, name, or label
     string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label
     string              About         = 6;  // Additional phase information about this item (html or rtf ok)
-    
-    AssetRef            Glyph         = 10;  // glyph sufficient for "10x10" viewing
-    AssetRef            GlyphLarge    = 12;  // detailed glyph for close-up viewing (but loaded more sparingly)
-    AssetRef            Link          = 14;  // When an arc:// URL, meaning "pin this URI into a cell" -- but could be any URL or asset
-    
-    int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16)
-    int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16)
+
 
 }
+
 
 // AuthToken is an oauth token -- see oauth2.Token
 message AuthToken {

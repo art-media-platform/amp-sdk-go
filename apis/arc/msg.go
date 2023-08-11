@@ -11,6 +11,14 @@ type MsgBatch struct {
 }
 
 /*
+var gMsgBatchPool = sync.Pool{
+	New: func() interface{} {
+		return &MsgBatch{
+			Msgs: make([]*Msg, 0, 16),
+		}
+	},
+}
+
 func NewMsgBatch() *MsgBatch {
 	return gMsgBatchPool.Get().(*MsgBatch)
 }
@@ -143,14 +151,6 @@ func (msg *Msg) Reclaim() {
 var gMsgPool = sync.Pool{
 	New: func() interface{} {
 		return &Msg{}
-	},
-}
-
-var gMsgBatchPool = sync.Pool{
-	New: func() interface{} {
-		return &MsgBatch{
-			Msgs: make([]*Msg, 0, 16),
-		}
 	},
 }
 

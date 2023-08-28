@@ -4,7 +4,7 @@ BUILD_PATH  := $(patsubst %/,%,$(abspath $(dir $(lastword $(MAKEFILE_LIST)))))
 PARENT_PATH := $(patsubst %/,%,$(dir $(BUILD_PATH)))
 UNITY_PROJ := ${PARENT_PATH}/arcspace.unity-app
 UNITY_PATH := $(shell python3 ${UNITY_PROJ}/arc-utils.py UNITY_PATH "${UNITY_PROJ}")
-ARC_UNITY_PATH = ${UNITY_PROJ}/Assets/Arcspace
+ARC_UNITY_PATH = ${UNITY_PROJ}/Assets/ArcXR
 grpc_csharp_exe="${GOPATH}/bin/grpc_csharp_plugin"
 
 CAPNP_DIST := "capnproto-c++-0.10.4"
@@ -74,15 +74,15 @@ generate:
 #   Links: https://grpc.io/docs/languages/csharp/quickstart/
 	protoc \
 	    --gogoslick_out=plugins=grpc:. --gogoslick_opt=paths=source_relative \
-	    --csharp_out "${ARC_UNITY_PATH}/Arc" \
-	    --grpc_out   "${ARC_UNITY_PATH}/Arc" \
+	    --csharp_out "${ARC_UNITY_PATH}/Arc.Apps" \
+	    --grpc_out   "${ARC_UNITY_PATH}/Arc.Apps" \
 	    --plugin=protoc-gen-grpc="${grpc_csharp_exe}" \
 	    --proto_path=. \
 		apis/arc/arc.proto
 
 	protoc \
 	    --gogoslick_out=plugins=grpc:. --gogoslick_opt=paths=source_relative \
-	    --csharp_out "${ARC_UNITY_PATH}/Crates" \
+	    --csharp_out "${ARC_UNITY_PATH}/Arc.Crates" \
 	    --proto_path=. \
 		apis/crates/crates.proto
 

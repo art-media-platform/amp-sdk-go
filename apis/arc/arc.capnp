@@ -5,7 +5,7 @@ $Go.package("arc");
 $Go.import("github.com/arcspace/go-arc-sdk");
 
 using CSharp = import "/csharp.capnp";
-$CSharp.namespace("Arcspace");
+$CSharp.namespace("ArcXR");
 
 struct AttrDefTest {
     typeName @0 :Text;

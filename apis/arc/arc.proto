@@ -7,7 +7,7 @@ package arc;
 // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 // import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-option csharp_namespace = "Arcspace";
+option csharp_namespace = "ArcXR";
 
 
 // High-level channel repository RPC.
@@ -499,9 +499,12 @@ message CryptoKey {
 
 message CellHeader {
     
-    // Problem 1: how does a plant cell (node) know its pinned attrs?
+    // Problem 1: how does a planet cell (node) know its pinned attrs?   does it read them all?
     // Problem 2: if using an "AttrSet" model, what happens if the client hasn't registered one of the AttrSpec types?  
     // uint32              PinnedAttrs    = 2;  // AttrSetID indicating the additional attrs this cell pushes if pinned (or 0 if none)
+    
+    //repeated StrEntry   Content        = 2;
+    
 
     AssetRef            Icon           = 4;  // List items and icons -- resolution appropriate for ~10 sq mm
     AssetRef            Icon720        = 5;  // Small screens -- vicinity of 1200x720 resolution
@@ -516,6 +519,13 @@ message CellHeader {
     int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
     
 }
+
+
+// message StrEntry {
+//     uint32              NameID = 1;
+//     string              ValStr = 2;
+// }
+
 
 // CellText is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
 message CellText {

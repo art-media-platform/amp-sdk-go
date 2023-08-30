@@ -19,13 +19,13 @@ type AssetPublisher interface {
 	PublishAsset(asset MediaAsset, opts PublishOpts) (URL string, err error)
 }
 
-// MediaAsset wraps any data asset that can be streamed and is typically audio or video.
+// MediaAsset is a flexible wrapper for any data asset that can be streamed -- often audio or video.
 type MediaAsset interface {
 
-	// Short name or description of this asset for logging
+	// Short name or description of this asset used for logging / debugging.
 	Label() string
 
-	// Returns the media / MIME type of this asset
+	// Returns the media (MIME) type of the asset.
 	MediaType() string
 
 	// OnStart is called when this asset is live within the given context.

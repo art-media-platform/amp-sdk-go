@@ -2,6 +2,7 @@ package arc
 
 import (
 	"bytes"
+	"encoding/binary"
 	strings "strings"
 	"time"
 
@@ -9,16 +10,17 @@ import (
 )
 
 // TimeID is a locally unique UTC16 value -- see SessionRegistry.IssueTimeID()
+// The difference between a TimeID and a UTC16 is that a TimeID is guaranteed to be unique for a given host and is convenient identifier.
 type TimeID UTC16
 
-// CellID is a uniquely issued TimeID (guaranteed to be globally unique) used to persistently identify a Cell.
+// CellID is a TimeID (guaranteed to be globally unique) used to persistently identify a Cell.
 type CellID TimeID
 
-type CellTID struct {
-	TID_UTC16 TimeID
-	TID_HASH1 uint64
-	TID_HASH2 uint64
-	TID_HASH3 uint64
+type TxID struct {
+	UTC16 UTC16
+	Hash1 uint64
+	Hash2 uint64
+	Hash3 uint64
 }
 
 // TID identifies a specific planet, node, or transaction.
@@ -26,17 +28,17 @@ type CellTID struct {
 // Unless otherwise specified a TID in the wild should always be considered read-only.
 type TID []byte
 
-// TxID is embedded UTC16 value followed by a 24 byte hash.
-type TxID [TIDBinaryLen]byte
+// TIDBuf is embedded UTC16 value followed by a 24 byte hash.
+type TIDBuf [TIDBinaryLen]byte
 
 // Byte size of a TID, a hash with a leading embedded big endian binary time index.
 const TIDBinaryLen = int(Const_TIDBinaryLen)
 
-// ASCII-compatible string length of a (binary) TID encoded into its base32 form.
+// ASCII string length of a CellTID encoded into its base32 form.
 const TIDStringLen = int(Const_TIDStringLen)
 
 // nilTID is a zeroed TID that denotes a void/nil/zero value of a TID
-var nilTID = TxID{}
+var nilTID = TID{}
 
 // UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
 //
@@ -71,12 +73,12 @@ func (t UTC16) ToMs() int64 {
 }
 
 // TID is a convenience function that returns the TID contained within this TxID.
-func (tid *TxID) TID() TID {
+func (tid *TIDBuf) TID() TID {
 	return tid[:]
 }
 
 // Base32 returns this TID in Base32 form.
-func (tid *TxID) Base32() string {
+func (tid *TIDBuf) Base32() string {
 	return bufs.Base32Encoding.EncodeToString(tid[:])
 }
 
@@ -101,10 +103,9 @@ func (tid TID) Clone() TID {
 }
 
 // Buf is a convenience function that make a new TxID from a TID byte slice.
-func (tid TID) Buf() TxID {
-	var blob TxID
-	copy(blob[:], tid)
-	return blob
+func (tid TID) Buf() (buf TIDBuf) {
+	copy(buf[:], tid)
+	return buf
 }
 
 // Base32 returns this TID in Base32 form.
@@ -148,7 +149,7 @@ func (tid TID) SetTimeAndHash(time UTC16, hash []byte) {
 
 // SetHash sets the sig/hash portion of this ID
 func (tid TID) SetHash(hash []byte) {
-	const TIDHashSz = int(Const_TIDBinaryLen - Const_TIDTimestampSz)
+	const TIDHashSz = int(Const_TIDBinaryLen - Const_UTC16Sz)
 	pos := len(hash) - TIDHashSz
 	if pos >= 0 {
 		copy(tid[TIDHashSz:], hash[pos:])
@@ -231,6 +232,59 @@ func (tid TID) CopyNext(inTID TID) {
 			break
 		}
 	}
+}
+
+// CellTID identifies a Tx by secure hash ID.
+// The host maintains a two-way map to resolve a CellID with its corresponding TxID.
+type CellTID struct {
+	UTC16 UTC16
+	HASH1 uint64
+	HASH2 uint64
+	HASH3 uint64
+}
+
+// Base32 returns this TID in Base32 form.
+func (tid *CellTID) Base32() string {
+	var bin [TIDBinaryLen]byte
+	binStr := tid.AppendAsBinary(bin[:0])
+	return bufs.Base32Encoding.EncodeToString(binStr)
+}
+
+// Appends the base 32 ASCII encoding of this TID to the given buffer
+func (tid *CellTID) AppendAsBase32(io []byte) []byte {
+	L := len(io)
+
+	needed := L + TIDStringLen
+	dst := io
+	if needed > cap(dst) {
+		dst = make([]byte, (needed+0x100)&^0xFF)
+		dst = append(dst[:0], io...)
+	}
+	dst = dst[:needed]
+
+	var bin [TIDBinaryLen]byte
+	binStr := tid.AppendAsBinary(bin[:0])
+
+	bufs.Base32Encoding.Encode(dst[L:needed], binStr)
+	return dst
+}
+
+// Appends the base 32 ASCII encoding of this TID to the given buffer
+func (tid *CellTID) AppendAsBinary(io []byte) []byte {
+	L := len(io)
+	needed := L + TIDBinaryLen
+	dst := io
+	if needed > cap(dst) {
+		dst = make([]byte, needed)
+		dst = append(dst[:0], io...)
+	}
+	dst = dst[:needed]
+
+	binary.BigEndian.PutUint64(dst[L+0:L+8], uint64(tid.UTC16))
+	binary.BigEndian.PutUint64(dst[L+8:L+16], tid.HASH1)
+	binary.BigEndian.PutUint64(dst[L+16:L+24], tid.HASH2)
+	binary.BigEndian.PutUint64(dst[L+24:L+32], tid.HASH3)
+	return dst
 }
 
 func (id ConstSymbol) Ord() uint32 {

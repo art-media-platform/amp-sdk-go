@@ -38,15 +38,6 @@ func (app *AppBase) OnClosing() {
 
 }
 
-// ResolveAppCell is a convenience function that resolves a cell spec into a CellSpec def ID.
-func (app *AppBase) ResolveAppCell(cellSpec string) (cellSpecID uint32, err error) {
-	cellDef, err := app.AppContext.Session().ResolveCellSpec(cellSpec)
-	if err != nil {
-		return
-	}
-	return cellDef.ClientDefID, nil
-}
-
 // ResolveAppAttr is a convenience function that resolves an attr spec intended to be sent to the client.
 func (app *AppBase) ResolveAppAttr(attrSpec string) (uint32, error) {
 	spec, err := app.AppContext.Session().ResolveAttrSpec(attrSpec, false)

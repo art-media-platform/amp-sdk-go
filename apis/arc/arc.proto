@@ -1,24 +1,22 @@
 syntax = "proto3";
 
-// package arc is an implementation-independent API and support for a distributed
-// files, media, and communication system running a realtime 2D/3D/XR client.
+// package arc is an implementation-independent API for a pluggable client-server UI/UX system,
+// featuring support and integration for files, media, and communication.
 package arc;
 
-// https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
-// import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+// import "github.com/gogo/protobuf/gogoproto/gogo.proto";  // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 
 option csharp_namespace = "ArcXR";
 
-
-// High-level channel repository RPC.
+// HostGrpc is a full-duplex Msg pipe between a client and arc.Host.
+// FUTURE: this goes away in the near future as it is replaced by a raw tcp connection
 service HostGrpc {
 
-    // HostSession is full duplex connected between two Planet hosts.
+    // HostSession is called by a client once to establish a session with a arc.Host.
     // The return stream reports completion or status of active requests and will remain open as long as the client stream remains open.
     rpc HostSession(stream Msg) returns (stream Msg);
     
 }
-
 
 
 enum Const {
@@ -27,21 +25,21 @@ enum Const {
     // TIDBinaryLen is the byte size of a Tx ID ("TID"), a hash with a leading big endian binary time index.
     //
     // This allows TIDs to be naturally sorted chronologically naturally.  
-    // This facilitates Tx storage and Tx syndication (time-ordered Tx playback).  This also improves performance.
-    // since most operations tend to be in the same time neighborhood, leveraging the db's cache.
+    // This facilitates Tx storage and Tx syndication (time-ordered Tx playback).  
+    // Importantly, a TxID (32 bytes) is has a UTC16 prefix, allowing efficient LSM storage to scale to billions of Txs.
     //
     // Byte layout is designed so that TIDs are sortable by their embedded timestamp:
     //    0:6   - Standard UTC timestamp in unix seconds (big endian)
     //    6:8   - Timestamp fraction (big endian)
-    //    8:32  - Signature/hash
+    //    8:32  - Signature/hash suffix.
     Const_TIDBinaryLen = 32;
 
     // TIDStringLen is the ASCII-compatible string length of a (binary) TID encoded into its base32 form.
     // The encoding used is the geohash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
     Const_TIDStringLen = 52;
 
-    // TIDTimestampSz is the number of left-hand bytes in a TID reserved for a time index value.
-    Const_TIDTimestampSz = 8;
+    // UTC16Sz is the number of left-hand bytes in a TID reserved for a time index value -- see type UTC16.
+    Const_UTC16Sz = 8;
 
     // DefaultGrpcServicePort is the TCP port the service HostGrpc should run on by default.
     Const_DefaultGrpcServicePort = 5192;
@@ -67,16 +65,7 @@ enum ConstSymbol {
     ConstSymbol_IssuerInitsAt  = 256; 
 }
 
-
-
-    // ValType_AttrSet            = 4; // .ValInt is a AttrSet CellID
-    // ValType_NameSet            = 5; // CellID+AttrID+NameID     => Msg.(Type)          Values only 
-    // ValType_CellSet            = 6; // CellID+AttrID+CellID     => Cell_NID            AttrSet NIDs only 
-    // ValType_Series             = 8; // CellID+AttrID+TSI+FromID => Msg.(Type)          Values only
-    // ValType_CellRef            = 20; // .FromID and .SI together identify a cell
-    // ValType_CellSetID          = 21; // .ValInt is a CellSet ID (used for SetValType_CellSet)
-
-
+// ReqStatus allows a sender to express the status of a request.
 enum ReqStatus {
     ReqStatus_Syncing      = 0;
     
@@ -89,38 +78,38 @@ enum ReqStatus {
     ReqStatus_Closed       = 0x10;
 }
 
+// Msg is thw workhorse generic transport serialization sent between client and host.
 message Msg {
 
     // ReqID names an originating request ID, issued by client using an atomic counter.
     //
-    // When a client issues request-side MsgOp (e.g. ResolveCell, RegisterDefs), ReqID specifies a new and uniquely generated ID that is used in subsequent Msgs.
-    // If this msg is a reply to a request, ReqID identifies the originating request op.
+    // For example, if a Msg is a reply to some request, ReqID identifies the originating request\.
     uint64              ReqID           = 1;
     
-    // Communicates request status / completion.
+    // Status communicates request status / completion.
     ReqStatus           Status          = 2;
     
+    // CellTxs is a Cell state update as well as session meta-messaging mechanism.
     repeated CellTxPb   CellTxs         = 5;
     
 }
 
-
-
+// CellTxPb is a cell transaction, a unit of change (or meta message) for a cell.
 message CellTxPb {
-    CellTxOp            Op          = 1;
+    CellTxOp            Op              = 1;
        
-    fixed64             TID_UTC16   = 6;
-    fixed64             TID_HASH1   = 7;
-    fixed64             TID_HASH2   = 8;
-    fixed64             TID_HASH3   = 9;
+    // Target CellID
+    fixed64             CellID_UTC16    = 3;
+    fixed64             CellID_Hash1    = 4; // 0 -> not from a Tx
+    fixed64             CellID_Hash2    = 5; // 0 -> not from a Tx
+    fixed64             CellID_Hash3    = 6; // 0 -> not from a Tx
     
+    int64               TargetCell      = 7; // This goes away once CellID is sorted
+    repeated AttrElemPb Elems           = 8;
 
-
-    int64               TargetCell      = 3;
-    repeated AttrElemPb Elems           = 4;
 }
 
-
+// CellTxOp specifies a cell transaction operation.
 enum CellTxOp {
     CellTxOp_MetaAttr          = 0; // CellSpec and TargetCell are ignored
     CellTxOp_UpsertCell        = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
@@ -139,22 +128,6 @@ message AttrElemPb {
     
     // Series index (if applicable)  
     int64               SI              = 3;  
-}
-
-
-message PlanetEpoch {
-
-    // EpochTID is the genesis Tx ID and is only known after this PlanetEpoch is sealed.
-    bytes               EpochTID        = 1;
-    
-    // EpochEntries contains the entries that bootstrap this epoch
-    repeated Msg        EpochEntries    = 2;
-    
-    // CommonName is the commonly used name for this planet
-    string              CommonName      = 3;
-    
-    // Points to the next
-    //PlanetEpoch         NextEpoch                   = 4;
 }
 
 
@@ -193,7 +166,7 @@ message Symbol {
     bytes               Name            = 2;
 }
 
-
+// RegisterDefs is sent by a client to register its symbols and schemas during a session.
 message RegisterDefs {
     repeated Symbol        Symbols      = 1;
     repeated AttrSpec      Attrs        = 2;
@@ -250,21 +223,6 @@ message AttrSpec {
 
 }
 
-// enum AttrContext {
-//     AttrContext_Nil           = 0;
-//     //AttrContext_ChildOnly     = 0x01; // Attr appears only when cell is a child cell (rare)
-//     AttrContext_Pinned        = 0x02; // Attr appears only when cell is pinned 
-//     AttrContext_Common        = 0x03; // Attr appears when cell is a child *or* a pinned cell.
-//     AttrContext_PinnedSelf    = 0x08; // Attr appears only when a pinned cell is pinned again.
-
-// }
-
-// enum AttrContext {
-//     CellContext_Nil        = 0;
-//     CellContext_ParentCell = 1;
-//     CellContext_ChildCell  = 2; 
-// }
-
 
 enum SeriesIndexType  {
     SeriesIndexType_Literal = 0; // SeriesSpec has no suffix:      SI values are literal values (Int64, UTC16, GeoHash)
@@ -308,8 +266,7 @@ message AttrSet {
 }
 */
 
-// SymbolSet
-// SymbolSelector?
+
 // ItemSelector selects / filters a srt of items (AttrSpec descriptors)
 message ItemSelector {
 
@@ -340,9 +297,6 @@ message ItemSelector {
     //uint32              SelectorName = 4;
     
 
-    // Attrs binds a set of AttrSpecs to this SchemaURI.
-    //repeated uint32     Attrs = 8;
-
 }
 
 /*
@@ -353,6 +307,7 @@ message KwArg {
 }
 */
 
+// HandleURI is used as a meta attribute to request a URI is handled, such as an oauth request (host to client) or an oauth response (client to host).
 message HandleURI {
     string              URI = 1;
 }
@@ -479,6 +434,22 @@ message Content {
     //GeoFix              Location        = 11;
     
 }
+
+message PlanetEpoch {
+
+    // EpochTID is the genesis Tx ID and is only known after this PlanetEpoch is sealed.
+    bytes               EpochTID        = 1;
+    
+    // EpochEntries contains the entries that bootstrap this epoch
+    repeated Msg        EpochEntries    = 2;
+    
+    // CommonName is the commonly used name for this planet
+    string              CommonName      = 3;
+    
+    // Points to the next
+    //PlanetEpoch         NextEpoch                   = 4;
+}
+
 */
 
 // CryptoKitID identifies an encryption suite that implements ski.CryptoKit
@@ -499,29 +470,27 @@ message CryptoKey {
 
 message CellHeader {
     
-    // Problem 1: how does a planet cell (node) know its pinned attrs?   does it read them all?
-    // Problem 2: if using an "AttrSet" model, what happens if the client hasn't registered one of the AttrSpec types?  
-    // uint32              PinnedAttrs    = 2;  // AttrSetID indicating the additional attrs this cell pushes if pinned (or 0 if none)
+    // Extensible content container
+    //repeated TextEntry  Content         = 2;
     
-    //repeated StrEntry   Content        = 2;
-    
-
-    AssetRef            Icon           = 4;  // List items and icons -- resolution appropriate for ~10 sq mm
-    AssetRef            Icon720        = 5;  // Small screens -- vicinity of 1200x720 resolution
-    AssetRef            Icon1080       = 6;  // Tablets, laptops -- vicinity of 1920x1080
+    // A glyph is a representative image or 3D graphic similar to an icon in function.
+    // They ideally have a 1:1[:1] aspect ratio and should not to exceed 16:9 or 9:16.
+    AssetRef            Glyph10x10      = 4;  // Item thumbnail   -- appropriate for ~10 sq mm
+    AssetRef            Glyph720        = 5;  // Small screens    -- appropriate for 1200x720
+    AssetRef            Glyph1080       = 6;  // Tablets, laptops -- appropriate for 1920x1080
     
     // FUTURE: layout params?
     // { }
     
-    AssetRef            Link          = 10;  //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
+    AssetRef            Link            = 10;  //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
 
-    int64               Created       = 20;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
-    int64               Modified      = 21;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Created         = 20;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Modified        = 21;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
     
 }
 
 
-// message StrEntry {
+// message TextEntry {
 //     uint32              NameID = 1;
 //     string              ValStr = 2;
 // }
@@ -547,12 +516,7 @@ message AuthToken {
 }
 
 /*
- 
-message SectionAttr {
-    //  No new fields needed 
-}
- 
- 
+
 message LabelAttr {
     string              Main            = 1;
     string              Subtext         = 2;

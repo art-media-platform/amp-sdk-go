@@ -475,7 +475,7 @@ message CellHeader {
     
     // A glyph is a representative image or 3D graphic similar to an icon in function.
     // They ideally have a 1:1[:1] aspect ratio and should not to exceed 16:9 or 9:16.
-    AssetRef            Glyph10x10      = 4;  // Item thumbnail   -- appropriate for ~10 sq mm
+    AssetRef            Glyph240        = 4;  // Item thumbnail   -- appropriate for ~10 sq mm
     AssetRef            Glyph720        = 5;  // Small screens    -- appropriate for 1200x720
     AssetRef            Glyph1080       = 6;  // Tablets, laptops -- appropriate for 1920x1080
     

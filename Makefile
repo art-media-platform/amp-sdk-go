@@ -7,11 +7,6 @@ UNITY_PATH := $(shell python3 ${UNITY_PROJ}/arc-utils.py UNITY_PATH "${UNITY_PRO
 ARC_UNITY_PATH = ${UNITY_PROJ}/Assets/ArcXR
 grpc_csharp_exe="${GOPATH}/bin/grpc_csharp_plugin"
 
-CAPNP_DIST := "capnproto-c++-0.10.4"
-#CAPNP_INCLUDE := "${GOPATH}/pkg/mod/capnproto.org/go/capnp/v3@v3.0.0-alpha-29/std"
-CAPNP_INCLUDE := "${BUILD_PATH}/apis/capnp/include" # made from capnproto.org/go/capnp/std + csharp.capnp
-
-
 
 ## display this help message
 help:
@@ -41,22 +36,6 @@ arc-sdk:
 	echo "Ship it!"
 
 
-## build and install cap'n proto tools -- https://capnproto.org/install.html
-tools-capnp-nix:
-	curl -O --insecure https://capnproto.org/${CAPNP_DIST}.tar.gz \
-	&& tar zxf ${CAPNP_DIST}.tar.gz \
-	&& cd ${CAPNP_DIST} \
-	&& ./configure \
-	&& make -j6 check \
-	&& sudo make install \
-	&& cd ..  \
-	&& rm -rf ${CAPNP_DIST}
-
-## install cap'n proto tools -- https://capnproto.org/install.html
-tools-capnp-csharp:
-#   https://github.com/c80k/capnproto-dotnetcore#code-generator-back-end-dotnet-tool
-	dotnet tool install capnpc-csharp --global 
-
 ## install protobufs tools needed to turn a .proto file into Go and C# files
 tools-proto:
 	go install github.com/gogo/protobuf/protoc-gen-gogoslick
@@ -64,7 +43,7 @@ tools-proto:
 	go get -d  github.com/gogo/protobuf/proto
 
 
-## generate .cs and .go from .proto and .capnp files
+## generate .cs and .go from .proto files
 generate:
 #   GrpcTools (2.49.1)
 #   Install protoc & grpc_csharp_plugin:
@@ -85,10 +64,4 @@ generate:
 	    --csharp_out "${ARC_UNITY_PATH}/Arc.Crates" \
 	    --proto_path=. \
 		apis/crates/crates.proto
-
-	capnp compile -I${CAPNP_INCLUDE} -ogo     apis/arc/arc.capnp
-
-#	capnp compile -I${CAPNP_INCLUDE} -ocsharp apis/arc/arc.capnp \
-		&& mv apis/arc/arc.capnp.cs ${ARC_UNITY_PATH}/Arc/Arc.capnp.cs
-
 

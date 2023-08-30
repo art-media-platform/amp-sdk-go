@@ -102,13 +102,13 @@ type Registry interface {
 	ExportTo(dst SessionRegistry) error
 
 	// Registers an app by its UUID, URI, and schemas it supports.
-	RegisterApp(app *AppModule) error
+	RegisterApp(app *App) error
 
 	// Looks-up an app by UUID -- READ ONLY ACCESS
-	GetAppByUID(appUID UID) (*AppModule, error)
+	GetAppByUID(appUID UID) (*App, error)
 
 	// Selects the app that best matches an invocation string.
-	GetAppForInvocation(invocation string) (*AppModule, error)
+	GetAppForInvocation(invocation string) (*App, error)
 }
 
 // SessionRegistry manages a HostSession's symbol and type definitions -- concurrency safe.

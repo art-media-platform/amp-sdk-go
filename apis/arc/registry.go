@@ -7,16 +7,16 @@ import (
 
 func newRegistry() Registry {
 	return &registry{
-		appsByUID:    make(map[UID]*AppModule),
-		appsByInvoke: make(map[string]*AppModule),
+		appsByUID:    make(map[UID]*App),
+		appsByInvoke: make(map[string]*App),
 	}
 }
 
 // Implements arc.Registry
 type registry struct {
 	mu           sync.RWMutex
-	appsByUID    map[UID]*AppModule
-	appsByInvoke map[string]*AppModule
+	appsByUID    map[UID]*App
+	appsByInvoke map[string]*App
 	elemTypes    []ElemVal
 }
 
@@ -38,7 +38,7 @@ func (reg *registry) ExportTo(dst SessionRegistry) error {
 }
 
 // Implements arc.Registry
-func (reg *registry) RegisterApp(app *AppModule) error {
+func (reg *registry) RegisterApp(app *App) error {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 
@@ -46,7 +46,7 @@ func (reg *registry) RegisterApp(app *AppModule) error {
 		strings.ContainsRune(app.AppID, ' ') ||
 		strings.Count(app.AppID, ".") < 2 {
 
-		// Reject if URI does not conform to standards for AppModule.AppURI
+		// Reject if URI does not conform to standards for App.AppURI
 		return ErrCode_BadSchema.Errorf("illegal app ID: %q", app.AppID)
 	}
 
@@ -70,7 +70,7 @@ func (reg *registry) RegisterApp(app *AppModule) error {
 }
 
 // Implements arc.Registry
-func (reg *registry) GetAppByUID(appUID UID) (*AppModule, error) {
+func (reg *registry) GetAppByUID(appUID UID) (*App, error) {
 	reg.mu.RLock()
 	defer reg.mu.RUnlock()
 
@@ -83,7 +83,7 @@ func (reg *registry) GetAppByUID(appUID UID) (*AppModule, error) {
 }
 
 // Implements arc.Registry
-func (reg *registry) GetAppForInvocation(invocation string) (*AppModule, error) {
+func (reg *registry) GetAppForInvocation(invocation string) (*App, error) {
 	if invocation == "" {
 		return nil, ErrCode_AppNotFound.Errorf("missing app invocation")
 	}

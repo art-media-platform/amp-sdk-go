@@ -158,6 +158,10 @@ type PinContext interface {
 
 	PinReq // Originating request info
 
+	// Looks up the given AttrSpec and returns its AttrID.
+	// Returns 0 if the AttrSpec is not registered or not enabled within this PinContext.
+	GetAttrID(attrSpec string) uint32
+
 	// PushTx pushes the given tx to this PinContext
 	PushUpdate(tx *Msg) error
 

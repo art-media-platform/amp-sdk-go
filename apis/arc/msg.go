@@ -155,11 +155,8 @@ var gMsgPool = sync.Pool{
 }
 
 func (tx *CellTx) Marshal(attrID uint32, SI int64, val ElemVal) {
-	if val == nil {
+	if val == nil || attrID == 0 {
 		return
-	}
-	if attrID == 0 {
-		panic("attrID == 0")
 	}
 
 	pb := &AttrElemPb{

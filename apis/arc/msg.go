@@ -155,11 +155,8 @@ var gMsgPool = sync.Pool{
 }
 
 func (tx *CellTx) Marshal(attrID uint32, SI int64, val ElemVal) {
-	if val == nil {
+	if val == nil || attrID == 0 {
 		return
-	}
-	if attrID == 0 {
-		panic("attrID == 0")
 	}
 
 	pb := &AttrElemPb{
@@ -176,7 +173,7 @@ func (tx *CellTx) Marshal(attrID uint32, SI int64, val ElemVal) {
 
 func (tx *CellTx) Clear(op CellTxOp) {
 	tx.Op = op
-	tx.TargetCell = 0
+	tx.TargetCell = CellID{}
 	//tx.Elems = tx.Elems[:0]
 	tx.ElemsPb = tx.ElemsPb[:0]
 }
@@ -298,9 +295,9 @@ func (tx *MultiTx) UnmarshalFrom(msg *Msg, reg SessionRegistry, native bool) err
 
 		tx.CellTxs[i] = CellTx{
 			Op:         cellTx.Op,
-			TargetCell: CellID(cellTx.TargetCell),
 			//Elems:      elems,
 		}
+		tx.CellTxs[i].TargetCell.AssignFromU64(cellTx.CellID_0, cellTx.CellID_1)
 	}
 
 	if elemCount == 0 {

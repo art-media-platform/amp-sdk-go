@@ -102,13 +102,13 @@ type Registry interface {
 	ExportTo(dst SessionRegistry) error
 
 	// Registers an app by its UUID, URI, and schemas it supports.
-	RegisterApp(app *AppModule) error
+	RegisterApp(app *App) error
 
 	// Looks-up an app by UUID -- READ ONLY ACCESS
-	GetAppByUID(appUID UID) (*AppModule, error)
+	GetAppByUID(appUID UID) (*App, error)
 
 	// Selects the app that best matches an invocation string.
-	GetAppForInvocation(invocation string) (*AppModule, error)
+	GetAppForInvocation(invocation string) (*App, error)
 }
 
 // SessionRegistry manages a HostSession's symbol and type definitions -- concurrency safe.
@@ -116,14 +116,6 @@ type SessionRegistry interface {
 
 	// Returns the symbol table for a session a technique sometimes also known as interning.
 	ClientSymbols() symbol.Table
-
-	// Issues a monotonically increasing UTC16 timestamp (guaranteed never to have been issued).
-	// This is usually just the current time, but if multiple timestamps are rapidly issued, then the next unissued UTC16 is issued.
-	// This means even during intense TimeID issuance, newly issued TimeIDs will still be unique and "caught up" after a negligible period of time.
-	//
-	// The purpose of a TimeID is to have a wieldy (int64) unique identifier while providing a locally unique prefix for a system Tx.
-	// Collisions may naturally occasionally occur, but since a TimeID is never used alone to reference a Tx this is not a problem.
-	IssueTimeID() TimeID
 
 	// Translates a native symbol ID to a client symbol ID, returning false if not found.
 	NativeToClientID(nativeID uint32) (clientID uint32, found bool)
@@ -158,6 +150,10 @@ type PinContext interface {
 
 	PinReq // Originating request info
 
+	// Looks up the given AttrSpec and returns its AttrID.
+	// Returns 0 if the AttrSpec is not registered or not enabled within this PinContext.
+	GetAttrID(attrSpec string) uint32
+
 	// PushTx pushes the given tx to this PinContext
 	PushUpdate(tx *Msg) error
 
@@ -174,8 +170,8 @@ type PinReq interface {
 // PinReqParams implements PinReq
 type PinReqParams struct {
 	PinReq   PinRequest
+	PinCell  CellID
 	URL      *url.URL
-	Target   CellID
 	ReqID    uint64    // Request ID needed to route to the originator
 	LogLabel string    // info string for logging and debugging
 	Outlet   chan *Msg // send to this channel to transmit to the request originator

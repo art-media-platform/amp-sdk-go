@@ -26,8 +26,9 @@ func Go(parent Context, label string, fn func(ctx Context)) (Context, error) {
 // Task is an optional set of callbacks for a Context
 type Task struct {
 
-	// If > 0, CloseWhenIdle() is automatically called after the last remaining child is closed or after OnRun() completes (if set) -- whichever occurs later.
-	// Note how this will not enter into effect unless OnRun is given or a child is started.
+	// If > 0, Context.CloseWhenIdle() will automatically called when the last remaining child is closed or when OnRun() completes, whichever occurs later.
+	//
+	// This will not enter into effect unless OnRun is given or a child is started.
 	IdleClose time.Duration
 
 	TaskRef        any                     // Offered to you for open-ended use.

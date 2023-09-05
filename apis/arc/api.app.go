@@ -6,10 +6,10 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
-// AppModule is how an app is registered with an arc.Host so it can be invoked.
+// App is how an app module is registered with an arc.Host so it can be invoked.
 //
-// An app is invoked by a client or other app via the app's UID or URI.
-type AppModule struct {
+// An App is invoked by a client or other app via the app's UID or URI.
+type App struct {
 
 	// AppID identifies this app with form "{AppNameID}.{FamilyID}.{PublisherID}" -- e.g. "filesys.hosting.arcspace.systems"
 	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "arcspace.systems"
@@ -25,7 +25,7 @@ type AppModule struct {
 	Invocations  []string // Additional aliases that invoke this app
 	AttrDecl     []string // Attrs to be resolved and registered with a HostSession
 
-	// NewAppInstance is the entry point for an AppModule.
+	// NewAppInstance is the entry point for an App.
 	// Called when an App is invoked on an active User session and is not yet running.
 	NewAppInstance func() AppInstance
 }
@@ -40,8 +40,8 @@ type AppContext interface {
 	// This directory is scoped by the app's UID.
 	LocalDataPath() string
 
-	// Atomically issues a new and unique ID that is globally unique.
-	// An ID may still expire, go out of scope, or otherwise become meaningless.
+	// Issues a mew cell ID guaranteed to be universally unique.
+	// This should not be called concurrently with other IssueCellID() calls.
 	IssueCellID() CellID
 
 	// Gets the named cell and attribute from the user's home planet -- used high-level app settings.
@@ -53,11 +53,11 @@ type AppContext interface {
 	PutAppCellAttr(attrSpec string, src ElemVal) error
 }
 
-// AppInstance is implemented by an app (AppModule) and invoked by arc.Host responding to a client pin request.
+// AppInstance is implemented by an App and invoked by arc.Host responding to a client pin request.
 type AppInstance interface {
 	AppContext // The arc runtime's app context support exposed
 
-	// Instantiation callback made immediately after AppModule.NewAppInstance() -- typically resolves app-specific type specs.
+	// Instantiation callback made immediately after App.NewAppInstance() -- typically resolves app-specific type specs.
 	OnNew(this AppContext) error
 
 	// Celled when the app is pin the cell IAW with the given request.

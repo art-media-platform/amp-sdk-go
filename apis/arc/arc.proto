@@ -99,12 +99,10 @@ message CellTxPb {
     CellTxOp            Op              = 1;
        
     // Target CellID
-    fixed64             CellID_UTC16    = 3;
-    fixed64             CellID_Hash1    = 4; // 0 -> not from a Tx
-    fixed64             CellID_Hash2    = 5; // 0 -> not from a Tx
-    fixed64             CellID_Hash3    = 6; // 0 -> not from a Tx
+    // If CellID_1 == 0, then this cell is ephemeral (vs persistent).
+    fixed64             CellID_0        = 3;
+    fixed64             CellID_1        = 4;
     
-    int64               TargetCell      = 7; // This goes away once CellID is sorted
     repeated AttrElemPb Elems           = 8;
 
 }
@@ -317,24 +315,26 @@ message HandleURI {
 message PinRequest {
 
     // ParentReqID, if set, provides context for this request and is typically needed when pinning a cell by ID alone.  
-    // Not set if PinURI and/or PinCellID implies that no parent req exists.
+    // Not set if PinURL and/or PinCellID implies that no parent req exists.
     uint64              ParentReqID = 1;
     
     // URL specifying the cell to be pinned and whose child cells are to be pushed.
     // Typically: [[arc://]arc-app-uri/]cell-uri..
     string              PinURL = 2;
-        
-    // PinCellID is an explicit cell ID be pinned (or 0 if PinURI does not require a cell ID)
-    int64               PinCellID = 3;
+    
+    // Pins a cell specified by its 16 byte ID and is typically a child cell of a pinned cell implied by ParentReqID.
+    // These values are 0 if PinURL is nil or does not require a CellID.
+    uint64              PinCellID_0 = 3;
+    uint64              PinCellID_1 = 4;
 
-	// If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
-	uint32              ParentAttrSelector = 5;
+    // If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
+    uint32              ParentAttrSelector = 5;
 	
-	// If set, specifies an ItemSelector that filters which child cells are pushed to the client.
-	uint32              ChildCellSelector = 6;
+    // If set, specifies an ItemSelector that filters which child cells are pushed to the client.
+    uint32              ChildCellSelector = 6;
 	
-	// Flags specifies options.
-	PinFlags            Flags = 7;
+    // Flags specifies options.
+    PinFlags            Flags = 7;
 	
 }
 
@@ -492,7 +492,7 @@ message CellHeader {
 
 // message TextEntry {
 //     uint32              NameID = 1;
-//     string              ValStr = 2;
+//     string              String = 2;
 // }
 
 

@@ -3,25 +3,18 @@ package arc
 import (
 	"bytes"
 	"encoding/binary"
-	strings "strings"
+	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
 
-// TimeID is a locally unique UTC16 value -- see SessionRegistry.IssueTimeID()
-// The difference between a TimeID and a UTC16 is that a TimeID is guaranteed to be unique for a given host and is convenient identifier.
-type TimeID UTC16
-
-// CellID is a TimeID (guaranteed to be globally unique) used to persistently identify a Cell.
-type CellID TimeID
-
-type TxID struct {
-	UTC16 UTC16
-	Hash1 uint64
-	Hash2 uint64
-	Hash3 uint64
-}
+// UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
+//
+// Shifting this value to the right 16 bits will yield standard Unix time.
+// This means there are 47 bits dedicated for seconds, implying a limit 4.4 million years.
+type UTC16 int64
 
 // TID identifies a specific planet, node, or transaction.
 //
@@ -40,21 +33,20 @@ const TIDStringLen = int(Const_TIDStringLen)
 // nilTID is a zeroed TID that denotes a void/nil/zero value of a TID
 var nilTID = TID{}
 
-// UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
-//
-// Shifting this value to the right 16 bits will yield standard Unix time.
-// This means there are 47 bits dedicated for seconds, implying a max timestamp of 4.4 million years.
-type UTC16 int64
-
 const (
 	SI_DistantFuture = UTC16(0x7FFFFFFFFFFFFFFF)
 )
 
 // Converts a time.Time to a UTC16.
-func ConvertToUTC(t time.Time) UTC16 {
+func ConvertToUTC16(t time.Time) UTC16 {
 	time16 := t.Unix() << 16
 	frac := uint16((2199 * (uint32(t.Nanosecond()) >> 10)) >> 15)
 	return UTC16(time16 | int64(frac))
+}
+
+// Similar to time.Now() but returns a UTC16.
+func Now() UTC16 {
+	return ConvertToUTC16(time.Now())
 }
 
 // Converts milliseconds to UTC16.
@@ -234,24 +226,57 @@ func (tid TID) CopyNext(inTID TID) {
 	}
 }
 
-// CellTID identifies a Tx by secure hash ID.
-// The host maintains a two-way map to resolve a CellID with its corresponding TxID.
-type CellTID struct {
+// CellID is unique Cell identifier that globally identifies a cell.
+type CellID [16]byte
+
+// Forms a CellID from uint64s.
+func CellIDFromU64(x0, x1 uint64) (id CellID) {
+	id.AssignFromU64(x0, x1)
+	return id
+}
+
+func (id *CellID) IsNil() bool {
+	return *(*int64)(unsafe.Pointer(id)) == 0 && *(*int64)(unsafe.Pointer(&id[8])) == 0
+}
+
+func (id *CellID) AssignFromU64(x0, x1 uint64) {
+	binary.BigEndian.PutUint64(id[0:8], x0)
+	binary.BigEndian.PutUint64(id[8:16], x1)
+}
+
+func (id *CellID) ExportAsU64() (x0, x1 uint64) {
+	x0 = binary.BigEndian.Uint64(id[0:8])
+	x1 = binary.BigEndian.Uint64(id[8:16])
+	return
+}
+
+func (id *CellID) String() string {
+	return bufs.Base32Encoding.EncodeToString(id[:])
+}
+
+/*
+// Issues a CellID using the given random number generator to generate the UID hash portion.
+func IssueCellID(rng *rand.Rand) (id CellID) {
+	return CellIDFromU64(uint64(ConvertToUTC16(time.Now())), rng.Uint64())
+}
+
+// TID identifies a Tx (or Cell) by secure hash ID.
+type TxID struct {
 	UTC16 UTC16
-	HASH1 uint64
-	HASH2 uint64
-	HASH3 uint64
+	Hash1 uint64
+	Hash2 uint64
+	Hash3 uint64
 }
 
 // Base32 returns this TID in Base32 form.
-func (tid *CellTID) Base32() string {
+func (tid *TxID) Base32() string {
 	var bin [TIDBinaryLen]byte
 	binStr := tid.AppendAsBinary(bin[:0])
 	return bufs.Base32Encoding.EncodeToString(binStr)
 }
 
 // Appends the base 32 ASCII encoding of this TID to the given buffer
-func (tid *CellTID) AppendAsBase32(io []byte) []byte {
+func (tid *TxID) AppendAsBase32(io []byte) []byte {
 	L := len(io)
 
 	needed := L + TIDStringLen
@@ -270,7 +295,7 @@ func (tid *CellTID) AppendAsBase32(io []byte) []byte {
 }
 
 // Appends the base 32 ASCII encoding of this TID to the given buffer
-func (tid *CellTID) AppendAsBinary(io []byte) []byte {
+func (tid *TxID) AppendAsBinary(io []byte) []byte {
 	L := len(io)
 	needed := L + TIDBinaryLen
 	dst := io
@@ -281,11 +306,12 @@ func (tid *CellTID) AppendAsBinary(io []byte) []byte {
 	dst = dst[:needed]
 
 	binary.BigEndian.PutUint64(dst[L+0:L+8], uint64(tid.UTC16))
-	binary.BigEndian.PutUint64(dst[L+8:L+16], tid.HASH1)
-	binary.BigEndian.PutUint64(dst[L+16:L+24], tid.HASH2)
-	binary.BigEndian.PutUint64(dst[L+24:L+32], tid.HASH3)
+	binary.BigEndian.PutUint64(dst[L+8:L+16], tid.Hash1)
+	binary.BigEndian.PutUint64(dst[L+16:L+24], tid.Hash2)
+	binary.BigEndian.PutUint64(dst[L+24:L+32], tid.Hash3)
 	return dst
 }
+*/
 
 func (id ConstSymbol) Ord() uint32 {
 	return uint32(id)

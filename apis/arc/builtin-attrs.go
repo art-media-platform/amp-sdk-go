@@ -220,3 +220,7 @@ func (v *PinRequest) TypeName() string {
 func (v *PinRequest) New() ElemVal {
 	return &PinRequest{}
 }
+
+func (v *PinRequest) CellID() CellID {
+	return CellIDFromU64(v.PinCellID_0, v.PinCellID_1)
+}

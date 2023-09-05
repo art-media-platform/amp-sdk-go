@@ -40,8 +40,8 @@ type AppContext interface {
 	// This directory is scoped by the app's UID.
 	LocalDataPath() string
 
-	// Atomically issues a new and unique ID that is globally unique.
-	// An ID may still expire, go out of scope, or otherwise become meaningless.
+	// Issues a mew cell ID guaranteed to be universally unique.
+	// This should not be called concurrently with other IssueCellID() calls.
 	IssueCellID() CellID
 
 	// Gets the named cell and attribute from the user's home planet -- used high-level app settings.

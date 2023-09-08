@@ -39,13 +39,7 @@ type Issuer interface {
 
 var ErrIssuerNotOpen = errors.New("issuer not open")
 
-// Table stores value-ID pairs, designed for high-performance lookup of an ID or byte string.
-// This implementation is intended to handle extreme loads, leveraging:
-//   - ID-value pairs are cached once read, offering subsequent O(1) access
-//   - Internal value allocations are pooled. The default TableOpts.PoolSz of 16k means
-//     thousands of buffers can be issued or read under only a single allocation.
-//
-// All methods are thread-safe.
+// Table abstracts value-ID storage and two-way lookup.
 type Table interface {
 	generics.RefCloser
 

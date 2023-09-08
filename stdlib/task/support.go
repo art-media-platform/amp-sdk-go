@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Periodically calls PrintContextTree() to the context's logger.
 func PrintTreePeriodically(ctx Context, period time.Duration, verboseLevel int32) {
 	block := [32]byte{}
 	var text []byte
@@ -54,7 +55,7 @@ func PrintTreePeriodically(ctx Context, period time.Duration, verboseLevel int32
 	ticker.Stop()
 }
 
-// Writes pretty debug state info of a given verbosity level.
+// Writes pretty and indented debug state info of a given verbosity level.
 // If out == nil, the text output is instead directed to this context's logger.Info()
 func PrintContextTree(ctx Context, out io.Writer, verboseLevel int32) {
 	buf := new(strings.Builder)

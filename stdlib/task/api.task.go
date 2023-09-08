@@ -1,3 +1,4 @@
+// Features task.Context, a wrapper for goroutines inspired by a conventional parent-child process model
 package task
 
 import (
@@ -7,15 +8,14 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/log"
 )
 
-// NilContext is used to start Contexts with no parent Context.
-var NilContext = Context((*ctx)(nil))
-
-// Start starts the given context as its own task root.
+// Starts a new Context with no parent Context.
 func Start(task *Task) (Context, error) {
-	return NilContext.StartChild(task)
+	return Context((*ctx)(nil)).StartChild(task)
 }
 
-// Go starts a new root Context with the given label and function.
+// Go is a convenience function that starts a new Context that runs the given function -- like starting a goroutine.
+//
+// If parent == null, then the new Context will have no parent.
 func Go(parent Context, label string, fn func(ctx Context)) (Context, error) {
 	return parent.StartChild(&Task{
 		Label: label,
@@ -23,7 +23,7 @@ func Go(parent Context, label string, fn func(ctx Context)) (Context, error) {
 	})
 }
 
-// Task is an optional set of callbacks for a Context
+// Task is a parameter block used to start a new Context and contains hooks for each stage of the Context's lifecycle.
 type Task struct {
 
 	// If > 0, Context.CloseWhenIdle() will automatically called when the last remaining child is closed or when OnRun() completes, whichever occurs later.
@@ -31,8 +31,8 @@ type Task struct {
 	// This will not enter into effect unless OnRun is given or a child is started.
 	IdleClose time.Duration
 
-	TaskRef        any                     // Offered to you for open-ended use.
-	Label          string                  // Label is a log label and debugging
+	TaskRef        any                     // TaskRef is offered for open-ended use
+	Label          string                  // Label is used for logging and debugging
 	OnStart        func(ctx Context) error // Blocking fn called in StartChild(). If err, ctx.Close() is called and Go() returns the err and OnRun is never called.
 	OnRun          func(ctx Context)       // Async work body. If non-nil, ctx.Close() will be automatically called after OnRun() completes
 	OnClosing      func()                  // Called immediately after Close() is first called while self & children are still closing
@@ -40,10 +40,16 @@ type Task struct {
 	OnClosed       func()                  // Called after Close() and all children have completed Close() (but immediately before Done() is released)
 }
 
+// Context is an expanded form of a context.Context offering, featuring:
+//   - integrated logging, removing guesswork of which Context logged what
+//   - "child" Contexts such that Close() will cause a Context's children to close
+//   - automatic idle-close of Contexts after a period of inactivity
+//   - the OnClosing() hook, allowing cleanup to occur  when a Context is closed but before its parent is closed.
+//   - PrintTreePeriodically() which visualizes a Context's child tree and is helpful for debugging in large projects.
 type Context interface {
 	log.Logger
 
-	// A task.Context is an extension of context.Context.
+	// Includes functionality and behavior of a context.Context.
 	context.Context
 
 	// Returns Task.Ref passed into StartChild()

@@ -1,4 +1,6 @@
 syntax = "proto3";
+
+// Contains data structures used by the client for content management and deployment
 package crates;
 
 option csharp_namespace = "ArcXR";

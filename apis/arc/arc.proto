@@ -469,40 +469,35 @@ message CryptoKey {
 
 
 message CellHeader {
-    
-    // Extensible content container
-    //repeated TextEntry  Content         = 2;
-    
+
     // A glyph is a representative image or 3D graphic similar to an icon in function.
     // They ideally have a 1:1[:1] aspect ratio and should not to exceed 16:9 or 9:16.
-    AssetRef            Glyph240        = 4;  // Item thumbnail   -- appropriate for ~10 sq mm
-    AssetRef            Glyph720        = 5;  // Small screens    -- appropriate for 1200x720
-    AssetRef            Glyph1080       = 6;  // Tablets, laptops -- appropriate for 1920x1080
+    AssetRef            Glyph240    = 3;  // Item thumbnail   -- appropriate for ~10 sq mm
+    AssetRef            Glyph720    = 4;  // Small screens    -- appropriate for 1200x720
+    AssetRef            Glyph1080   = 5;  // Tablets, laptops -- appropriate for 1920x1080
     
-    // FUTURE: layout params?
-    // { }
+    repeated AltEntry   AltText     = 9;  // Extensible text values
     
-    AssetRef            Link            = 10;  //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
+    AssetRef            Link        = 10; //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
 
-    int64               Created         = 20;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
-    int64               Modified        = 21;  // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Created     = 20; // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Modified    = 21; // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
     
 }
 
 
-// message TextEntry {
-//     uint32              NameID = 1;
-//     string              String = 2;
-// }
+message AltEntry {
+    string              Key         = 1;
+    string              Value       = 2;
+}
 
 
 // CellText is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
 message CellText {
     
-    string              Title         = 4;  // Title, name, or label
-    string              Subtitle      = 5;  // Synopsis phrase, tagline, or sub-label
-    string              About         = 6;  // Additional phase information about this item (html or rtf ok)
-
+    string              Title       = 2;  // title, name, or label
+    string              Subtitle    = 3;  // synopsis, summary, tagline, or sub-label
+    string              About       = 4;  // Additional information about this item
 
 }
 

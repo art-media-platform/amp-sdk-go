@@ -23,6 +23,6 @@ In suggested order of review for newcomers:
 
 |                          |                                                                   |
 |------------------------- | ------------------------------------------------------------------|
-| [api.task.go](https://github.com/arcspace/go-arc-sdk/blob/main/stdlib/task/api.task.go)        | A generic wrapper for goroutines inspired by a conventional parent-child process model and is used throughout this SDK.              |
-| [api.app.go](https://github.com/arcspace/go-arc-sdk/blob/main/apis/arc/api.app.go)    | Interfaces for developers implementing an `arc.App`, defining how state is requested, pushed, or merged.                |
+| [api.task.go](https://github.com/arcspace/go-arc-sdk/blob/main/stdlib/task/api.task.go)        | A wrapper for goroutines inspired by a conventional parent-child process model and is used throughout this SDK.              |
+| [api.app.go](https://github.com/arcspace/go-arc-sdk/blob/main/apis/arc/api.app.go)    | Interfaces for developers looking to implement an `arc.App`, defining how state is requested, pushed, and merged.                |
 | [api.host.go](https://github.com/arcspace/go-arc-sdk/blob/main/apis/arc/api.host.go) | Defines `arc.Host` and its related types, what [`go-archost`](https://github.com/arcspace/go-archost) implements, and the abstraction that an `arc.App` plugs into.             |

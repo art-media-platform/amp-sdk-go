@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+<<<<<<< HEAD
 // TxDataStore is a message packet sent to / from a client.
 // It is leads with a fixed-size header (TxHeader_Size) followed by a variable-size body.
 type TxDataStore []byte
@@ -42,137 +43,70 @@ func (msg *Msg) MarshalToTxBuffer(txBuf []byte) error {
 type MsgBatch struct {
 	Msgs []*Msg
 }
+=======
+>>>>>>> 2dc15a0 (WIP)
 
-/*
-var gMsgBatchPool = sync.Pool{
-	New: func() interface{} {
-		return &MsgBatch{
-			Msgs: make([]*Msg, 0, 16),
-		}
-	},
-}
 
-func NewMsgBatch() *MsgBatch {
-	return gMsgBatchPool.Get().(*MsgBatch)
-}
 
-func (batch *MsgBatch) Reset(count int) []*Msg {
-	if count > cap(batch.Msgs) {
-		msgs := make([]*Msg, count)
-		copy(msgs, batch.Msgs)
-		batch.Msgs = msgs
-	} else {
-		batch.Msgs = batch.Msgs[:count]
-	}
-
-	// Alloc or init  each msg
-	for i, msg := range batch.Msgs {
-		if msg == nil {
-			batch.Msgs[i] = NewMsg()
-		} else {
-			msg.Init()
-		}
-	}
-
-	return batch.Msgs
-}
-
-func (batch *MsgBatch) AddNew(count int) []*Msg {
-	N := len(batch.Msgs)
-	for i := 0; i < count; i++ {
-		batch.Msgs = append(batch.Msgs, NewMsg())
-	}
-	return batch.Msgs[N:]
-}
-
-func (batch *MsgBatch) AddMsgs(msgs []*Msg) {
-	batch.Msgs = append(batch.Msgs, msgs...)
-}
-
-func (batch *MsgBatch) AddMsg() *Msg {
-	m := NewMsg()
-	batch.Msgs = append(batch.Msgs, m)
-	return m
-}
-
-func (batch *MsgBatch) Reclaim() {
-	for i, msg := range batch.Msgs {
-		msg.Reclaim()
-		batch.Msgs[i] = nil
-	}
-	batch.Msgs = batch.Msgs[:0]
-	gMsgBatchPool.Put(batch)
-}
-
-func (batch *MsgBatch) PushCopyToClient(dst PinContext) bool {
-	for _, src := range batch.Msgs {
-		msg := CopyMsg(src)
-		if !dst.PushUpdate(msg) {
-			return false
-		}
-	}
-	return true
-}
-*/
-
-func NewMsg() *Msg {
-	msg := gMsgPool.Get().(*Msg)
+func NewTxMsg() *TxMsg {
+	msg := gTxMsgPool.Get().(*TxMsg)
 	return msg
 }
 
 /*
-	func CopyMsg(src *Msg) *Msg {
-		msg := NewMsg()
+func CopyMsg(src *TxMsg) *TxMsg {
+	msg := NewMsg()
 
-		if src != nil {
-			valBuf := append(msg.ValBuf[:0], src.ValBuf...)
-			*msg = *src
-			msg.ValBuf = valBuf
+	if src != nil {
+		valBuf := append(msg.ValBuf[:0], src.ValBuf...)
+		*msg = *src
+		msg.ValBuf = valBuf
 
-		}
-		return msg
 	}
+	return msg
+}
 */
-func (msg *Msg) Init() {
-	*msg = Msg{
-		CellTxs: msg.CellTxs[:0],
+
+func (tx *TxMsg) Init() {
+	*tx = TxMsg{
+		CellOps: tx.CellOps[:0],
 	}
 }
 
-func (msg *Msg) Reclaim() {
-	if msg != nil {
-		msg.Init()
-		gMsgPool.Put(msg)
+func (tx *TxMsg) Reclaim() {
+	if tx != nil {
+		tx.Init()
+		gTxMsgPool.Put(tx)
 	}
 }
 
-/*
-	func (msg *Msg) MarshalAttrElem(attrID uint32, src PbValue) error {
-		msg.AttrID = attrID
-		sz := src.Size()
-		if sz > cap(msg.ValBuf) {
-			msg.ValBuf = make([]byte, sz, (sz+0x3FF)&^0x3FF)
-		} else {
-			msg.ValBuf = msg.ValBuf[:sz]
-		}
-		_, err := src.MarshalToSizedBuffer(msg.ValBuf)
-		return err
-	}
 
-	func (msg *Msg) UnmarshalValue(dst PbValue) error {
-		return dst.Unmarshal(msg.ValBuf)
-	}
+	// func (msg *TxMsg) MarshalAttrElem(attrID uint32, src PbValue) error {
+	// 	msg.AttrID = attrID
+	// 	sz := src.Size()
+	// 	if sz > cap(msg.ValBuf) {
+	// 		msg.ValBuf = make([]byte, sz, (sz+0x3FF)&^0x3FF)
+	// 	} else {
+	// 		msg.ValBuf = msg.ValBuf[:sz]
+	// 	}
+	// 	_, err := src.MarshalToSizedBuffer(msg.ValBuf)
+	// 	return err
+	// }
 
-	func (attr AttrElem) MarshalToMsg(id CellID) (*Msg, error) {
-		msg := NewMsg()
-		msg.Op = MsgOp_PushAttrElem
-		msg.AttrID = attr.AttrID
-		msg.SI = attr.SI
-		msg.CellID = int64(id)
-		err := attr.Val.MarshalToBuf(&msg.ValBuf)
-		return msg, err
-	}
-*/
+	// func (msg *TxMsg) UnmarshalValue(dst PbValue) error {
+	// 	return dst.Unmarshal(msg.ValBuf)
+	// }
+
+	// func (attr AttrElemVal) MarshalToMsg(id CellID) (*TxMsg, error) {
+	// 	msg := NewMsg()
+	// 	msg.Op = MsgOp_PushAttrElem
+	// 	msg.AttrID = attr.AttrID
+	// 	msg.SI = attr.SI
+	// 	msg.CellID = int64(id)
+	// 	err := attr.Val.MarshalToBuf(&msg.ValBuf)
+	// 	return msg, err
+	// }
+
 
 // type CellMarshaller struct {
 // 	Txs []*CellTxPb
@@ -181,35 +115,29 @@ func (msg *Msg) Reclaim() {
 // 	fatalErr   error
 // }
 
-var gMsgPool = sync.Pool{
+var gTxMsgPool = sync.Pool{
 	New: func() interface{} {
-		return &Msg{}
+		return &TxMsg{}
 	},
 }
 
-func (tx *CellTx) Marshal(attrID uint32, SI int64, val ElemVal) {
-	if val == nil || attrID == 0 {
-		return
-	}
 
-	pb := &AttrElemPb{
-		AttrID: uint64(attrID),
-		SI:     SI,
-	}
-	err := val.MarshalToBuf(&pb.ValBuf)
-	if err != nil {
-		panic(err)
-	}
 
-	tx.ElemsPb = append(tx.ElemsPb, pb)
+
+// func (tx *AttrOp) Clear(op AttrOpCode) {
+// 	tx.Op = op
+// 	tx.CellID = CellID{}
+// 	tx.Elems = tx.Elems[:0]
+// }
+
+func (op *CellOp) HasAttrUID() bool {
+	return op.AttrID[0] != 0 || op.AttrID[1] != 0 
 }
 
-func (tx *CellTx) Clear(op CellTxOp) {
-	tx.Op = op
-	tx.TargetCell = CellID{}
-	//tx.Elems = tx.Elems[:0]
-	tx.ElemsPb = tx.ElemsPb[:0]
+func (op *CellOp) NilAttrUID() bool {
+	return op.AttrID[0] == 0 && op.AttrID[1] == 0 
 }
+
 
 /*
 func (tx *CellTx) MarshalAttrs() error {
@@ -245,16 +173,16 @@ func (tx *CellTx) MarshalToPb(dst *CellTxPb) error {
 */
 
 // If reqID == 0, then this sends an attr to the client's session controller (vs a specific request)
-func SendClientMetaAttr(sess HostSession, reqID uint64, val ElemVal) error {
-	msg, err := FormClientMetaAttrMsg(sess, val.TypeName(), val)
+func SendClientMetaAttr(sess HostSession, reqID uint64, val AttrElemVal) error {
+	msg, err := FormClientMetaAttrMsg(sess, val.ElemTypeName(), val)
 	msg.ReqID = reqID
 	if err != nil {
 		return err
 	}
-	return sess.SendMsg(msg)
+	return sess.SendTx(msg)
 }
 
-func FormClientMetaAttrMsg(reg SessionRegistry, attrSpec string, val ElemVal) (*Msg, error) {
+func FormClientMetaAttrMsg(reg SessionRegistry, attrSpec string, val AttrElemVal) (*TxMsg, error) {
 	spec, err := reg.ResolveAttrSpec(attrSpec, false)
 	if err != nil {
 		return nil, err
@@ -263,7 +191,7 @@ func FormClientMetaAttrMsg(reg SessionRegistry, attrSpec string, val ElemVal) (*
 	return FormMetaAttrTx(spec, val)
 }
 
-func FormMetaAttrTx(attrSpec AttrSpec, val ElemVal) (*Msg, error) {
+func FormMetaAttrTx(attrSpec AttrSpec, val AttrElemVal) (*TxMsg, error) {
 	elemPb := &AttrElemPb{
 		AttrID: uint64(attrSpec.DefID),
 	}
@@ -285,7 +213,7 @@ func FormMetaAttrTx(attrSpec AttrSpec, val ElemVal) (*Msg, error) {
 	return msg, nil
 }
 
-func (msg *Msg) GetMetaAttr() (attr *AttrElemPb, err error) {
+func (msg *TxMsg) GetMetaAttr() (attr *AttrElemPb, err error) {
 	if len(msg.CellTxs) == 0 || msg.CellTxs[0].Op != CellTxOp_MetaAttr || msg.CellTxs[0].Elems == nil || len(msg.CellTxs[0].Elems) == 0 {
 		return nil, ErrCode_MalformedTx.Error("missing meta attr")
 	}
@@ -293,7 +221,7 @@ func (msg *Msg) GetMetaAttr() (attr *AttrElemPb, err error) {
 	return msg.CellTxs[0].Elems[0], nil
 }
 
-func (tx *MultiTx) UnmarshalFrom(msg *Msg, reg SessionRegistry, native bool) error {
+func (tx *TxMsg) UnmarshalFrom(msg *TxMsg, reg SessionRegistry, native bool) error {
 	tx.ReqID = msg.ReqID
 	tx.Status = msg.Status
 	tx.CellTxs = tx.CellTxs[:0]
@@ -307,10 +235,10 @@ func (tx *MultiTx) UnmarshalFrom(msg *Msg, reg SessionRegistry, native bool) err
 		tx.CellTxs = tx.CellTxs[:len(srcTxs)]
 	}
 	for i, cellTx := range srcTxs {
-		elems := make([]AttrElem, len(cellTx.Elems))
+		elems := make([]AttrElemVal, len(cellTx.Elems))
 		for j, srcElem := range cellTx.Elems {
 			attrID := uint32(srcElem.AttrID)
-			elem := AttrElem{
+			elem := AttrElemVal{
 				SI:     srcElem.SI,
 				AttrID: attrID,
 			}
@@ -354,7 +282,7 @@ func (bat *CellTx) PushBatch(ctx PinContext) error {
 		// 	msg.Flags |= MsgFlags_CellCheckpoint
 		// }
 
-		if !ctx.PushUpdate(msg) {
+		if !ctx.PushTx(msg) {
 			return ErrPinCtxClosed
 		}
 	}
@@ -362,10 +290,10 @@ func (bat *CellTx) PushBatch(ctx PinContext) error {
 	return nil
 
 }
+*/
 
-
-func (tx *MultiTx) MarshalToBuf(dst *[]byte) error {
-	pb := MultiTxPb{
+func (tx *TxMsg) MarshalToBuf(dst *[]byte) error {
+	pb := TxMsgPb{
 		ReqID:   tx.ReqID,
 		CellTxs: make([]*CellTxPb, len(tx.CellTxs)),
 	}
@@ -376,13 +304,13 @@ func (tx *MultiTx) MarshalToBuf(dst *[]byte) error {
 			TargetCellID: int64(srcTx.Target),
 			Elems:        make([]*AttrElemPb, len(srcTx.Elems)),
 		}
-		for j, attrElem := range srcTx.Elems {
-			//attrElem.ValBuf = make([]byte, attrElem.Val.Marhal
+		for j, AttrElemVal := range srcTx.Elems {
+			//AttrElemVal.ValBuf = make([]byte, AttrElemVal.Val.Marhal
 			elem := &AttrElemPb{
-				SI:     attrElem.SI,
-				AttrID: attrElem.AttrID,
+				SI:     AttrElemVal.SI,
+				AttrID: AttrElemVal.AttrID,
 			}
-			attrElem.Val.MarshalToBuf(&elem.ValBuf)
+			AttrElemVal.Val.MarshalToBuf(&elem.ValBuf)
 			cellTx.Elems[j] = elem
 		}
 		pb.CellTxs[i] = cellTx
@@ -397,18 +325,18 @@ func (tx *MultiTx) MarshalToBuf(dst *[]byte) error {
 	return err
 }
 
+/*
 
-
-func (v *MultiTxPb) MarshalToBuf(dst *[]byte) error {
+func (v *TxMsgPb) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *MultiTxPb) TypeName() string {
-	return "MultiTx"
+func (v *TxMsgPb) TypeName() string {
+	return "TxMsg"
 }
 
-func (v *MultiTxPb) New() ElemVal {
-	return &MultiTxPb{}
+func (v *TxMsgPb) New() AttrElemVal {
+	return &TxMsgPb{}
 }
 
 */

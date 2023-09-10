@@ -87,8 +87,6 @@ func (tx *TxMsg) Reclaim() {
 }
 
 
-
-
 	// func (msg *TxMsg) MarshalAttrElem(attrID uint32, src PbValue) error {
 	// 	msg.AttrID = attrID
 	// 	sz := src.Size()
@@ -123,6 +121,12 @@ func (tx *TxMsg) Reclaim() {
 // 	fatalErr   error
 // }
 
+var gTxMsgPool = sync.Pool{
+	New: func() interface{} {
+		return &TxMsg{}
+	},
+}
+
 
 
 
@@ -131,18 +135,6 @@ func (tx *TxMsg) Reclaim() {
 // 	tx.CellID = CellID{}
 // 	tx.Elems = tx.Elems[:0]
 // }
-
-// func (op *CellOp) MarshalToStore(tx *TxMsg, val arc.AttrElemVal) error {
-// 	var err error
-	
-// 	op.DataOfs = int64(len(tx.DataStore))
-// 	tx.DataStore, err = val.MarshalToStore(tx.DataStore)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	op.DataLen = int64(len(tx.DataStore))
-// }
-
 
 func (op *CellOp) HasAttrUID() bool {
 	return op.AttrID[0] != 0 || op.AttrID[1] != 0 

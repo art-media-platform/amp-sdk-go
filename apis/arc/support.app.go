@@ -3,10 +3,10 @@ package arc
 import "net/url"
 
 // AttrSpecs used universally
-const (
-	CellHeaderAttrSpec = "CellHeader"
-	CellTextAttrSpec   = "[Locale.Name]CellText"
-	CellPosAttrSpec    = "[Surface.Name]Position"
+var (
+	CellHeaderAttrID = GenAttrUID("CellHeader")
+	CellTextAttrID   = GenAttrUID("[Locale.Name]CellText")
+	CellPosAttrID    = GenAttrUID("[Surface.Name]Position")
 )
 
 // This file contains types and interfaces intended to ease an arc app development.
@@ -30,7 +30,7 @@ func (app *AppBase) HandleURL(*url.URL) error {
 func (app *AppBase) OnClosing() {
 }
 
-func (app *AppBase) RegisterElemType(prototype ElemVal) error {
+func (app *AppBase) RegisterElemType(prototype AttrElemVal) error {
 	err := app.AppContext.Session().RegisterElemType(prototype)
 	if err != nil {
 		return err

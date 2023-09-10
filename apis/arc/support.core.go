@@ -2,10 +2,10 @@ package arc
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/binary"
 	"strings"
 	"time"
-	"unsafe"
 
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
@@ -226,8 +226,17 @@ func (tid TID) CopyNext(inTID TID) {
 	}
 }
 
-// CellID is unique Cell identifier that globally identifies a cell.
-type CellID [16]byte
+
+func GenAttrUID(attrSpec string) AttrUID {
+	hash := crypto.MD5.New()
+	hash.Write([]byte(attrSpec))
+	digest := hash.Sum(nil)
+	return [2]uint64{
+		binary.BigEndian.Uint64(digest[0:8]),
+		binary.BigEndian.Uint64(digest[8:16]),
+	}
+}
+
 
 // Forms a CellID from uint64s.
 func CellIDFromU64(x0, x1 uint64) (id CellID) {
@@ -235,6 +244,30 @@ func CellIDFromU64(x0, x1 uint64) (id CellID) {
 	return id
 }
 
+func (id *CellID) IsNil() bool {
+	return id[0] == 0 && id[1] == 0
+}
+
+func (id *CellID) AssignFromU64(x0, x1 uint64) {
+	id[0] = x0
+	id[1] = x1
+}
+
+// func (id *CellID) ExportAsU64() (x0, x1 uint64) {
+// 	x0 = binary.BigEndian.Uint64(id[0:8])
+// 	x1 = binary.BigEndian.Uint64(id[8:16])
+// 	return
+// }
+
+func (id *CellID) String() string {
+	var buf[16]byte
+	binary.BigEndian.PutUint64(buf[0:8], id[0])
+	binary.BigEndian.PutUint64(buf[8:16], id[1])
+	return bufs.Base32Encoding.EncodeToString(buf[:])
+}
+
+
+/*
 func (id *CellID) IsNil() bool {
 	return *(*int64)(unsafe.Pointer(id)) == 0 && *(*int64)(unsafe.Pointer(&id[8])) == 0
 }
@@ -253,6 +286,7 @@ func (id *CellID) ExportAsU64() (x0, x1 uint64) {
 func (id *CellID) String() string {
 	return bufs.Base32Encoding.EncodeToString(id[:])
 }
+*/
 
 /*
 // Issues a CellID using the given random number generator to generate the UID hash portion.
@@ -360,8 +394,8 @@ func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) 
 	var keyBuf [128]byte
 	cellKey := append(append(keyBuf[:0], []byte(ctx.StateScope())...), []byte(subKey)...)
 
-	msgs := make([]*Msg, 0, len(schema.Attrs))
-	err := ctx.User().HomePlanet().ReadCell(cellKey, schema, func(msg *Msg) {
+	msgs := make([]*TxMsg, 0, len(schema.Attrs))
+	err := ctx.User().HomePlanet().ReadCell(cellKey, schema, func(msg *TxMsg) {
 		switch msg.Op {
 		case MsgOp_PushAttr:
 			msgs = append(msgs, msg)
@@ -466,7 +500,7 @@ func (req *CellReq) PushBeginPin(target CellID) {
 	m := NewMsg()
 	m.CellID = target.U64()
 	m.Op = MsgOp_PinCell
-	req.PushUpdate(m)
+	req.PushTx(m)
 }
 
 func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
@@ -476,7 +510,7 @@ func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
 		m.Op = MsgOp_InsertChildCell
 		m.ValType = int32(ValType_SchemaID)
 		m.ValInt = int64(schema.SchemaID)
-		req.PushUpdate(m)
+		req.PushTx(m)
 	}
 }
 
@@ -498,7 +532,7 @@ func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, 
 	if attr.ValTypeID != 0 { // what is this for!?
 		m.ValType = int32(attr.ValTypeID)
 	}
-	req.PushUpdate(m)
+	req.PushTx(m)
 }
 
 func (req *CellReq) PushCheckpoint(err error) {
@@ -508,7 +542,7 @@ func (req *CellReq) PushCheckpoint(err error) {
 	if err != nil {
 		m.setVal(err)
 	}
-	req.PushUpdate(m)
+	req.PushTx(m)
 }
 
 */

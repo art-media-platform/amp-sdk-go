@@ -32,7 +32,7 @@ func RegisterConstSymbols(reg SessionRegistry) {
 
 func RegisterBuiltInTypes(reg Registry) error {
 
-	prototypes := []ElemVal{
+	prototypes := []AttrElemVal{
 		&Err{},
 		&RegisterDefs{},
 		&HandleURI{},
@@ -54,18 +54,19 @@ func RegisterBuiltInTypes(reg Registry) error {
 	return nil
 }
 
-func MarshalPbValueToBuf(src PbValue, dst *[]byte) error {
+func MarshalPbToStore(src PbValue, dst []byte) ([]byte, error) {
 	sz := src.Size()
-	if cap(*dst) < sz {
-		*dst = make([]byte, sz)
-	} else {
-		*dst = (*dst)[:sz]
+	L := len(dst)
+	if cap(dst)-L < sz {
+		new := make([]byte, (L+sz+0x400)&^0x3FF)
+		copy(new, dst)
 	}
-	_, err := src.MarshalToSizedBuffer(*dst)
-	return err
+	dst = dst[:L+sz]
+	_, err := src.MarshalToSizedBuffer(dst[L:])
+	return dst, err
 }
 
-func ErrorToValue(v error) ElemVal {
+func ErrorToValue(v error) AttrElemVal {
 	if v == nil {
 		return nil
 	}
@@ -77,147 +78,147 @@ func ErrorToValue(v error) ElemVal {
 	return arcErr
 }
 
-func (v *AssetRef) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *AssetRef) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *AssetRef) TypeName() string {
+func (v *AssetRef) ElemTypeName() string {
 	return "AssetRef"
 }
 
-func (v *AssetRef) New() ElemVal {
+func (v *AssetRef) New() AttrElemVal {
 	return &AssetRef{}
 }
 
-func (v *Err) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *Err) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *Err) TypeName() string {
+func (v *Err) ElemTypeName() string {
 	return "Err"
 }
 
-func (v *Err) New() ElemVal {
+func (v *Err) New() AttrElemVal {
 	return &Err{}
 }
 
-func (v *HandleURI) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *HandleURI) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *HandleURI) TypeName() string {
+func (v *HandleURI) ElemTypeName() string {
 	return "HandleURI"
 }
 
-func (v *HandleURI) New() ElemVal {
+func (v *HandleURI) New() AttrElemVal {
 	return &HandleURI{}
 }
 
-func (v *Login) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *Login) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *Login) TypeName() string {
+func (v *Login) ElemTypeName() string {
 	return "Login"
 }
 
-func (v *Login) New() ElemVal {
+func (v *Login) New() AttrElemVal {
 	return &Login{}
 }
 
-func (v *LoginChallenge) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *LoginChallenge) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *LoginChallenge) TypeName() string {
+func (v *LoginChallenge) ElemTypeName() string {
 	return "LoginChallenge"
 }
 
-func (v *LoginChallenge) New() ElemVal {
+func (v *LoginChallenge) New() AttrElemVal {
 	return &LoginChallenge{}
 }
 
-func (v *LoginResponse) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *LoginResponse) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *LoginResponse) TypeName() string {
+func (v *LoginResponse) ElemTypeName() string {
 	return "LoginResponse"
 }
 
-func (v *LoginResponse) New() ElemVal {
+func (v *LoginResponse) New() AttrElemVal {
 	return &LoginResponse{}
 }
 
-func (v *CellText) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *CellText) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *CellText) TypeName() string {
+func (v *CellText) ElemTypeName() string {
 	return "CellText"
 }
 
-func (v *CellText) New() ElemVal {
+func (v *CellText) New() AttrElemVal {
 	return &CellText{}
 }
 
-func (v *CellHeader) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *CellHeader) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *CellHeader) TypeName() string {
+func (v *CellHeader) ElemTypeName() string {
 	return "CellHeader"
 }
 
-func (v *CellHeader) New() ElemVal {
+func (v *CellHeader) New() AttrElemVal {
 	return &CellHeader{}
 }
 
-func (v *RegisterDefs) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *RegisterDefs) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *RegisterDefs) TypeName() string {
+func (v *RegisterDefs) ElemTypeName() string {
 	return "RegisterDefs"
 }
 
-func (v *RegisterDefs) New() ElemVal {
+func (v *RegisterDefs) New() AttrElemVal {
 	return &RegisterDefs{}
 }
 
-func (v *Position) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *Position) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *Position) TypeName() string {
+func (v *Position) ElemTypeName() string {
 	return "Position"
 }
 
-func (v *Position) New() ElemVal {
+func (v *Position) New() AttrElemVal {
 	return &Position{}
 }
 
-func (v *AuthToken) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *AuthToken) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *AuthToken) TypeName() string {
+func (v *AuthToken) ElemTypeName() string {
 	return "AuthToken"
 }
 
-func (v *AuthToken) New() ElemVal {
+func (v *AuthToken) New() AttrElemVal {
 	return &AuthToken{}
 }
 
-func (v *PinRequest) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *PinRequest) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *PinRequest) TypeName() string {
+func (v *PinRequest) ElemTypeName() string {
 	return "PinRequest"
 }
 
-func (v *PinRequest) New() ElemVal {
+func (v *PinRequest) New() AttrElemVal {
 	return &PinRequest{}
 }
 

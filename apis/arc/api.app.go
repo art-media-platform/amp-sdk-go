@@ -47,10 +47,10 @@ type AppContext interface {
 	// Gets the named cell and attribute from the user's home planet -- used high-level app settings.
 	// The attr is scoped by both the app UID so key collision with other users or apps is not possible.
 	// This is how an app can store and retrieve settings.
-	GetAppCellAttr(attrSpec string, dst ElemVal) error
+	GetAppCellAttr(attrSpec string, dst AttrElemVal) error
 
 	// Write analog for GetAppCellAttr()
-	PutAppCellAttr(attrSpec string, src ElemVal) error
+	PutAppCellAttr(attrSpec string, src AttrElemVal) error
 }
 
 // AppInstance is implemented by an App and invoked by arc.Host responding to a client pin request.
@@ -97,8 +97,8 @@ type PinnedCell interface {
 	//   - an error is encountered
 	ServeState(ctx PinContext) error
 
-	// Merges a set of incoming changes into this pinned cell. -- a "write" operation
-	MergeUpdate(tx *Msg) error
+	// Merges an incoming change set into this pinned cell. -- aka write operation
+	MergeTx(tx *TxMsg) error
 }
 
 // Serialization abstraction
@@ -108,49 +108,61 @@ type PbValue interface {
 	Unmarshal(dAtA []byte) error
 }
 
-// ElemVal wraps cell attribute element name and serialization.
-type ElemVal interface {
+// AttrElemVal wraps cell attribute element type name and serialization.
+type AttrElemVal interface {
 
 	// Returns the element type name (a degenerate AttrSpec).
-	TypeName() string
+	ElemTypeName() string
 
-	// Marshals this ElemVal to a buffer, reallocating if needed.
-	MarshalToBuf(dst *[]byte) error
+	// Marshals this value to the end of a buffer.
+	MarshalToStore(in []byte) (out []byte, err error)
 
 	// Unmarshals and merges value state from a buffer.
 	Unmarshal(src []byte) error
 
-	// Creates a default instance of this same ElemVal type
-	New() ElemVal
+	// Creates a default instance of this same AttrElemVal type
+	New() AttrElemVal
 }
 
-// MultiTx is a multi-cell state update for a pinned cell or a container of meta attrs.
-type MultiTx struct {
-	ReqID   uint64 // allows replies to be routed to the originator
-	Status  ReqStatus
-	CellTxs []CellTx
-}
-
-// CellTx is a state update for a cell pushed to a client.
-type CellTx struct {
-	Op         CellTxOp      // The tx operation to perform
-	TargetCell CellID        // The cell being modified
-	ElemsPb    []*AttrElemPb // Attr element run (serialized)
+// TxMsg is a multi-cell state update for a pinned cell or a container of meta attrs.
+type TxMsg struct {
+	ReqID     uint64    // allows replies to be routed to an originator if applicable
+	Status    ReqStatus // status of the originating request if applicable
+	CellOps   []CellOp  // Ordered operations in this tx
+	DataStore []byte    // backing store
 }
 
 type AttrElem struct {
-	Val    ElemVal // Val is the abstraction interface allowing serialization and type string-ification
-	SI     int64   // SI is the SeriesIndex, which is described in the AttrSpec.SeriesIndexType
-	AttrID uint32  // AttrID is the native ID (AttrSpec.DefID) that fully names an AttrSpec
+	AttrID      AttrUID     // attr being modified -- 0 denotes preceding CellOp's AttrID
+	SeriesIndex SeriesIndex // series index (if applicable)
+	DataOfs     int64       // Byte offset serialized location into parent TxMsg's data store
+	DataLen     int64       // Byte length of serialized data
 }
 
-type AttrDef struct {
-	Client AttrSpec
-	Native AttrSpec
+type CellOp struct {
+	AttrElem
+	OpCode      CellOpCode  // operation to perform
+	CellID      CellID      // cell being modified -- 0 denotes preceding CellOp's CellID
+	// AttrID      AttrUID     // attr being modified -- 0 denotes preceding CellOp's AttrID
+	// SeriesIndex SeriesIndex // series index (if applicable)
+	// DataOfs     int64       // Byte offset serialized location into parent TxMsg's data store
+	// DataLen     int64       // Byte length of serialized data
 }
 
+// AttrSet is an ordered set of AttrSpec's that is used to select or mask a Cell's attributes.
 type AttrSet struct {
-	ClientDefID uint32    // READ-ONLY
-	NativeDefID uint32    // READ-ONLY
-	Attrs       []AttrDef // READ-ONLY
+	DefID AttrUID
+	Attrs []AttrUID
 }
+
+// CellID is globally unique Cell identifier that globally identifies a cell.
+//
+// By convention, the the leading 8 bytes are a UTC16 timestamp and the trailing 8 bytes are pseudo-random.
+// If the leading 8 bytes are 0, this denotes an ephemeral cell, meaning it does not no originate from a persistent store.
+type CellID [2]uint64
+
+// General purpose index of an cell attribute element in a series.
+type SeriesIndex [2]uint64
+
+// AttrUID is a universally unique identifier for an AttrSpec, generated from the MD5 of the canonic AttrSpec string.
+type AttrUID [2]uint64

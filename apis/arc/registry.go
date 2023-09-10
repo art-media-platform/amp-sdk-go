@@ -17,10 +17,10 @@ type registry struct {
 	mu           sync.RWMutex
 	appsByUID    map[UID]*App
 	appsByInvoke map[string]*App
-	elemTypes    []ElemVal
+	elemTypes    []AttrElemVal
 }
 
-func (reg *registry) RegisterElemType(prototype ElemVal) {
+func (reg *registry) RegisterElemType(prototype AttrElemVal) {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 	reg.elemTypes = append(reg.elemTypes, prototype)

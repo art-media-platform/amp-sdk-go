@@ -88,56 +88,35 @@ enum ReqStatus {
     ReqStatus_Closed       = 3;
 }
 
-// Msg is thw workhorse generic transport serialization sent between client and host.
-message Msg {
 
-    // ReqID names an originating request ID, issued by client using an atomic counter.
-    //
-    // For example, if a Msg is a reply to some request, ReqID identifies the originating request\.
-    uint64              ReqID           = 1;
-    
-    // Status communicates request status / completion.
-    ReqStatus           Status          = 2;
-    
-    // CellTxs is a Cell state update as well as session meta-messaging mechanism.
-    repeated CellTxPb   CellTxs         = 5;
-    
+
+// CellOpCode specifies a cell transaction operation.
+enum CellOpCode {
+    CellOpCode_MetaAttr    = 0; // 
+    CellOpCode_UpsertAttr  = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
+    CellOpCode_RemoveAttr  = 4; // remove single attr element
+    CellOpCode_RemoveCell  = 6; 
 }
 
-// CellTxPb is a cell transaction, a unit of change (or meta message) for a cell.
-message CellTxPb {
-    CellTxOp            Op              = 1;
-       
-    // Target CellID
-    // If CellID_1 == 0, then this cell is ephemeral (vs persistent).
-    fixed64             CellID_0        = 3;
-    fixed64             CellID_1        = 4;
+/*
+message CellOp {
     
-    repeated AttrElemPb Elems           = 8;
-
-}
-
-// CellTxOp specifies a cell transaction operation.
-enum CellTxOp {
-    CellTxOp_MetaAttr          = 0; // CellSpec and TargetCell are ignored
-    CellTxOp_UpsertCell        = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
-    CellTxOp_RemoveCell        = 3;
-}
-
-
-// Serialization helper for AttrElem
-message AttrElemPb {
-
-    // AttrID of the attr being updated (64 bits for future proofing)
-    uint64              AttrID          = 1;
+    CellOpCode          Op            = 1;
     
-    // Serialized value of the attr element -- IAW AttrID
-    bytes               ValBuf          = 2;
+    int64               CellID_UTC16  = 2;  // Bytes 00-07 of target Cell's ID -- UTC16 timestamp (secs x 2^16)
+    fixed64             CellID_1      = 3;  // Bytes 08-15 of target Cell's ID  
     
-    // Series index (if applicable)  
-    int64               SI              = 3;  
+    fixed64             AttrUID_0     = 6;  // Bytes 00-07 of target Cell's AttrSpec UID  
+    fixed64             AttrUID_1     = 7;  // Bytes 08-15 of target Cell's AttrSpec UID  
+    
+    uint64              SI_0          = 10; // Bytes 00-07 of the SeriesIndex
+    uint64              SI_1          = 11; // Bytes 08-15 of the SeriesIndex
+    
+    int64               DataOfs       = 14; // Byte offset serialized location into parent Tx's backing store
+    int64               DataLen       = 15; // Byte length of serialized data
+    
 }
-
+*/
 
 
 message Login {
@@ -166,7 +145,7 @@ message LoginResponse {
     bytes               HashResp        = 1;
 }
 
-
+/*
 message Symbol {
     // A symbol ID is 32 bits and corresponds to a real-world const byte strings.
     // FUTURE: IDs are int64, where client symbols IDs are < 0 and native symbols are > 0.
@@ -182,14 +161,20 @@ message RegisterDefs {
 }
 
 
-
 // AttrSpec fully describes a cell attribute, specifying a name, element type, and series element type.
 message AttrSpec {
 
     // Composite expression / invocation of this AttrSpec in the form: 
     //      "[{SeriesSpec}]{ElemType}:{AttrName}"
     //
-    // This the value is used for Msg.AttrID -- it references an AttrSpec.
+    // This the value is used for TxMsg.AttrID -- it references an AttrSpec.
+    // e.g. "AssetRef", "AssetRef:promo", "[UTC16]Position:past-promo-shoots",
+    string              AsString = 1;
+    
+    // Composite expression / invocation of this AttrSpec in the form: 
+    //      "[{SeriesSpec}]{ElemType}:{AttrName}"
+    //
+    // This the value is used for TxMsg.AttrID -- it references an AttrSpec.
     // e.g. "AssetRef", "AssetRef:promo", "[UTC16]Position:past-promo-shoots",
     uint32              DefID = 1;  
     
@@ -237,6 +222,7 @@ enum SeriesIndexType  {
     SeriesIndexType_Name    = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
     //SeriesIndexTypeCellID  = 2; // SI values correspond to Cell TIDs 
 }
+*/
 
 	
 enum PinFlags {
@@ -485,7 +471,7 @@ message PlanetEpoch {
     bytes               EpochTID        = 1;
     
     // EpochEntries contains the entries that bootstrap this epoch
-    repeated Msg        EpochEntries    = 2;
+    repeated TxMsg        EpochEntries    = 2;
     
     // CommonName is the commonly used name for this planet
     string              CommonName      = 3;
@@ -695,5 +681,5 @@ message Err {
     LogLevel            Level                       = 2;
     
     // human-readable info
-    string              Msg                         = 4;
+    string              TxMsg                         = 4;
 }

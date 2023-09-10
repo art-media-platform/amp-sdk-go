@@ -16,11 +16,11 @@ type Host interface {
 	// The arc.Registry interface bakes security and efficiently and tries to serve as effective package manager.
 	Registry() Registry
 
-	// StartNewSession creates a new HostSession and binds its Msg transport to a stream.
+	// StartNewSession creates a new HostSession and binds its TxMsg transport to a stream.
 	StartNewSession(parent HostService, via Transport) (HostSession, error)
 }
 
-// Transport wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
+// Transport wraps a TxMsg transport abstraction, allowing a Host to connect over any data transport layer.
 // For example, a tcp-based transport as well as a dll-based transport are both implemented..
 type Transport interface {
 
@@ -30,13 +30,14 @@ type Transport interface {
 	// Called when this stream should close because the associated parent host session is closing or has closed.
 	Close() error
 
-	// SendMsg sends a Msg to the remote client.
+	// SendTx sends a TxMsg to the remote client.
 	// ErrStreamClosed is used to denote normal stream close.
-	SendMsg(m *Msg) error
+	// Like grpc.Transport.SendTx(), on exit, the TxMsg has been copied and so can be reused.
+	SendTx(m *TxMsg) error
 
-	// RecvMsg blocks until it receives a Msg or the stream is done.
+	// RecvTx blocks until it receives a TxMsg or the stream is done.
 	// ErrStreamClosed is used to denote normal stream close.
-	RecvMsg() (*Msg, error)
+	RecvTx() (*TxMsg, error)
 }
 
 // HostService attaches to a arc.Host as a child, extending host functionality.
@@ -71,10 +72,10 @@ type HostSession interface {
 	// Returns info about this user and session
 	LoginInfo() Login
 
-	// Sends a readied Msg to the client for handling.
+	// Sends a readied tx to the client for handling.
 	// If msg.ReqID == 0, the attr is sent to the client's session controller (for sending session meta messages).
 	// On exit, the given msg should not be referenced further.
-	SendMsg(msg *Msg) error
+	SendTx(tx *TxMsg) error
 
 	// PinCell resolves and pins a requested cell.
 	PinCell(req PinReq) (PinContext, error)
@@ -87,10 +88,10 @@ type HostSession interface {
 // Registry is where apps and types are registered -- concurrency safe.
 type Registry interface {
 
-	// Registers an element value type (ElemVal) as a prototype under its AttrElemType (also a valid AttrSpec type expression).
+	// Registers an element value type (AttrElemVal) as a prototype under its AttrElemType (also a valid AttrSpec type expression).
 	// If an entry already exists (common for a type used by multiple apps), an error is returned and is a no-op.
 	// This and ResolveAttrSpec() allow NewElemVal() to work.
-	RegisterElemType(prototype ElemVal)
+	RegisterElemType(prototype AttrElemVal)
 
 	// When a HostSession creates a new SessionRegistry(), this populates it with its registered ElemTypes.
 	ExportTo(dst SessionRegistry) error
@@ -114,9 +115,9 @@ type SessionRegistry interface {
 	// Translates a native symbol ID to a client symbol ID, returning false if not found.
 	NativeToClientID(nativeID uint32) (clientID uint32, found bool)
 
-	// Registers an ElemVal as a prototype under its element type name..
+	// Registers an AttrElemVal as a prototype under its element type name..
 	// This and ResolveAttrSpec() allow NewElemVal() to work.
-	RegisterElemType(prototype ElemVal) error
+	RegisterElemType(prototype AttrElemVal) error
 
 	// Registers a block of symbol, attr, cell, and selector definitions for a client.
 	RegisterDefs(defs *RegisterDefs) error
@@ -129,8 +130,8 @@ type SessionRegistry interface {
 	// See AttrSpec docs.
 	ResolveAttrSpec(attrSpec string, native bool) (AttrSpec, error)
 
-	// Instantiates an attr element value for an AttrID -- typically followed by ElemVal.Unmarshal()
-	NewAttrElem(attrDefID uint32, native bool) (ElemVal, error)
+	// Instantiates an attr element value for an AttrID -- typically followed by AttrElemVal.Unmarshal()
+	NewAttrElem(attrDefID uint32, native bool) (AttrElemVal, error)
 }
 
 // NewRegistry returns a new Registry
@@ -144,12 +145,13 @@ type PinContext interface {
 
 	PinReq // Originating request info
 
-	// Looks up the given AttrSpec and returns its AttrID.
-	// Returns 0 if the AttrSpec is not registered or not enabled within this PinContext.
-	GetAttrID(attrSpec string) uint32
+	// Marshals a CellOp and optional value to the given Tx's data store.
+	//
+	// If the given attr is not enabled within this PinContext, this function is a no-op.
+	MarshalCellOp(dst *TxMsg, op CellOp, val AttrElemVal)
 
-	// PushTx pushes the given tx to this PinContext
-	PushUpdate(tx *Msg) error
+	// PushTx pushes the given tx to the originator of this PinContext.
+	PushTx(tx *TxMsg) error
 
 	// App returns the resolved AppContext that is servicing this PinContext
 	App() AppContext
@@ -166,8 +168,8 @@ type PinReqParams struct {
 	PinReq   PinRequest
 	PinCell  CellID
 	URL      *url.URL
-	ReqID    uint64    // Request ID needed to route to the originator
-	LogLabel string    // info string for logging and debugging
-	Outlet   chan *Msg // send to this channel to transmit to the request originator
+	ReqID    uint64        // Request ID needed to route to the originator
+	LogLabel string        // info string for logging and debugging
+	Outlet   chan *TxMsg // send to this channel to transmit to the request originator
 
 }

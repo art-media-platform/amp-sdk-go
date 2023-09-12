@@ -20,15 +20,15 @@ type Host interface {
 	StartNewSession(parent HostService, via Transport) (HostSession, error)
 }
 
-// Transport wraps a TxMsg transport abstraction, allowing a Host to connect over any data transport layer.
-// This is intended to be implemented over grpc, tcp, and other transport layers.
+// Transport wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
+// For example, a tcp-based transport as well as a dll-based transport are both implemented..
 type Transport interface {
 
 	// Describes this transport for logging and debugging.
-	Desc() string
+	Label() string
 
 	// Called when this stream should close because the associated parent host session is closing or has closed.
-	Close()
+	Close() error
 
 	// SendTx sends a TxMsg to the remote client.
 	// ErrStreamClosed is used to denote normal stream close.

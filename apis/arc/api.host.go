@@ -20,7 +20,7 @@ type Host interface {
 	StartNewSession(parent HostService, via Transport) (HostSession, error)
 }
 
-// Transport wraps a TxMsg transport abstraction, allowing a Host to connect over any data transport layer.
+// Transport wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
 // For example, a tcp-based transport as well as a dll-based transport are both implemented..
 type Transport interface {
 

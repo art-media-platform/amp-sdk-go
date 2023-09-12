@@ -8,16 +8,6 @@ package arc;
 
 option csharp_namespace = "ArcXR";
 
-// HostGrpc is a full-duplex Msg pipe between a client and arc.Host.
-// FUTURE: this goes away in the near future as it is replaced by a raw tcp connection
-service HostGrpc {
-
-    // HostSession is called by a client once to establish a session with a arc.Host.
-    // The return stream reports completion or status of active requests and will remain open as long as the client stream remains open.
-    rpc HostSession(stream Msg) returns (stream Msg);
-    
-}
-
 
 enum Const {
     Const_Defs = 0;
@@ -35,15 +25,26 @@ enum Const {
     Const_TIDBinaryLen = 32;
 
     // TIDStringLen is the ASCII-compatible string length of a (binary) TID encoded into its base32 form.
-    // The encoding used is the geohash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
+    // The encoding used is the geo-hash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
     Const_TIDStringLen = 52;
 
-    // UTC16Sz is the number of left-hand bytes in a TID reserved for a time index value -- see type UTC16.
-    Const_UTC16Sz = 8;
+    // DefaultServicePort  is the default TCP port used to expose arc.Host service.
+    Const_DefaultServicePort = 5192;
 
-    // DefaultGrpcServicePort is the TCP port the service HostGrpc should run on by default.
-    Const_DefaultGrpcServicePort = 5192;
+}
+
+enum TxHeader {
+    TxHeader_0           = 0;
     
+    
+    // TxHeader heads a MsgTx serialized data store
+    //   Bytes 03:07 -- big endian total byte size (includes header)
+    //   Bytes 07:08 -- TxMsg op code (1 byte)
+    TxHeader_Size        = 8;
+    TxHeader_OpOfs       = 7;
+    
+    TxHeader_OpRecvTx    = 20;
+    TxHeader_OpEOS       = 24;
 }
 
 // These are hard-wired symbol IDs are required to bootstrap a new connection.

@@ -141,7 +141,7 @@ func (tid TID) SetTimeAndHash(time UTC16, hash []byte) {
 
 // SetHash sets the sig/hash portion of this ID
 func (tid TID) SetHash(hash []byte) {
-	const TIDHashSz = int(Const_TIDBinaryLen - Const_UTC16Sz)
+	const TIDHashSz = int(Const_TIDBinaryLen - 8)
 	pos := len(hash) - TIDHashSz
 	if pos >= 0 {
 		copy(tid[TIDHashSz:], hash[pos:])

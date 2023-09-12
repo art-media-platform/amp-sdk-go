@@ -21,18 +21,17 @@ type Host interface {
 }
 
 // Transport wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
-// This is intended to be implemented over grpc, tcp, and other transport layers.
+// For example, a tcp-based transport as well as a dll-based transport are both implemented..
 type Transport interface {
 
 	// Describes this transport for logging and debugging.
-	Desc() string
+	Label() string
 
 	// Called when this stream should close because the associated parent host session is closing or has closed.
-	Close()
+	Close() error
 
 	// SendMsg sends a Msg to the remote client.
 	// ErrStreamClosed is used to denote normal stream close.
-	// Like grpc.Transport.SendMsg(), on exit, the Msg has been copied and so can be reused.
 	SendMsg(m *Msg) error
 
 	// RecvMsg blocks until it receives a Msg or the stream is done.
@@ -41,7 +40,6 @@ type Transport interface {
 }
 
 // HostService attaches to a arc.Host as a child, extending host functionality.
-// For example. it wraps a Grpc-based Msg transport as well as a dll-based Msg transport implementation.
 type HostService interface {
 	task.Context
 

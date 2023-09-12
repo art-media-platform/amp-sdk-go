@@ -5,7 +5,6 @@ PARENT_PATH := $(patsubst %/,%,$(dir $(BUILD_PATH)))
 UNITY_PROJ := ${PARENT_PATH}/arcspace.unity-app
 UNITY_PATH := $(shell python3 ${UNITY_PROJ}/arc-utils.py UNITY_PATH "${UNITY_PROJ}")
 ARC_UNITY_PATH = ${UNITY_PROJ}/Assets/ArcXR
-grpc_csharp_exe="${GOPATH}/bin/grpc_csharp_plugin"
 
 
 ## display this help message
@@ -39,28 +38,20 @@ arc-sdk:
 ## install protobufs tools needed to turn a .proto file into Go and C# files
 tools-proto:
 	go install github.com/gogo/protobuf/protoc-gen-gogoslick
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 	go get -d  github.com/gogo/protobuf/proto
 
 
 ## generate .cs and .go from .proto files
 generate:
-#   GrpcTools (2.49.1)
-#   Install protoc & grpc_csharp_plugin:
-#      - Download latest Grpc.Tools from https://nuget.org/packages/Grpc.Tools
-#      - Extract .nupkg as .zip, move both protoc and grpc_csharp_plugin to ${GOPATH}/bin 
-#   Or, just protoc: https://github.com/protocolbuffers/protobuf/releases
-#   Links: https://grpc.io/docs/languages/csharp/quickstart/
+#   protoc: https://github.com/protocolbuffers/protobuf/releases
 	protoc \
-	    --gogoslick_out=plugins=grpc:. --gogoslick_opt=paths=source_relative \
+	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${ARC_UNITY_PATH}/Arc.Apps" \
-	    --grpc_out   "${ARC_UNITY_PATH}/Arc.Apps" \
-	    --plugin=protoc-gen-grpc="${grpc_csharp_exe}" \
 	    --proto_path=. \
 		apis/arc/arc.proto
 
 	protoc \
-	    --gogoslick_out=plugins=grpc:. --gogoslick_opt=paths=source_relative \
+	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${ARC_UNITY_PATH}/Arc.Crates" \
 	    --proto_path=. \
 		apis/crates/crates.proto

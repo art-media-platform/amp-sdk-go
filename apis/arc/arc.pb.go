@@ -47,10 +47,7 @@ const (
 	Const_TIDBinaryLen Const = 32
 	// TIDStringLen is the ASCII-compatible string length of a (binary) TID encoded into its base32 form.
 	// The encoding used is the geo-hash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
-	// The encoding used is the geo-hash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
 	Const_TIDStringLen Const = 52
-	// DefaultServicePort  is the default TCP port used to expose arc.Host service.
-	Const_DefaultServicePort Const = 5192
 	// DefaultServicePort  is the default TCP port used to expose arc.Host service.
 	Const_DefaultServicePort Const = 5192
 )
@@ -60,14 +57,9 @@ var Const_name = map[int32]string{
 	32:   "Const_TIDBinaryLen",
 	52:   "Const_TIDStringLen",
 	5192: "Const_DefaultServicePort",
-	5192: "Const_DefaultServicePort",
 }
 
 var Const_value = map[string]int32{
-	"Const_Defs":               0,
-	"Const_TIDBinaryLen":       32,
-	"Const_TIDStringLen":       52,
-	"Const_DefaultServicePort": 5192,
 	"Const_Defs":               0,
 	"Const_TIDBinaryLen":       32,
 	"Const_TIDStringLen":       52,
@@ -76,6 +68,39 @@ var Const_value = map[string]int32{
 
 func (Const) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{0}
+}
+
+type TxHeader int32
+
+const (
+	TxHeader_0 TxHeader = 0
+	// TxHeader heads a MsgTx serialized data store
+	//   Bytes 03:07 -- big endian total byte size (includes header)
+	//   Bytes 07:08 -- TxMsg op code (1 byte)
+	TxHeader_Size     TxHeader = 8
+	TxHeader_OpOfs    TxHeader = 7
+	TxHeader_OpRecvTx TxHeader = 20
+	TxHeader_OpEOS    TxHeader = 24
+)
+
+var TxHeader_name = map[int32]string{
+	0:  "TxHeader_0",
+	8:  "TxHeader_Size",
+	7:  "TxHeader_OpOfs",
+	20: "TxHeader_OpRecvTx",
+	24: "TxHeader_OpEOS",
+}
+
+var TxHeader_value = map[string]int32{
+	"TxHeader_0":        0,
+	"TxHeader_Size":     8,
+	"TxHeader_OpOfs":    7,
+	"TxHeader_OpRecvTx": 20,
+	"TxHeader_OpEOS":    24,
+}
+
+func (TxHeader) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{1}
 }
 
 type TxHeader int32
@@ -155,7 +180,6 @@ var ConstSymbol_value = map[string]int32{
 
 func (ConstSymbol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{2}
-	return fileDescriptor_e4a0eb974cf54c93, []int{2}
 }
 
 // ReqStatus allows a sender to express the status of a request.
@@ -189,7 +213,6 @@ var ReqStatus_value = map[string]int32{
 }
 
 func (ReqStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{3}
 	return fileDescriptor_e4a0eb974cf54c93, []int{3}
 }
 
@@ -240,7 +263,6 @@ var SeriesIndexType_value = map[string]int32{
 
 func (SeriesIndexType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{5}
-	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 }
 
 type PinFlags int32
@@ -275,6 +297,7 @@ var PinFlags_value = map[string]int32{
 
 func (PinFlags) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{6}
+	return fileDescriptor_e4a0eb974cf54c93, []int{6}
 }
 
 // CordType describes how to interpret coordinates contained in a Position.
@@ -308,7 +331,6 @@ var CordType_value = map[string]int32{
 }
 
 func (CordType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 }
 
@@ -375,6 +397,7 @@ var AssetTags_value = map[string]int32{
 
 func (URIScheme) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{8}
+	return fileDescriptor_e4a0eb974cf54c93, []int{8}
 }
 
 // CryptoKitID identifies an encryption suite that implements ski.CryptoKit
@@ -405,6 +428,7 @@ var CryptoKitID_value = map[string]int32{
 }
 
 func (CryptoKitID) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_e4a0eb974cf54c93, []int{9}
 	return fileDescriptor_e4a0eb974cf54c93, []int{9}
 }
 

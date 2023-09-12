@@ -5,7 +5,6 @@ import (
 	"sync"
 )
 
-<<<<<<< HEAD
 // TxDataStore is a message packet sent to / from a client.
 // It is leads with a fixed-size header (TxHeader_Size) followed by a variable-size body.
 type TxDataStore []byte
@@ -43,8 +42,31 @@ func (msg *Msg) MarshalToTxBuffer(txBuf []byte) error {
 type MsgBatch struct {
 	Msgs []*Msg
 }
-=======
->>>>>>> 2dc15a0 (WIP)
+
+
+// TxDataStore is a message packet sent to / from a client.
+// It is leads with a fixed-size header (TxHeader_Size) followed by a variable-size body.
+type TxDataStore []byte
+
+func (tx TxDataStore) GetTxTotalLen() int {
+	if tx[TxHeader_OpOfs] != byte(TxHeader_OpRecvTx) {
+		return 0
+	}
+	bodySz := int(binary.BigEndian.Uint32(tx[3:7]))
+	return bodySz
+}
+
+func (tx TxDataStore) SetTxBodyLen(bodyLen int) {
+	txLen := bodyLen + int(TxHeader_Size)
+	binary.BigEndian.PutUint32(tx[3:7], uint32(txLen))
+	tx[TxHeader_OpOfs] = byte(TxHeader_OpRecvTx)
+}
+
+// MsgBatch is an ordered list os Msgs
+// See NewMsgBatch()
+type MsgBatch struct {
+	Msgs []*Msg
+}
 
 
 

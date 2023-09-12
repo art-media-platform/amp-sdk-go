@@ -40,16 +40,12 @@ type Transport interface {
 }
 
 // HostService attaches to a arc.Host as a child, extending host functionality.
+// FUTURE: interface HostService goes away, replaced by a host script that starts arc.Apps in a "sys.services" Context.
 type HostService interface {
 	task.Context
 
-	// Returns short description of this service
-	ServiceURI() string
-
-	// Returns the parent Host this extension is attached to.
-	Host() Host
-
 	// StartService attaches a child task to a Host and starts this HostService.
+	// This service may retain the arc.Host instance so that it can make calls to StartNewSession().
 	StartService(on Host) error
 
 	// GracefulStop initiates a polite stop of this extension and blocks until it's in a "soft" closed state,

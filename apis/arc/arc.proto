@@ -4,6 +4,9 @@ syntax = "proto3";
 // featuring support and integration for files, media, and communication.
 package arc;
 
+// Tells protoc that a .proto file importing arc.proto what package import to use for Go.
+option go_package = "github.com/arcspace/go-arc-sdk/apis/arc";
+
 // import "github.com/gogo/protobuf/gogoproto/gogo.proto";  // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 
 option csharp_namespace = "ArcXR";
@@ -256,7 +259,7 @@ message AttrSet {
     // Composite expression / invocation of this CellSpec in the form:
     //      "(Attrs[0],Attrs[1],..)" 
     //
-    // e.g. "(CellHeader,CellText,ArtistTour)"
+    // e.g. "(CellHeader,ArtistTour)"
     //      "(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
@@ -325,8 +328,8 @@ message PinRequest {
     
     // Pins a cell specified by its 16 byte ID and is typically a child cell of a pinned cell implied by ParentReqID.
     // These values are 0 if PinURL is nil or does not require a CellID.
-    uint64              PinCellID_0 = 3;
-    uint64              PinCellID_1 = 4;
+    uint64              PinCellIDx0 = 3;
+    uint64              PinCellIDx1 = 4;
 
     // If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
     uint32              ParentAttrSelector = 5;
@@ -394,26 +397,60 @@ message Position {
 }
 
 
-// URIScheme is used to accompany a URI to specify a URI scheme without it being being a prefix of the URI .
-enum URIScheme {
-    URIScheme_Any           = 0;    // unspecified URI scheme
-    URIScheme_Data          = 1;    // [data:]<mimetype>[[;base64],<data>] 
-    URIScheme_HTTP          = 2;    // [http[s]://]<hostname>[:<port>]/<path>
-    URIScheme_File          = 5;    // [file://]<unix-pathname>
-    URIScheme_Arc           = 6;    // [arc://]<arc-app-uri/cell-uri..>
-    URIScheme_CrateAsset    = 2701; // [crate-asset://]<crate-asset-uri>
+
+enum AssetScheme {
+    AssetScheme_Unspecified     = 0;
+    
+    AssetScheme_InlineData      = 1;  // URI = "[data:]{mimetype}[[;base64],{data-encoding}]"
+    AssetScheme_FilePath        = 2;  // URI = "{native-pathname}"
+    AssetScheme_HttpURL         = 4;  // URI = "[http[s]://]{hostname}[:{port}]/{query}"
+    AssetScheme_CrateAsset      = 6;  // URI = "[crate-asset://]{crate-asset-uri}"
+    
+    // AssetScheme_PlanetID        = 20; // URI = "{planet-id-string}"  and/or (UIDx0, UIDx1) are set 
+    // AssetScheme_CellID          = 21; // URI = "{cell-id-string}"    and/or (UIDx0, UIDx1) are set
+    // AssetScheme_AttrUID         = 22; // URI = "{attr-id-string}"    and/or (UIDx0, UIDx1) are set 
+    
+    // AssetScheme_TimeID          = 10; // URI = "{timeID-base32-string}" and/or (UIDx0, UIDx1) are set
+    // AssetScheme_TxHashID        = 11; // URI = "{txID-base32-string}" and/or (UIDx0, UIDx1) are set
+
+    //AssetScheme_GeoFixOrdered    IEEE128    = 20; // URI = "{geo-base32-string}"  and/or (UIDx0, UIDx1) are set
+    //AssetScheme_QuaternionOrderedIEEE2348    = 20; // URI = "{geo-base32-string}"  and/or (UIDx0, UIDx1) are set
+    
+    // Denotes that AssetRef.MediaType invokes a themed UI asset within the client -- e.g. "application/x-directory" => a folder glyph.
+    // AssetRef.URI is not used.
+    AssetScheme_UseMediaType    = 32; 
 }
 
-message AssetRef {
-    string              Label      = 1;  // Describes the asset (optional)
-    string              MediaType  = 3;  // Describes content of URI; MIME type (or '/' separated type pathname)
-    URIScheme           Scheme     = 5;  // Describes URI scheme such that the pa URL scheme is not required to prefix URI
-    string              URI        = 6;  // URI to the asset (has scheme prefix if URIScheme == URL, otherwise, scheme prefix is optional)
     
-    int32               PixWidth   = 10; // Width in pixels  (0 -> not specified)
-    int32               PixHeight  = 11; // Height in pixels (0 -> not specified)
-    float               PhysWidth  = 12; // Width in mm      (0 -> not specified)
-    float               PhysHeight = 13; // Height in mm     (0 -> not specified)
+
+enum AssetTags {
+    AssetTags_None                  = 0; 
+    
+    AssetTags_IsNativeObject        = 0x0004; // Native client object -- e.g. a Unity GameObject     
+    AssetTags_IsImageMedia          = 0x0010; // URI refers to image; equivalent to MediaType = "image/"
+    
+    AssetTags_NeedsNetwork          = 0x0100;
+    AssetTags_NoCache               = 0x0200; // If set, asset should not be cached
+}
+
+
+message AssetRef {
+    AssetScheme         Scheme      = 1;  // How URI is interpreted
+    AssetTags           Tags        = 2;
+    string              CustomTags  = 3;  // Semicolon delimited list of custom tags
+            
+    string              MediaType   = 5;  // MIME type of asset content ("{content-type}/[{subtype}]")
+    string              URI         = 6;  // URI of the asset (with URL scheme prefix when appropriate)
+    fixed64             UIDx0       = 8;  // UID of the asset (when appropriate)
+    fixed64             UIDx1       = 9;  // UID of the asset (when appropriate)
+    
+
+    int32               PixelWidth  = 11; // Width in pixels 
+    int32               PixelHeight = 12; // Height in pixels
+    
+    float               MeterWidth  = 15;
+    float               MeterHeight = 16;
+    float               MeterDepth  = 17;
 }
 
 
@@ -469,36 +506,35 @@ message CryptoKey {
 }
 
 
+
+// CellHeader is a standard attribute for a cell that is presented in a UI.
+// An arc.App fills in what is appropriate and leaves the rest blank.
 message CellHeader {
+        
 
-    // A glyph is a representative image or 3D graphic similar to an icon in function.
-    // They ideally have a 1:1[:1] aspect ratio and should not to exceed 16:9 or 9:16.
-    AssetRef            Glyph240    = 3;  // Item thumbnail   -- appropriate for ~10 sq mm
-    AssetRef            Glyph720    = 4;  // Small screens    -- appropriate for 1200x720
-    AssetRef            Glyph1080   = 5;  // Tablets, laptops -- appropriate for 1920x1080
     
-    repeated AltEntry   AltText     = 9;  // Extensible text values
+    string              Title        = 2; // title, name, or label
+    string              Subtitle     = 3; // synopsis, summary, tagline, or sub-label
+    string              About        = 4; // Additional information about this item
+   
+    // A Glyph is a representative image or 3D graphic similar to an icon in function.
+    repeated AssetRef   Glyphs       = 6; 
     
-    AssetRef            Link        = 10; //  If 'arc://...', this denotes "pin this URI into a cell" -- but could be any URL or asset
-
-    int64               Created     = 20; // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
-    int64               Modified    = 21; // Unix UTC16 timestamp (secs x 2^16) -- 0 if not set
+    int64               Created      = 8; // Unix UTC16 timestamp (secs x 2^16)
+    int64               Modified     = 9; // Unix UTC16 timestamp (secs x 2^16)        
     
-}
 
-
-message AltEntry {
-    string              Key         = 1;
-    string              Value       = 2;
-}
-
-
-// CellText is a standard attribute for a cell that can be listed or otherwise presented in a UI to the user.
-message CellText {
+   // If set, this (typically http:// or arc://) to reproduce this cell (with given archost session)  
+    string              PinAsURL     = 20;  
     
-    string              Title       = 2;  // title, name, or label
-    string              Subtitle    = 3;  // synopsis, summary, tagline, or sub-label
-    string              About       = 4;  // Additional information about this item
+    // // If set, often a URI that causes UI (re)action.
+    // string              ActionURI    = 31;  
+    
+    // Extensible and persistent link, can be any URL -- typically passed to another application or shared with a another human.
+    // E.g. if 'arc://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
+    // But also UI button or settings URI.
+    AssetRef            ExternalLink = 22;
+    
 
 }
 

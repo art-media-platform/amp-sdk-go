@@ -42,7 +42,6 @@ func RegisterBuiltInTypes(reg Registry) error {
 
 		&PinRequest{},
 		&CellHeader{},
-		&CellText{},
 		&AssetRef{},
 		&AuthToken{},
 		&Position{},
@@ -149,18 +148,6 @@ func (v *LoginResponse) New() ElemVal {
 	return &LoginResponse{}
 }
 
-func (v *CellText) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
-}
-
-func (v *CellText) TypeName() string {
-	return "CellText"
-}
-
-func (v *CellText) New() ElemVal {
-	return &CellText{}
-}
-
 func (v *CellHeader) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
@@ -222,5 +209,5 @@ func (v *PinRequest) New() ElemVal {
 }
 
 func (v *PinRequest) CellID() CellID {
-	return CellIDFromU64(v.PinCellID_0, v.PinCellID_1)
+	return CellIDFromU64(v.PinCellIDx0, v.PinCellIDx1)
 }

@@ -5,7 +5,6 @@ import "net/url"
 // AttrSpecs used universally
 const (
 	CellHeaderAttrSpec = "CellHeader"
-	CellTextAttrSpec   = "[Locale.Name]CellText"
 	CellPosAttrSpec    = "[Surface.Name]Position"
 )
 

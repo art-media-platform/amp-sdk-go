@@ -71,15 +71,20 @@ enum ConstSymbol {
 
 // ReqStatus allows a sender to express the status of a request.
 enum ReqStatus {
-    ReqStatus_Syncing      = 0;
+
+    // The request is in the process of being formed
+    ReqStatus_NotStarted   = 0;
+    
+    // Denotes that the request is in progress.
+    ReqStatus_Syncing      = 1;
     
     // Sent by the host to signal that this ReqID up to date and the client state is stable / synchronized.
     // This generally drives UI updates or other aggregate cell dependencies.
-    ReqStatus_Synced       = 0x01;
+    ReqStatus_Synced       = 2;
     
     // From the client to host, this signals to close / cancel the op associated with ReqID.
     // From the host to client, this signals that the given request ID has been closed / discarded.
-    ReqStatus_Closed       = 0x10;
+    ReqStatus_Closed       = 3;
 }
 
 // Msg is thw workhorse generic transport serialization sent between client and host.
@@ -421,7 +426,6 @@ enum AssetScheme {
     AssetScheme_UseMediaType    = 32; 
 }
 
-    
 
 enum AssetTags {
     AssetTags_None                  = 0; 
@@ -435,22 +439,23 @@ enum AssetTags {
 
 
 message AssetRef {
-    AssetScheme         Scheme      = 1;  // How URI is interpreted
-    AssetTags           Tags        = 2;
-    string              CustomTags  = 3;  // Semicolon delimited list of custom tags
-            
-    string              MediaType   = 5;  // MIME type of asset content ("{content-type}/[{subtype}]")
-    string              URI         = 6;  // URI of the asset (with URL scheme prefix when appropriate)
-    fixed64             UIDx0       = 8;  // UID of the asset (when appropriate)
-    fixed64             UIDx1       = 9;  // UID of the asset (when appropriate)
+    AssetScheme         Scheme          = 1;  // How URI is interpreted
+    AssetTags           Tags            = 2;
+    string              CustomTags      = 3;  // Semicolon delimited list of custom tags
+
+    string              MediaType       = 5;  // MIME type of asset content ("{content-type}/[{subtype}]")
+    string              URI             = 7;   // URI of the asset
+    
+    fixed64             UIDx0           = 10;  // UID of the asset if applicable
+    fixed64             UIDx1           = 11;  // UID of the asset if applicable
     
 
-    int32               PixelWidth  = 11; // Width in pixels 
-    int32               PixelHeight = 12; // Height in pixels
+    int32               PixelWidth      = 15; // Width in pixels 
+    int32               PixelHeight     = 16; // Height in pixels
     
-    float               MeterWidth  = 15;
-    float               MeterHeight = 16;
-    float               MeterDepth  = 17;
+    float               MeterWidth      = 32;
+    float               MeterHeight     = 33;
+    float               MeterDepth      = 34;
 }
 
 

@@ -1,6 +1,6 @@
 # go-arc-sdk
 
-This repo contains Go types and support for wrapping a Go package as an `arc.App`.  This repo is lightweight and dependency-free so that it can be added to a project without consequence.
+This repo contains Go types, interfaces, and type support for wrapping your Go package as an [`arc.App`](https://github.com/arcspace/go-arc-sdk/blob/main/apis/arc/api.app.go).  This repo is lightweight and dependency-free so that it can be consumed by a project without consequence.
 
 ## Why?
 

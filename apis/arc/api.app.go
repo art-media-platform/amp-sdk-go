@@ -141,12 +141,9 @@ type AttrElem struct {
 
 type CellOp struct {
 	AttrElem
-	OpCode      CellOpCode  // operation to perform
-	CellID      CellID      // cell being modified -- 0 denotes preceding CellOp's CellID
-	// AttrID      AttrUID     // attr being modified -- 0 denotes preceding CellOp's AttrID
-	// SeriesIndex SeriesIndex // series index (if applicable)
-	// DataOfs     int64       // Byte offset serialized location into parent TxMsg's data store
-	// DataLen     int64       // Byte length of serialized data
+	OpCode CellOpCode // operation to perform
+	TargetCell CellID     // cell being modified -- 0 denotes preceding CellOp's CellID
+	ParentCell CellID     // parent cell of target cell -- 0 denotes preceding CellOp's CellID
 }
 
 // AttrSet is an ordered set of AttrSpec's that is used to select or mask a Cell's attributes.
@@ -165,4 +162,7 @@ type CellID [2]uint64
 type SeriesIndex [2]uint64
 
 // AttrUID is a universally unique identifier for an AttrSpec, generated from the MD5 of the canonic AttrSpec string.
+// Leading two bits are reserved to provide additional info about the AttrSpec. 
 type AttrUID [2]uint64
+
+

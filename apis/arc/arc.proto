@@ -89,25 +89,14 @@ enum CellOpCode {
     CellOpCode_RemoveCell  = 6; 
 }
 
-/*
-message CellOp {
-    
-    CellOpCode          Op            = 1;
-    
-    int64               CellID_UTC16  = 2;  // Bytes 00-07 of target Cell's ID -- UTC16 timestamp (secs x 2^16)
-    fixed64             CellID_1      = 3;  // Bytes 08-15 of target Cell's ID  
-    
-    fixed64             AttrUID_0     = 6;  // Bytes 00-07 of target Cell's AttrSpec UID  
-    fixed64             AttrUID_1     = 7;  // Bytes 08-15 of target Cell's AttrSpec UID  
-    
-    uint64              SI_0          = 10; // Bytes 00-07 of the SeriesIndex
-    uint64              SI_1          = 11; // Bytes 08-15 of the SeriesIndex
-    
-    int64               DataOfs       = 14; // Byte offset serialized location into parent Tx's backing store
-    int64               DataLen       = 15; // Byte length of serialized data
-    
+enum CellOpFlags {
+    CellOpFlags_None          = 0;
+    CellOpFlags_TargetCell_Repeat = 0x01; // If set, CellID is same as previous
+    CellOpFlags_ParentCell_Repeat = 0x02; // If set, CellID is same as previous
+    CellOpFlags_AttrUID_Repeat = 0x04; // If set, AttrU3ID is same as previous
+    CellOpFlags_SI_Repeat     = 0x08; // If set, SeriesIndex is same as previous
+
 }
-*/
 
 
 message Login {
@@ -206,11 +195,20 @@ message AttrSpec {
     
 
 }
+*/
 
+enum UID_Kind {
+    UID_Kind_TimeID = 0;
+    UID_Kind_NameID = 1;
+    UID_Kind_CellID = 2;
+    UID_Kind_AttrID = 3;
+    UID_Kind_UserID = 4;
+}
 
 enum SeriesIndexType  {
     SeriesIndexType_Literal = 0; // SeriesSpec has no suffix:      SI values are literal values (Int64, UTC16, GeoHash)
-    SeriesIndexType_Name    = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
+    SeriesIndexType_UID = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
+    SeriesIndexType_TimeID = 2; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
     //SeriesIndexTypeCellID  = 2; // SI values correspond to Cell TIDs 
 }
 */
@@ -218,10 +216,6 @@ enum SeriesIndexType  {
 	
 enum PinFlags {
     PinFlags_None             = 0;
-    
-    // If set, all symbol / attr ID are native symbol IDs.
-    // This is used for apps pinning cells and so are using native (not client) IDs.
-    PinFlags_UseNativeSymbols = 0x01; 
 
 	// If set, PinnedCell.ServeState() causes this request (PinContext) to automatically close once state is pushed and synchronized.
 	// Otherwise, the request remains open and the client will receive any state updates until closed.

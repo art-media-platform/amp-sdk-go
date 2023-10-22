@@ -41,7 +41,8 @@ enum TxHeader {
     
     
     // TxHeader heads a MsgTx serialized data store
-    //   Bytes 03:07 -- big endian total byte size (includes header)
+    //   Bytes 00:03 -- Reserved (3 bytes)
+    //   Bytes 03:07 -- big endian total byte size, including header (4 bytes)
     //   Bytes 07:08 -- TxMsg op code (1 byte)
     TxHeader_Size        = 8;
     TxHeader_OpOfs       = 7;
@@ -407,7 +408,7 @@ enum AssetScheme {
     AssetScheme_Unspecified     = 0;
     
     AssetScheme_InlineData      = 1;  // URI = "[data:]{mimetype}[[;base64],{data-encoding}]"
-    AssetScheme_FilePath        = 2;  // URI = "{native-pathname}"
+    AssetScheme_FilePath        = 2;  // URI = "[file://]{native-pathname}"
     AssetScheme_HttpURL         = 4;  // URI = "[http[s]://]{hostname}[:{port}]/{query}"
     AssetScheme_CrateAsset      = 6;  // URI = "[crate-asset://]{crate-asset-uri}"
     
@@ -443,8 +444,8 @@ message AssetRef {
     AssetTags           Tags            = 2;
     string              CustomTags      = 3;  // Semicolon delimited list of custom tags
 
-    string              MediaType       = 5;  // MIME type of asset content ("{content-type}/[{subtype}]")
-    string              URI             = 7;   // URI of the asset
+    string              MediaType       = 5;  // MIME type of asset content -- "{content-type}/[{sub-type}]"
+    string              URI             = 7;  // URI of the asset
     
     fixed64             UIDx0           = 10;  // UID of the asset if applicable
     fixed64             UIDx1           = 11;  // UID of the asset if applicable

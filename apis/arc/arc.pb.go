@@ -75,7 +75,8 @@ type TxHeader int32
 const (
 	TxHeader_0 TxHeader = 0
 	// TxHeader heads a MsgTx serialized data store
-	//   Bytes 03:07 -- big endian total byte size (includes header)
+	//   Bytes 00:03 -- Reserved (3 bytes)
+	//   Bytes 03:07 -- big endian total byte size, including header (4 bytes)
 	//   Bytes 07:08 -- TxMsg op code (1 byte)
 	TxHeader_Size     TxHeader = 8
 	TxHeader_OpOfs    TxHeader = 7

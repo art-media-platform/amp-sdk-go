@@ -5,7 +5,6 @@ import (
 )
 
 var (
-	ErrNotConnected  = ErrCode_NotConnected.Error("not connected")
 	ErrStreamClosed  = ErrCode_NotConnected.Error("stream closed")
 	ErrCellNotFound  = ErrCode_CellNotFound.Error("cell not found")
 	ErrPinCtxClosed  = ErrCode_PinContextClosed.Error("pin context closed")

@@ -4,6 +4,9 @@ import "net/url"
 
 // AttrSpecs used universally
 var (
+	ErrAttrID        = GenAttrUID(((*Err)(nil)).ElemTypeName())
+	//AttrID        = GenAttrUID(((*Err)(nil)).ElemTypeName())
+
 	CellHeaderAttrID = GenAttrUID("CellHeader")
 	CellTextAttrID   = GenAttrUID("[Locale.Name]CellText")
 	CellPosAttrID    = GenAttrUID("[Surface.Name]Position")

@@ -128,7 +128,7 @@ type SessionRegistry interface {
 	// If native === true, the spec is resolved with native symbols (vs client symbols).
 	//
 	// See AttrSpec docs.
-	ResolveAttrSpec(attrSpec string, native bool) (AttrSpec, error)
+	ResolveAttrSpec(attrSpec string, native bool) (AttrUID, error)
 
 	// Instantiates an attr element value for an AttrID -- typically followed by AttrElemVal.Unmarshal()
 	NewAttrElem(attrDefID uint32, native bool) (AttrElemVal, error)

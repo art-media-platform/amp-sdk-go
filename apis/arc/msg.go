@@ -53,6 +53,12 @@ func NewTxMsg() *TxMsg {
 	return msg
 }
 
+var gTxMsgPool = sync.Pool{
+	New: func() interface{} {
+		return &TxMsg{}
+	},
+}
+
 /*
 func CopyMsg(src *TxMsg) *TxMsg {
 	msg := NewMsg()
@@ -79,6 +85,8 @@ func (tx *TxMsg) Reclaim() {
 		gTxMsgPool.Put(tx)
 	}
 }
+
+
 
 
 	// func (msg *TxMsg) MarshalAttrElem(attrID uint32, src PbValue) error {
@@ -115,12 +123,6 @@ func (tx *TxMsg) Reclaim() {
 // 	fatalErr   error
 // }
 
-var gTxMsgPool = sync.Pool{
-	New: func() interface{} {
-		return &TxMsg{}
-	},
-}
-
 
 
 
@@ -129,6 +131,18 @@ var gTxMsgPool = sync.Pool{
 // 	tx.CellID = CellID{}
 // 	tx.Elems = tx.Elems[:0]
 // }
+
+// func (op *CellOp) MarshalToStore(tx *TxMsg, val arc.AttrElemVal) error {
+// 	var err error
+	
+// 	op.DataOfs = int64(len(tx.DataStore))
+// 	tx.DataStore, err = val.MarshalToStore(tx.DataStore)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	op.DataLen = int64(len(tx.DataStore))
+// }
+
 
 func (op *CellOp) HasAttrUID() bool {
 	return op.AttrID[0] != 0 || op.AttrID[1] != 0 
@@ -292,36 +306,63 @@ func (bat *CellTx) PushBatch(ctx PinContext) error {
 }
 */
 
-func (tx *TxMsg) MarshalToBuf(dst *[]byte) error {
-	pb := TxMsgPb{
-		ReqID:   tx.ReqID,
-		CellTxs: make([]*CellTxPb, len(tx.CellTxs)),
-	}
-	for i, srcTx := range tx.CellTxs {
-		cellTx := &CellTxPb{
-			Op:           srcTx.Op,
-			CellSpec:     srcTx.CellSpec,
-			TargetCellID: int64(srcTx.Target),
-			Elems:        make([]*AttrElemPb, len(srcTx.Elems)),
+func (tx *TxMsg) MarshalTo(dst []byte) []byte {
+	// pb := TxMsgPb{
+	// 	ReqID:   tx.ReqID,
+	// 	CellTxs: make([]*CellTxPb, len(tx.C ellTxs)),
+	// }
+	flags := CellOpFlags(0)
+	
+	targetCell := CellID{}
+	parentCell := CellID{}
+	attrID := AttrUID{}
+	SI := SeriesIndex{}
+
+	dst = binary.AppendUvarint(dst, 0) // reserved
+	dataBaseOfs := int64(len(dst))
+	dst = append(dst, tx.DataStore...)
+	dst = binary.AppendUvarint(dst, 0) // reserved
+
+
+	dst = binary.AppendUvarint(dst, uint64(len(tx.CellOps)))
+	for _, op := range tx.CellOps {
+		dst = binary.AppendUvarint(dst, uint64(op.OpCode))
+		if op.TargetCell == targetCell {
+			flags |= CellOpFlags_TargetCell_Repeat
 		}
-		for j, AttrElemVal := range srcTx.Elems {
-			//AttrElemVal.ValBuf = make([]byte, AttrElemVal.Val.Marhal
-			elem := &AttrElemPb{
-				SI:     AttrElemVal.SI,
-				AttrID: AttrElemVal.AttrID,
-			}
-			AttrElemVal.Val.MarshalToBuf(&elem.ValBuf)
-			cellTx.Elems[j] = elem
+		if op.ParentCell == parentCell {
+			flags |= CellOpFlags_TargetCell_Repeat
 		}
-		pb.CellTxs[i] = cellTx
+		if op.AttrID == attrID {
+			flags |= CellOpFlags_AttrID_Repeat
+		}
+		if op.SeriesIndex == SI {
+			flags |= CellOpFlags_SI_Repeat
+		}
+		dst = append(dst, byte(flags))
+		
+		if flags & CellOpFlags_TargetCell_Repeat == 0 {
+			dst = binary.BigEndian.AppendUint64(dst, op.TargetCell[0])
+			dst = binary.BigEndian.AppendUint64(dst, op.TargetCell[1])
+		}
+		if flags & CellOpFlags_ParentCell_Repeat == 0 {
+			dst = binary.BigEndian.AppendUint64(dst, op.ParentCell[0])
+			dst = binary.BigEndian.AppendUint64(dst, op.ParentCell[1])
+		}
+		if flags & CellOpFlags_AttrID_Repeat == 0 {
+			dst = binary.BigEndian.AppendUint64(dst, op.AttrID[0])
+			dst = binary.BigEndian.AppendUint64(dst, op.AttrID[1])
+		}	
+		if flags & CellOpFlags_SI_Repeat == 0 {
+			dst = binary.BigEndian.AppendUint64(dst, op.SeriesIndex[0])
+			dst = binary.BigEndian.AppendUint64(dst, op.SeriesIndex[1])
+		}
+		
+		dst = binary.AppendVarint(dst, op.DataOfs + dataBaseOfs)
+		dst = binary.AppendVarint(dst, op.DataLen)
 	}
-	sz := pb.Size()
-	if cap(*dst) < sz {
-		*dst = make([]byte, sz)
-	} else {
-		*dst = (*dst)[:sz]
-	}
-	_, err := pb.MarshalToSizedBuffer(*dst)
+	
+	
 	return err
 }
 

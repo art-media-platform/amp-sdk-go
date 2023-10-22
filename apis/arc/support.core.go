@@ -16,6 +16,9 @@ import (
 // This means there are 47 bits dedicated for seconds, implying a limit 4.4 million years.
 type UTC16 int64
 
+// TimeID is a 16 byte time index, lead with an 8 byte UTC16 timestamp followed by 8 pseudorandom bytes (or additional precision).
+type TimeID [2]uint64
+
 // TID identifies a specific planet, node, or transaction.
 //
 // Unless otherwise specified a TID in the wild should always be considered read-only.

@@ -17,10 +17,24 @@ func (tx TxDataStore) GetTxTotalLen() int {
 	return bodySz
 }
 
-func (tx TxDataStore) SetTxBodyLen(bodyLen int) {
+func (tx TxDataStore) InitHeader(bodyLen int) {
+	tx[0] = 0
+	tx[1] = 0
+	tx[2] = 0
 	txLen := bodyLen + int(TxHeader_Size)
 	binary.BigEndian.PutUint32(tx[3:7], uint32(txLen))
 	tx[TxHeader_OpOfs] = byte(TxHeader_OpRecvTx)
+}
+
+///////////////////////// host -> client /////////////////////////
+
+func (msg *Msg) MarshalToTxBuffer(txBuf []byte) error {
+	n, err := msg.MarshalToSizedBuffer(txBuf[TxHeader_Size:])
+	if err != nil {
+		return err
+	}
+	TxDataStore(txBuf).InitHeader(n)
+	return nil
 }
 
 // MsgBatch is an ordered list os Msgs
@@ -313,7 +327,7 @@ func (tx *MultiTx) UnmarshalFrom(msg *Msg, reg SessionRegistry, native bool) err
 		}
 
 		tx.CellTxs[i] = CellTx{
-			Op:         cellTx.Op,
+			Op: cellTx.Op,
 			//Elems:      elems,
 		}
 		tx.CellTxs[i].TargetCell.AssignFromU64(cellTx.CellID_0, cellTx.CellID_1)

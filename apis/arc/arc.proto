@@ -93,7 +93,7 @@ enum CellOpFlags {
     CellOpFlags_None          = 0;
     CellOpFlags_TargetCell_Repeat = 0x01; // If set, CellID is same as previous
     CellOpFlags_ParentCell_Repeat = 0x02; // If set, CellID is same as previous
-    CellOpFlags_AttrUID_Repeat = 0x04; // If set, AttrU3ID is same as previous
+    CellOpFlags_Attr_Repeat = 0x04; // If set, AttrUID is same as previous
     CellOpFlags_SI_Repeat     = 0x08; // If set, SeriesIndex is same as previous
 
 }
@@ -211,7 +211,7 @@ enum SeriesIndexType  {
     SeriesIndexType_TimeID = 2; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
     //SeriesIndexTypeCellID  = 2; // SI values correspond to Cell TIDs 
 }
-*/
+
 
 	
 enum PinFlags {

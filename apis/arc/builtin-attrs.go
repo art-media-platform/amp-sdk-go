@@ -149,15 +149,15 @@ func (v *LoginResponse) New() AttrElemVal {
 	return &LoginResponse{}
 }
 
-func (v *CellText) MarshalToBuf(dst *[]byte) error {
-	return MarshalPbValueToBuf(v, dst)
+func (v *CellText) MarshalToStore(dst []byte) ([]byte, error) {
+	return MarshalPbToStore(v, dst)
 }
 
-func (v *CellText) TypeName() string {
+func (v *CellText) ElemTypeName() string {
 	return "CellText"
 }
 
-func (v *CellText) New() ElemVal {
+func (v *CellText) New() AttrElemVal {
 	return &CellText{}
 }
 

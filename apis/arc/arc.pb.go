@@ -47,10 +47,7 @@ const (
 	Const_TIDBinaryLen Const = 32
 	// TIDStringLen is the ASCII-compatible string length of a (binary) TID encoded into its base32 form.
 	// The encoding used is the geo-hash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
-	// The encoding used is the geo-hash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
 	Const_TIDStringLen Const = 52
-	// DefaultServicePort  is the default TCP port used to expose arc.Host service.
-	Const_DefaultServicePort Const = 5192
 	// DefaultServicePort  is the default TCP port used to expose arc.Host service.
 	Const_DefaultServicePort Const = 5192
 )
@@ -60,14 +57,9 @@ var Const_name = map[int32]string{
 	32:   "Const_TIDBinaryLen",
 	52:   "Const_TIDStringLen",
 	5192: "Const_DefaultServicePort",
-	5192: "Const_DefaultServicePort",
 }
 
 var Const_value = map[string]int32{
-	"Const_Defs":               0,
-	"Const_TIDBinaryLen":       32,
-	"Const_TIDStringLen":       52,
-	"Const_DefaultServicePort": 5192,
 	"Const_Defs":               0,
 	"Const_TIDBinaryLen":       32,
 	"Const_TIDStringLen":       52,
@@ -155,7 +147,6 @@ var ConstSymbol_value = map[string]int32{
 
 func (ConstSymbol) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_e4a0eb974cf54c93, []int{2}
-	return fileDescriptor_e4a0eb974cf54c93, []int{2}
 }
 
 // ReqStatus allows a sender to express the status of a request.
@@ -189,7 +180,6 @@ var ReqStatus_value = map[string]int32{
 }
 
 func (ReqStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{3}
 	return fileDescriptor_e4a0eb974cf54c93, []int{3}
 }
 
@@ -239,7 +229,6 @@ var SeriesIndexType_value = map[string]int32{
 }
 
 func (SeriesIndexType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 	return fileDescriptor_e4a0eb974cf54c93, []int{5}
 }
 
@@ -308,7 +297,6 @@ var CordType_value = map[string]int32{
 }
 
 func (CordType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 	return fileDescriptor_e4a0eb974cf54c93, []int{7}
 }
 

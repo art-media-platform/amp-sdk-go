@@ -307,10 +307,6 @@ func (bat *CellTx) PushBatch(ctx PinContext) error {
 */
 
 func (tx *TxMsg) MarshalTo(dst []byte) []byte {
-	// pb := TxMsgPb{
-	// 	ReqID:   tx.ReqID,
-	// 	CellTxs: make([]*CellTxPb, len(tx.C ellTxs)),
-	// }
 	flags := CellOpFlags(0)
 	
 	targetCell := CellID{}
@@ -319,10 +315,9 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 	SI := SeriesIndex{}
 
 	dst = binary.AppendUvarint(dst, 0) // reserved
-	dataBaseOfs := int64(len(dst))
+	dataStoreOfs := int64(len(dst))
 	dst = append(dst, tx.DataStore...)
 	dst = binary.AppendUvarint(dst, 0) // reserved
-
 
 	dst = binary.AppendUvarint(dst, uint64(len(tx.CellOps)))
 	for _, op := range tx.CellOps {
@@ -331,10 +326,10 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 			flags |= CellOpFlags_TargetCell_Repeat
 		}
 		if op.ParentCell == parentCell {
-			flags |= CellOpFlags_TargetCell_Repeat
+			flags |= CellOpFlags_ParentCell_Repeat
 		}
 		if op.AttrID == attrID {
-			flags |= CellOpFlags_AttrID_Repeat
+			flags |= CellOpFlags_Attr_Repeat
 		}
 		if op.SeriesIndex == SI {
 			flags |= CellOpFlags_SI_Repeat
@@ -349,7 +344,7 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 			dst = binary.BigEndian.AppendUint64(dst, op.ParentCell[0])
 			dst = binary.BigEndian.AppendUint64(dst, op.ParentCell[1])
 		}
-		if flags & CellOpFlags_AttrID_Repeat == 0 {
+		if flags & CellOpFlags_Attr_Repeat == 0 {
 			dst = binary.BigEndian.AppendUint64(dst, op.AttrID[0])
 			dst = binary.BigEndian.AppendUint64(dst, op.AttrID[1])
 		}	
@@ -358,12 +353,11 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 			dst = binary.BigEndian.AppendUint64(dst, op.SeriesIndex[1])
 		}
 		
-		dst = binary.AppendVarint(dst, op.DataOfs + dataBaseOfs)
+		dst = binary.AppendVarint(dst, op.DataOfs + dataStoreOfs)
 		dst = binary.AppendVarint(dst, op.DataLen)
 	}
-	
-	
-	return err
+
+	return dst
 }
 
 /*

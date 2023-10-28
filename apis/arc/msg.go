@@ -17,84 +17,6 @@ func (tx TxDataStore) GetTxTotalLen() int {
 	return bodySz
 }
 
-func (tx TxDataStore) InitHeader(bodyLen int) {
-	tx[0] = 0
-	tx[1] = 0
-	tx[2] = 0
-	txLen := bodyLen + int(TxHeader_Size)
-	binary.BigEndian.PutUint32(tx[3:7], uint32(txLen))
-	tx[TxHeader_OpOfs] = byte(TxHeader_OpRecvTx)
-}
-
-///////////////////////// host -> client /////////////////////////
-
-func (msg *Msg) MarshalToTxBuffer(txBuf []byte) error {
-	n, err := msg.MarshalToSizedBuffer(txBuf[TxHeader_Size:])
-	if err != nil {
-		return err
-	}
-	TxDataStore(txBuf).InitHeader(n)
-	return nil
-}
-
-// MsgBatch is an ordered list os Msgs
-// See NewMsgBatch()
-type MsgBatch struct {
-	Msgs []*Msg
-}
-
-
-// TxDataStore is a message packet sent to / from a client.
-// It is leads with a fixed-size header (TxHeader_Size) followed by a variable-size body.
-type TxDataStore []byte
-
-func (tx TxDataStore) GetTxTotalLen() int {
-	if tx[TxHeader_OpOfs] != byte(TxHeader_OpRecvTx) {
-		return 0
-	}
-	bodySz := int(binary.BigEndian.Uint32(tx[3:7]))
-	return bodySz
-}
-
-func (tx TxDataStore) InitHeader(bodyLen int) {
-	tx[0] = 0
-	tx[1] = 0
-	tx[2] = 0
-	txLen := bodyLen + int(TxHeader_Size)
-	binary.BigEndian.PutUint32(tx[3:7], uint32(txLen))
-	tx[TxHeader_OpOfs] = byte(TxHeader_OpRecvTx)
-}
-
-///////////////////////// host -> client /////////////////////////
-
-func (msg *Msg) MarshalToTxBuffer(txBuf []byte) error {
-	n, err := msg.MarshalToSizedBuffer(txBuf[TxHeader_Size:])
-	if err != nil {
-		return err
-	}
-	TxDataStore(txBuf).InitHeader(n)
-	return nil
-}
-
-// MsgBatch is an ordered list os Msgs
-// See NewMsgBatch()
-type MsgBatch struct {
-	Msgs []*Msg
-}
-
-
-// TxDataStore is a message packet sent to / from a client.
-// It is leads with a fixed-size header (TxHeader_Size) followed by a variable-size body.
-type TxDataStore []byte
-
-func (tx TxDataStore) GetTxTotalLen() int {
-	if tx[TxHeader_OpOfs] != byte(TxHeader_OpRecvTx) {
-		return 0
-	}
-	bodySz := int(binary.BigEndian.Uint32(tx[3:7]))
-	return bodySz
-}
-
 func (tx TxDataStore) SetTxBodyLen(bodyLen int) {
 	txLen := bodyLen + int(TxHeader_Size)
 	binary.BigEndian.PutUint32(tx[3:7], uint32(txLen))
@@ -105,12 +27,6 @@ func (tx TxDataStore) SetTxBodyLen(bodyLen int) {
 func NewTxMsg() *TxMsg {
 	msg := gTxMsgPool.Get().(*TxMsg)
 	return msg
-}
-
-var gTxMsgPool = sync.Pool{
-	New: func() interface{} {
-		return &TxMsg{}
-	},
 }
 
 var gTxMsgPool = sync.Pool{
@@ -329,7 +245,7 @@ func (tx *TxMsg) UnmarshalFrom(msg *TxMsg, reg SessionRegistry, native bool) err
 		}
 
 		tx.CellTxs[i] = CellTx{
-			Op: cellTx.Op,
+			Op:         cellTx.Op,
 			//Elems:      elems,
 		}
 		tx.CellTxs[i].TargetCell.AssignFromU64(cellTx.CellID_0, cellTx.CellID_1)
@@ -418,64 +334,6 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 	}
 
 	return dst
-func (tx *TxMsg) MarshalTo(dst []byte) []byte {
-	// pb := TxMsgPb{
-	// 	ReqID:   tx.ReqID,
-	// 	CellTxs: make([]*CellTxPb, len(tx.C ellTxs)),
-	// }
-	flags := CellOpFlags(0)
-	
-	targetCell := CellID{}
-	parentCell := CellID{}
-	attrID := AttrUID{}
-	SI := SeriesIndex{}
-
-	dst = binary.AppendUvarint(dst, 0) // reserved
-	dataBaseOfs := int64(len(dst))
-	dst = append(dst, tx.DataStore...)
-	dst = binary.AppendUvarint(dst, 0) // reserved
-
-
-	dst = binary.AppendUvarint(dst, uint64(len(tx.CellOps)))
-	for _, op := range tx.CellOps {
-		dst = binary.AppendUvarint(dst, uint64(op.OpCode))
-		if op.TargetCell == targetCell {
-			flags |= CellOpFlags_TargetCell_Repeat
-		}
-		if op.ParentCell == parentCell {
-			flags |= CellOpFlags_TargetCell_Repeat
-		}
-		if op.AttrID == attrID {
-			flags |= CellOpFlags_AttrID_Repeat
-		}
-		if op.SeriesIndex == SI {
-			flags |= CellOpFlags_SI_Repeat
-		}
-		dst = append(dst, byte(flags))
-		
-		if flags & CellOpFlags_TargetCell_Repeat == 0 {
-			dst = binary.BigEndian.AppendUint64(dst, op.TargetCell[0])
-			dst = binary.BigEndian.AppendUint64(dst, op.TargetCell[1])
-		}
-		if flags & CellOpFlags_ParentCell_Repeat == 0 {
-			dst = binary.BigEndian.AppendUint64(dst, op.ParentCell[0])
-			dst = binary.BigEndian.AppendUint64(dst, op.ParentCell[1])
-		}
-		if flags & CellOpFlags_AttrID_Repeat == 0 {
-			dst = binary.BigEndian.AppendUint64(dst, op.AttrID[0])
-			dst = binary.BigEndian.AppendUint64(dst, op.AttrID[1])
-		}	
-		if flags & CellOpFlags_SI_Repeat == 0 {
-			dst = binary.BigEndian.AppendUint64(dst, op.SeriesIndex[0])
-			dst = binary.BigEndian.AppendUint64(dst, op.SeriesIndex[1])
-		}
-		
-		dst = binary.AppendVarint(dst, op.DataOfs + dataBaseOfs)
-		dst = binary.AppendVarint(dst, op.DataLen)
-	}
-	
-	
-	return err
 }
 
 /*

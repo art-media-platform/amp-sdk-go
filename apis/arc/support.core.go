@@ -10,6 +10,9 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
 
+// Describes an asset to be an image stream but not specify format / codec
+const UnspecifiedImageType = "image/*"
+
 // UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
 //
 // Shifting this value to the right 16 bits will yield standard Unix time.

@@ -411,6 +411,7 @@ enum AssetScheme {
     AssetScheme_FilePath        = 2;  // URI = "[file://]{native-pathname}"
     AssetScheme_HttpURL         = 4;  // URI = "[http[s]://]{hostname}[:{port}]/{query}"
     AssetScheme_CrateAsset      = 6;  // URI = "[crate-asset://]{crate-asset-uri}"
+    AssetScheme_ThemedAsset     = 7;  // URI = "{themed-asset-uri}" -- e.g. "application/x-directory" => a folder icon ("glyph")
     
     // AssetScheme_PlanetID        = 20; // URI = "{planet-id-string}"  and/or (UIDx0, UIDx1) are set 
     // AssetScheme_CellID          = 21; // URI = "{cell-id-string}"    and/or (UIDx0, UIDx1) are set
@@ -422,17 +423,13 @@ enum AssetScheme {
     //AssetScheme_GeoFixOrdered    IEEE128    = 20; // URI = "{geo-base32-string}"  and/or (UIDx0, UIDx1) are set
     //AssetScheme_QuaternionOrderedIEEE2348    = 20; // URI = "{geo-base32-string}"  and/or (UIDx0, UIDx1) are set
     
-    // Denotes that AssetRef.MediaType invokes a themed UI asset within the client -- e.g. "application/x-directory" => a folder glyph.
-    // AssetRef.URI is not used.
-    AssetScheme_UseMediaType    = 32; 
 }
 
 
 enum AssetTags {
     AssetTags_None                  = 0; 
-    
-    AssetTags_IsNativeObject        = 0x0004; // Native client object -- e.g. a Unity GameObject     
-    AssetTags_IsImageMedia          = 0x0010; // URI refers to image; equivalent to MediaType = "image/"
+
+    //AssetTags_IsPrimaryGlyph        = 0x0001; // If set, this is a primary glyph for the cell
     
     AssetTags_NeedsNetwork          = 0x0100;
     AssetTags_NoCache               = 0x0200; // If set, asset should not be cached
@@ -444,11 +441,11 @@ message AssetRef {
     AssetTags           Tags            = 2;
     string              CustomTags      = 3;  // Semicolon delimited list of custom tags
 
-    string              MediaType       = 5;  // MIME type of asset content -- "{content-type}/[{sub-type}]"
-    string              URI             = 7;  // URI of the asset
+    string              MediaType       = 5;  // MIME type of asset -- "{content-type}/[{sub-type}]"
+    string              URI             = 7;  // URI of asset
     
-    fixed64             UIDx0           = 10;  // UID of the asset if applicable
-    fixed64             UIDx1           = 11;  // UID of the asset if applicable
+    fixed64             UIDx0           = 10; // UID of asset if applicable
+    fixed64             UIDx1           = 11; // UID of asset if applicable
     
 
     int32               PixelWidth      = 15; // Width in pixels 

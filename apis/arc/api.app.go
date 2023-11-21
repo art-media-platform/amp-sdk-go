@@ -111,8 +111,8 @@ type PbValue interface {
 // AttrElemVal wraps cell attribute element type name and serialization.
 type AttrElemVal interface {
 
-	// Returns the element type name (a degenerate AttrSpec).
-	ElemTypeName() string
+	// Returns the element type name (a "zero" AttrSpec).
+	ElemTypeName() string // TODO: AttrUID
 
 	// Marshals this value to the end of a buffer.
 	MarshalToStore(in []byte) (out []byte, err error)
@@ -128,20 +128,21 @@ type AttrElemVal interface {
 type TxMsg struct {
 	ReqID     uint64    // allows replies to be routed to an originator if applicable
 	Status    ReqStatus // status of the originating request if applicable
-	CellOps   []CellOp  // Ordered operations in this tx
-	DataStore []byte    // backing store
+	Ops       []CellOp  // Ordered operations in this tx
+	OpsStore  []byte    // serialization of []CellOp aka TOC
+	AttrStore []byte    // serialization of []AttrElem aka Attr data
 }
 
 type AttrElem struct {
-	AttrID      AttrUID     // attr being modified -- 0 denotes preceding CellOp's AttrID
-	SeriesIndex SeriesIndex // series index (if applicable)
-	DataOfs     int64       // Byte offset serialized location into parent TxMsg's data store
-	DataLen     int64       // Byte length of serialized data
+	AttrID       AttrUID // attr being modified
+	SeriesIndex  UID     // series index (if applicable)
+	DataStoreOfs int64   // Byte offset serialized location into parent TxMsg's data store
+	DataLen      int64   // Byte length of serialized data
 }
 
 type CellOp struct {
 	AttrElem
-	OpCode CellOpCode // operation to perform
+	OpCode     CellOpCode // operation to perform
 	TargetCell CellID     // cell being modified -- 0 denotes preceding CellOp's CellID
 	ParentCell CellID     // parent cell of target cell -- 0 denotes preceding CellOp's CellID
 }
@@ -156,13 +157,8 @@ type AttrSet struct {
 //
 // By convention, the the leading 8 bytes are a UTC16 timestamp and the trailing 8 bytes are pseudo-random.
 // If the leading 8 bytes are 0, this denotes an ephemeral cell, meaning it does not no originate from a persistent store.
-type CellID [2]uint64
-
-// General purpose index of an cell attribute element in a series.
-type SeriesIndex [2]uint64
+type CellID UID
 
 // AttrUID is a universally unique identifier for an AttrSpec, generated from the MD5 of the canonic AttrSpec string.
-// Leading two bits are reserved to provide additional info about the AttrSpec. 
-type AttrUID [2]uint64
-
-
+// Leading two bits are reserved to provide additional info about the AttrSpec.
+type AttrUID UID

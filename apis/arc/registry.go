@@ -17,25 +17,35 @@ type registry struct {
 	mu           sync.RWMutex
 	appsByUID    map[UID]*App
 	appsByInvoke map[string]*App
-	elemTypes    []AttrElemVal
+	elemDefs     map[AttrUID]AttrElemVal
+	attrDefs     map[AttrUID]AttrElemVal
 }
 
 func (reg *registry) RegisterElemType(prototype AttrElemVal) {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
-	reg.elemTypes = append(reg.elemTypes, prototype)
+	attrID := FormAttrID(prototype.ElemTypeName())
+	reg.elemDefs[attrID] = prototype
 }
 
-func (reg *registry) ExportTo(dst SessionRegistry) error {
-	reg.mu.Lock()
-	defer reg.mu.Unlock()
-	for _, elemType := range reg.elemTypes {
-		if err := dst.RegisterElemType(elemType); err != nil {
-			return err
+func (reg *registry) NewAttrElem(attrID AttrUID) (AttrElemVal, error) {
+
+	// Often, an attrID will be a unnamed scalar ("degenerate") attr, which means we can get the elemDef directly.
+	// This is also essential during bootstrapping when the client sends a RegisterDefs is not registered yet.
+	elemDef, exists := reg.elemDefs[attrID]
+	if !exists {
+		attrDef, exists := reg.attrDefs[attrID]
+		if !exists {
+			return nil, arc.ErrCode_DefNotFound.Errorf("NewAttrElem: attr DefID %v not found", attrID)
+		}
+		elemDef, exists = reg.elemDefs[attrDef.Native.ElemType]
+		if !exists {
+			return nil, arc.ErrCode_DefNotFound.Errorf("NewAttrElem: elemTypeID %v not found", attrDef.Client.ElemType)
 		}
 	}
-	return nil
+	return elemDef.prototype.New(), nil
 }
+
 
 // Implements arc.Registry
 func (reg *registry) RegisterApp(app *App) error {

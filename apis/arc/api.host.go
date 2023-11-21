@@ -3,7 +3,6 @@ package arc
 import (
 	"net/url"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/symbol"
 	"github.com/arcspace/go-arc-sdk/stdlib/task"
 )
 
@@ -60,11 +59,7 @@ type HostService interface {
 // HostSession in an open client session with a Host.
 // Closing is initiated via task.Context.Close().
 type HostSession interface {
-	task.Context    // Underlying task context
-	SessionRegistry // How symbols and types registered and resolved
-
-	// Called when this session is newly opened to set up the SessionRegistry
-	InitSessionRegistry(symTable symbol.Table)
+	task.Context // Underlying task context
 
 	// Returns the running AssetPublisher instance for this session.
 	AssetPublisher() AssetPublisher
@@ -90,48 +85,19 @@ type Registry interface {
 
 	// Registers an element value type (AttrElemVal) as a prototype under its AttrElemType (also a valid AttrSpec type expression).
 	// If an entry already exists (common for a type used by multiple apps), an error is returned and is a no-op.
-	// This and ResolveAttrSpec() allow NewElemVal() to work.
 	RegisterElemType(prototype AttrElemVal)
 
-	// When a HostSession creates a new SessionRegistry(), this populates it with its registered ElemTypes.
-	ExportTo(dst SessionRegistry) error
+	// Instantiates an attr element value for a given attr UID -- typically followed by AttrElemVal.Unmarshal()
+	NewAttrElem(attrID AttrUID) (AttrElemVal, error)
 
 	// Registers an app by its UUID, URI, and schemas it supports.
 	RegisterApp(app *App) error
 
 	// Looks-up an app by UUID -- READ ONLY ACCESS
-	GetAppByUID(appUID UID) (*App, error)
+	GetAppByUID(appID UID) (*App, error)
 
 	// Selects the app that best matches an invocation string.
 	GetAppForInvocation(invocation string) (*App, error)
-}
-
-// SessionRegistry manages a HostSession's symbol and type definitions -- concurrency safe.
-type SessionRegistry interface {
-
-	// Returns the symbol table for a session a technique sometimes also known as interning.
-	ClientSymbols() symbol.Table
-
-	// Translates a native symbol ID to a client symbol ID, returning false if not found.
-	NativeToClientID(nativeID uint32) (clientID uint32, found bool)
-
-	// Registers an AttrElemVal as a prototype under its element type name..
-	// This and ResolveAttrSpec() allow NewElemVal() to work.
-	RegisterElemType(prototype AttrElemVal) error
-
-	// Registers a block of symbol, attr, cell, and selector definitions for a client.
-	RegisterDefs(defs *RegisterDefs) error
-
-	// Resolves an AttrSpec into useful symbols, auto-registering the AttrSpec as needed.
-	// Typically used during AppInstance.OnNew() to get the AttrIDs that correspond to the AttrSpecs it will send later.
-	//
-	// If native === true, the spec is resolved with native symbols (vs client symbols).
-	//
-	// See AttrSpec docs.
-	ResolveAttrSpec(attrSpec string, native bool) (AttrUID, error)
-
-	// Instantiates an attr element value for an AttrID -- typically followed by AttrElemVal.Unmarshal()
-	NewAttrElem(attrDefID uint32, native bool) (AttrElemVal, error)
 }
 
 // NewRegistry returns a new Registry
@@ -168,8 +134,8 @@ type PinReqParams struct {
 	PinReq   PinRequest
 	PinCell  CellID
 	URL      *url.URL
-	ReqID    uint64        // Request ID needed to route to the originator
-	LogLabel string        // info string for logging and debugging
+	ReqID    uint64      // Request ID needed to route to the originator
+	LogLabel string      // info string for logging and debugging
 	Outlet   chan *TxMsg // send to this channel to transmit to the request originator
 
 }

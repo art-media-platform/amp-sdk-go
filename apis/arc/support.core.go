@@ -2,7 +2,6 @@ package arc
 
 import (
 	"bytes"
-	"crypto"
 	"encoding/binary"
 	"strings"
 	"time"
@@ -228,16 +227,8 @@ func (tid TID) CopyNext(inTID TID) {
 		}
 	}
 }
-
-
-func GenAttrUID(attrSpec string) AttrUID {
-	hash := crypto.MD5.New()
-	hash.Write([]byte(attrSpec))
-	digest := hash.Sum(nil)
-	return [2]uint64{
-		binary.BigEndian.Uint64(digest[0:8]),
-		binary.BigEndian.Uint64(digest[8:16]),
-	}
+func FormAttrID(attrSpec string) AttrUID {
+	return AttrUID(StringToUID(attrSpec))
 }
 
 
@@ -350,19 +341,7 @@ func (tid *TxID) AppendAsBinary(io []byte) []byte {
 }
 */
 
-func (id ConstSymbol) Ord() uint32 {
-	return uint32(id)
-}
 
-// Analyses an AttrSpec's SeriesSpec and returns the index class it uses.
-func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
-	switch {
-	case strings.HasSuffix(seriesSpec, ".Name"):
-		return SeriesIndexType_Name
-	default:
-		return SeriesIndexType_Literal
-	}
-}
 
 func (params *PinReqParams) URLPath() []string {
 	if params.URL == nil {

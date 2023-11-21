@@ -51,24 +51,7 @@ enum TxHeader {
     TxHeader_OpEOS       = 24;
 }
 
-// These are hard-wired symbol IDs are required to bootstrap a new connection.
-// After bootstrapping, the client uses RegisterDefs to register its symbols.
-enum ConstSymbol {
-    ConstSymbol_nil            = 0;
 
-    ConstSymbol_Err            = 10;
-    ConstSymbol_RegisterDefs   = 11;
-    ConstSymbol_HandleURI      = 12;
-    ConstSymbol_PinRequest     = 13;
-    
-    ConstSymbol_Login          = 20;
-    ConstSymbol_LoginChallenge = 21;
-    ConstSymbol_LoginResponse  = 22;
-    
-    // Minimum symbol ID that a client is allowed to issue
-    // This value sets a ceiling for the above hard-wired symbol IDs.
-    ConstSymbol_IssuerInitsAt  = 256; 
-}
 
 // ReqStatus allows a sender to express the status of a request.
 enum ReqStatus {
@@ -206,23 +189,15 @@ message AttrSpec {
 }
 */
 
-enum UID_Kind {
-    UID_Kind_TimeID = 0;
-    UID_Kind_NameID = 1;
-    UID_Kind_CellID = 2;
-    UID_Kind_AttrID = 3;
-    UID_Kind_UserID = 4;
-}
+// Should be used as SeriesIndex AttrSpec suffix
+// enum UID_Kind {
+//     UID_Kind_Literal = 0;
+//     UID_Kind_Time    = 1;
+//     UID_Kind_Attr    = 3;
+//     UID_Kind_Cell    = 2;
+//     UID_Kind_Actor   = 4;
+// }
 
-enum SeriesIndexType  {
-    SeriesIndexType_Literal = 0; // SeriesSpec has no suffix:      SI values are literal values (Int64, UTC16, GeoHash)
-    SeriesIndexType_UID = 1; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
-    SeriesIndexType_TimeID = 2; // SeriesSpec ends with ".Name":  SI values are string symbol IDs
-    //SeriesIndexTypeCellID  = 2; // SI values correspond to Cell TIDs 
-}
-
-
-	
 enum PinFlags {
     PinFlags_None             = 0;
 
@@ -493,6 +468,12 @@ message CryptoKey {
 
 
 
+message GlyphSet {
+
+}
+
+
+
 // CellHeader is a standard attribute for a cell that is presented in a UI.
 // An arc.App fills in what is appropriate and leaves the rest blank.
 message CellHeader {
@@ -635,6 +616,7 @@ enum ErrCode {
     ErrCode_InvalidReq                  = 5020;
     ErrCode_InvalidURI                  = 5021;
     ErrCode_BadValue                    = 5022;
+    ErrCode_InvalidUID                  = 5023;
 
     ErrCode_NothingToCommit             = 5030;
     ErrCode_CommitFailed                = 5031;
@@ -675,5 +657,5 @@ message Err {
     LogLevel            Level                       = 2;
     
     // human-readable info
-    string              TxMsg                         = 4;
+    string              Msg                         = 4;
 }

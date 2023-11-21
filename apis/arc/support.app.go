@@ -2,14 +2,20 @@ package arc
 
 import "net/url"
 
+type AttrSpec string
+
+const (
+	CellHeaderSpec = AttrSpec("[Name.UID]CellHeader")
+	GlyphSetSpec   = AttrSpec("[Name.UID]GlyphSet")
+)
+
+
 // AttrSpecs used universally
 var (
-	ErrAttrID        = GenAttrUID(((*Err)(nil)).ElemTypeName())
-	//AttrID        = GenAttrUID(((*Err)(nil)).ElemTypeName())
-
-	CellHeaderAttrID = GenAttrUID("CellHeader")
-	CellTextAttrID   = GenAttrUID("[Locale.Name]CellText")
-	CellPosAttrID    = GenAttrUID("[Surface.Name]Position")
+	//ErrAttrID        = FormAttrUID(((*Err)(nil)).ElemTypeName())
+	//GlyphSetAttrSpec   = FormAttrUID("[Name.UID]GlyphSet")
+	//LinksAttr     = FormAttrUID("[Name.UID]Links")
+	//PositionAttr   = FormAttrUID("[CoordinateScheme.UID]Position")
 )
 
 // This file contains types and interfaces intended to ease an arc app development.
@@ -34,7 +40,8 @@ func (app *AppBase) OnClosing() {
 }
 
 func (app *AppBase) RegisterElemType(prototype AttrElemVal) error {
-	err := app.AppContext.Session().RegisterElemType(prototype)
+	//err := app.AppContext.Session().RegisterElemType(prototype)
+	err := app
 	if err != nil {
 		return err
 	}

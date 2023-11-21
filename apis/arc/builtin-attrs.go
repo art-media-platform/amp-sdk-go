@@ -1,40 +1,18 @@
 package arc
 
-func RegisterConstSymbols(reg SessionRegistry) {
-	consts := []struct {
-		ID   ConstSymbol
-		name string
-	}{
-		{ConstSymbol_Err, "Err"},
-		{ConstSymbol_RegisterDefs, "RegisterDefs"},
-		{ConstSymbol_HandleURI, "HandleURI"},
-		{ConstSymbol_PinRequest, "PinRequest"},
-		{ConstSymbol_Login, "Login"},
-		{ConstSymbol_LoginChallenge, "LoginChallenge"},
-		{ConstSymbol_LoginResponse, "LoginResponse"},
-	}
-
-	defs := RegisterDefs{
-		Symbols: make([]*Symbol, len(consts)),
-	}
-
-	for i, sym := range consts {
-		defs.Symbols[i] = &Symbol{
-			ID:   uint32(sym.ID),
-			Name: []byte(sym.name),
-		}
-	}
-
-	if err := reg.RegisterDefs(&defs); err != nil {
-		panic(err)
-	}
-}
+// var (
+// 	ConstSymbol_Err = FormAttrUID("Err")
+// 	ConstSymbol_HandleURI = FormAttrUID( "HandleURI" )
+// 	ConstSymbol_PinRequest = FormAttrUID("PinRequest")
+// 	ConstSymbol_Login = FormAttrUID( "Login")
+// 	ConstSymbol_LoginChallenge = FormAttrUID("LoginChallenge")
+// 	ConstSymbol_LoginResponse = FormAttrUID( "LoginResponse")
+// )
 
 func RegisterBuiltInTypes(reg Registry) error {
 
 	prototypes := []AttrElemVal{
 		&Err{},
-		&RegisterDefs{},
 		&HandleURI{},
 		&Login{},
 		&LoginChallenge{},
@@ -42,6 +20,7 @@ func RegisterBuiltInTypes(reg Registry) error {
 
 		&PinRequest{},
 		&CellHeader{},
+		&GlyphSet{},
 		&AssetRef{},
 		&AuthToken{},
 		&Position{},
@@ -149,16 +128,16 @@ func (v *LoginResponse) New() AttrElemVal {
 	return &LoginResponse{}
 }
 
-func (v *CellText) MarshalToStore(dst []byte) ([]byte, error) {
+func (v *GlyphSet) MarshalToStore(dst []byte) ([]byte, error) {
 	return MarshalPbToStore(v, dst)
 }
 
-func (v *CellText) ElemTypeName() string {
-	return "CellText"
+func (v *GlyphSet) ElemTypeName() string {
+	return "GlyphSet"
 }
 
-func (v *CellText) New() AttrElemVal {
-	return &CellText{}
+func (v *GlyphSet) New() AttrElemVal {
+	return &GlyphSet{}
 }
 
 func (v *CellHeader) MarshalToStore(dst []byte) ([]byte, error) {
@@ -171,18 +150,6 @@ func (v *CellHeader) ElemTypeName() string {
 
 func (v *CellHeader) New() AttrElemVal {
 	return &CellHeader{}
-}
-
-func (v *RegisterDefs) MarshalToStore(dst []byte) ([]byte, error) {
-	return MarshalPbToStore(v, dst)
-}
-
-func (v *RegisterDefs) ElemTypeName() string {
-	return "RegisterDefs"
-}
-
-func (v *RegisterDefs) New() AttrElemVal {
-	return &RegisterDefs{}
 }
 
 func (v *Position) MarshalToStore(dst []byte) ([]byte, error) {

@@ -23,6 +23,27 @@ func (tx TxDataStore) SetTxBodyLen(bodyLen int) {
 	tx[TxHeader_OpOfs] = byte(TxHeader_OpRecvTx)
 }
 
+func (tx TxDataStore) InitHeader(bodyLen int) {
+	tx[0] = 0
+	tx[1] = 0
+	tx[2] = 0
+	txLen := bodyLen + int(TxHeader_Size)
+	binary.BigEndian.PutUint32(tx[3:7], uint32(txLen))
+	tx[TxHeader_OpOfs] = byte(TxHeader_OpRecvTx)
+}
+
+///////////////////////// host -> client /////////////////////////
+
+func (msg *TxMsg) MarshalToTxBuffer(txBuf []byte) error {
+	n, err := msg.MarshalToSizedBuffer(txBuf[TxHeader_Size:])
+	if err != nil {
+		return err
+	}
+	TxDataStore(txBuf).InitHeader(n)
+	return nil
+}
+
+
 
 func NewTxMsg() *TxMsg {
 	msg := gTxMsgPool.Get().(*TxMsg)
@@ -51,7 +72,7 @@ func CopyMsg(src *TxMsg) *TxMsg {
 
 func (tx *TxMsg) Init() {
 	*tx = TxMsg{
-		CellOps: tx.CellOps[:0],
+		Ops: tx.Ops[:0],
 	}
 }
 
@@ -108,10 +129,10 @@ func (tx *TxMsg) Reclaim() {
 // 	tx.Elems = tx.Elems[:0]
 // }
 
-// func (op *CellOp) MarshalToStore(tx *TxMsg, val arc.AttrElemVal) error {
+// func (op *CellOp) MarshalToStore(tx *TxMsg, val AttrElemVal) error {
 // 	var err error
 	
-// 	op.DataOfs = int64(len(tx.DataStore))
+// 	op.DataStoreOfs = int64(len(tx.DataStore))
 // 	tx.DataStore, err = val.MarshalToStore(tx.DataStore)
 // 	if err != nil {
 // 		return err
@@ -162,78 +183,95 @@ func (tx *CellTx) MarshalToPb(dst *CellTxPb) error {
 }
 */
 
+// Form
 // If reqID == 0, then this sends an attr to the client's session controller (vs a specific request)
-func SendClientMetaAttr(sess HostSession, reqID uint64, val AttrElemVal) error {
-	msg, err := FormClientMetaAttrMsg(sess, val.ElemTypeName(), val)
-	msg.ReqID = reqID
+func SendClientMetaAttr(sess HostSession, reqID uint64, val AttrElemVal, status ReqStatus) error {
+	metaOp := CellOp{
+		OpCode: CellOpCode_MetaAttr,
+	}
+	tx := NewTxMsg()
+	tx.ReqID = reqID
+	tx.Status = status
+	err := tx.MarshalCellOp(&metaOp, val)
 	if err != nil {
 		return err
 	}
-	return sess.SendTx(msg)
+	return sess.SendTx(tx)
 }
 
-func FormClientMetaAttrMsg(reg SessionRegistry, attrSpec string, val AttrElemVal) (*TxMsg, error) {
-	spec, err := reg.ResolveAttrSpec(attrSpec, false)
-	if err != nil {
-		return nil, err
-	}
-
-	return FormMetaAttrTx(spec, val)
-}
-
-func FormMetaAttrTx(attrSpec AttrSpec, val AttrElemVal) (*TxMsg, error) {
-	elemPb := &AttrElemPb{
-		AttrID: uint64(attrSpec.DefID),
-	}
-	if err := val.MarshalToBuf(&elemPb.ValBuf); err != nil {
-		return nil, err
-	}
-
-	tx := &CellTxPb{
-		Op: CellTxOp_MetaAttr,
-		Elems: []*AttrElemPb{
-			elemPb,
+func (tx *TxMsg) MarshalUpsert(attrSpec AttrSpec, seriesIndex UID, val AttrElemVal) error {
+	op := CellOp{
+		OpCode:   CellOpCode_UpsertAttr,
+		AttrElem: AttrElem{
+			
 		},
 	}
-
-	msg := NewMsg()
-	msg.ReqID = 0 // signals a meta message
-	msg.Status = ReqStatus_Synced
-	msg.CellTxs = append(msg.CellTxs, tx)
-	return msg, nil
+	return tx.MarshalCellOp(&op, val)
 }
 
-func (msg *TxMsg) GetMetaAttr() (attr *AttrElemPb, err error) {
-	if len(msg.CellTxs) == 0 || msg.CellTxs[0].Op != CellTxOp_MetaAttr || msg.CellTxs[0].Elems == nil || len(msg.CellTxs[0].Elems) == 0 {
-		return nil, ErrCode_MalformedTx.Error("missing meta attr")
+func (tx *TxMsg) MarshalCellOp(op *CellOp, val AttrElemVal) error {
+	op.DataStoreOfs = int64(len(tx.AttrStore))
+	var err error
+	tx.AttrStore, err = val.MarshalToStore(tx.AttrStore)
+	if err != nil {
+		return err
 	}
-
-	return msg.CellTxs[0].Elems[0], nil
+	op.DataLen = int64(len(tx.AttrStore)) - op.DataStoreOfs
+	
+	tx.Ops = append(tx.Ops, *op)
+	return nil
 }
 
+
+func (tx *TxMsg) UnmarshalAttrElem(opIndex int, out AttrElemVal) error {
+	if opIndex < 0 || opIndex >= len(tx.Ops) {
+		panic("opIndex out of range")
+	}
+	op := &tx.Ops[opIndex]
+	return out.Unmarshal(tx.AttrStore[op.DataStoreOfs:op.DataStoreOfs+op.DataLen])
+}
+
+
+
+// func (tx *TxMsg) IsMetaAttrElemType() (attr *AttrElem, err error) {
+
+// }
+
+func (tx *TxMsg) GetMetaAttr() (attr AttrElem, err error) {
+	if len(tx.Ops) == 0 || tx.Ops[0].OpCode != CellOpCode_MetaAttr  {
+		return AttrElem{}, ErrCode_MalformedTx.Error("expected meta attr")
+	}
+	return tx.Ops[0].AttrElem, nil
+	// val AttrElemVal
+	
+	// return out.Unmarshal(tx.AttrStore[op.DataStoreOfs:op.DataStoreOfs+op.DataLen])
+
+	// return msg.Ops[0].Elems[0], nil
+}
+/*
 func (tx *TxMsg) UnmarshalFrom(msg *TxMsg, reg SessionRegistry, native bool) error {
 	tx.ReqID = msg.ReqID
 	tx.Status = msg.Status
-	tx.CellTxs = tx.CellTxs[:0]
+	tx.Ops = tx.Ops[:0]
 
 	elemCount := 0
 
-	srcTxs := msg.CellTxs
-	if cap(tx.CellTxs) < len(srcTxs) {
-		tx.CellTxs = make([]CellTx, len(srcTxs))
+	srcTxs := msg.Ops
+	if cap(tx.Ops) < len(srcTxs) {
+		tx.Ops = make([]CellOp, len(srcTxs))
 	} else {
-		tx.CellTxs = tx.CellTxs[:len(srcTxs)]
+		tx.Ops = tx.Ops[:len(srcTxs)]
 	}
 	for i, cellTx := range srcTxs {
 		elems := make([]AttrElemVal, len(cellTx.Elems))
 		for j, srcElem := range cellTx.Elems {
 			attrID := uint32(srcElem.AttrID)
-			elem := AttrElemVal{
-				SI:     srcElem.SI,
+			elem := AttrElem{
+				SeriesIndex:     srcElem.SeriesIndex,
 				AttrID: attrID,
 			}
 			var err error
-			elem.Val, err = reg.NewAttrElem(attrID, native)
+			elem, err = reg.NewAttrElem(attrID, native)
 			if err == nil {
 				err = elem.Val.Unmarshal(srcElem.ValBuf)
 			}
@@ -245,10 +283,10 @@ func (tx *TxMsg) UnmarshalFrom(msg *TxMsg, reg SessionRegistry, native bool) err
 		}
 
 		tx.CellTxs[i] = CellTx{
-			Op:         cellTx.Op,
+			Op: cellTx.Op,
 			//Elems:      elems,
 		}
-		tx.CellTxs[i].TargetCell.AssignFromU64(cellTx.CellID_0, cellTx.CellID_1)
+		tx.Ops[i].TargetCell.AssignFromU64(cellTx.TargetCell[0], cellTx.TargetCell[1])
 	}
 
 	if elemCount == 0 {
@@ -257,7 +295,7 @@ func (tx *TxMsg) UnmarshalFrom(msg *TxMsg, reg SessionRegistry, native bool) err
 	return nil
 }
 
-/*
+
 // Pushes a attr mutation to the client, returning true if the msg was sent (false if the client has been closed).
 func (bat *CellTx) PushBatch(ctx PinContext) error {
 
@@ -292,11 +330,11 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 
 	dst = binary.AppendUvarint(dst, 0) // reserved
 	dataStoreOfs := int64(len(dst))
-	dst = append(dst, tx.DataStore...)
+	dst = append(dst, tx.AttrStore...)
 	dst = binary.AppendUvarint(dst, 0) // reserved
 
-	dst = binary.AppendUvarint(dst, uint64(len(tx.CellOps)))
-	for _, op := range tx.CellOps {
+	dst = binary.AppendUvarint(dst, uint64(len(tx.Ops)))
+	for _, op := range tx.Ops {
 		dst = binary.AppendUvarint(dst, uint64(op.OpCode))
 		if op.TargetCell == targetCell {
 			flags |= CellOpFlags_TargetCell_Repeat
@@ -329,7 +367,7 @@ func (tx *TxMsg) MarshalTo(dst []byte) []byte {
 			dst = binary.BigEndian.AppendUint64(dst, op.SeriesIndex[1])
 		}
 		
-		dst = binary.AppendVarint(dst, op.DataOfs + dataStoreOfs)
+		dst = binary.AppendVarint(dst, op.DataStoreOfs + dataStoreOfs)
 		dst = binary.AppendVarint(dst, op.DataLen)
 	}
 

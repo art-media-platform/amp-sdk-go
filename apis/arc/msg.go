@@ -282,8 +282,8 @@ func (tx *TxMsg) UnmarshalFrom(msg *TxMsg, reg SessionRegistry, native bool) err
 			elemCount++
 		}
 
-		tx.CellTxs[i] = CellTx{
-			Op: cellTx.Op,
+		tx.Ops[i] = CellOp{
+			OpCode: cellTx.Op,
 			//Elems:      elems,
 		}
 		tx.Ops[i].TargetCell.AssignFromU64(cellTx.TargetCell[0], cellTx.TargetCell[1])

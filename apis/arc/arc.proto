@@ -509,12 +509,22 @@ message CryptoKey {
 }
 
 
+// Glyphs are 2D or 3D visual graphics placed into a parent unit volume.
+message GlyphSet {
+    AssetRef            Thumbnail       = 2;
+    AssetRef            Q720            = 4;
+    AssetRef            Q1024           = 6;
+    
+    fixed64             UIDx0           = 10; // any UID if applicable
+    fixed64             UIDx1           = 11; // any UID if applicable
+    
+    repeated AssetRef   Ex              = 20;
+}
 
-// CellHeader is a standard attribute for a cell that is presented in a UI.
+// CellHeader is a standard attribute for a cell that is presented .
 // An arc.App fills in what is appropriate and leaves the rest blank.
 message CellHeader {
         
-
     
     string              Title        = 2; // title, name, or label
     string              Subtitle     = 3; // synopsis, summary, tagline, or sub-label

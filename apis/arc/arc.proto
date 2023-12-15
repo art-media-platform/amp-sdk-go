@@ -9,7 +9,7 @@ option go_package = "github.com/arcspace/go-arc-sdk/apis/arc";
 
 // import "github.com/gogo/protobuf/gogoproto/gogo.proto";  // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 
-option csharp_namespace = "ArcXR";
+option csharp_namespace = "AMP";
 
 
 enum Const {

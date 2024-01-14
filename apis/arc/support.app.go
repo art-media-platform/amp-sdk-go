@@ -2,13 +2,11 @@ package arc
 
 import "net/url"
 
-type AttrSpec string
 
-const (
-	CellHeaderSpec = AttrSpec("[Name.UID]CellHeader")
-	GlyphSetSpec   = AttrSpec("[Name.UID]GlyphSet")
+var (
+	CellHeaderUID = MustFormAttrUID("CellHeader")
+	GlyphSetUID   = MustFormAttrUID("[Name.UID]GlyphSet")
 )
-
 
 // AttrSpecs used universally
 var (
@@ -39,11 +37,6 @@ func (app *AppBase) HandleURL(*url.URL) error {
 func (app *AppBase) OnClosing() {
 }
 
-func (app *AppBase) RegisterElemType(prototype AttrElemVal) error {
-	//err := app.AppContext.Session().RegisterElemType(prototype)
-	err := app
-	if err != nil {
-		return err
-	}
-	return nil
+func (app *AppBase) RegisterElemType(prototype AttrElemVal) {
+	app.AppContext.Session().RegisterElemType(prototype)
 }

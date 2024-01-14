@@ -60,6 +60,7 @@ type HostService interface {
 // Closing is initiated via task.Context.Close().
 type HostSession interface {
 	task.Context // Underlying task context
+	Registry     // Registry for this session
 
 	// Returns the running AssetPublisher instance for this session.
 	AssetPublisher() AssetPublisher
@@ -84,9 +85,17 @@ type HostSession interface {
 type Registry interface {
 
 	// Registers an element value type (AttrElemVal) as a prototype under its AttrElemType (also a valid AttrSpec type expression).
-	// If an entry already exists (common for a type used by multiple apps), an error is returned and is a no-op.
+	// If an entry already exists (common for a type used by multiple apps), this is a no-op.
 	RegisterElemType(prototype AttrElemVal)
 
+	// Resolves an AttrSpec into useful symbols, auto-registering the AttrSpec as needed.
+	RegisterAttr(attrDef *AttrDef) error
+	
+	RegisterDefs(defs []*AttrDef) error
+
+	// Registers for a client for its host session
+	RegisterAttrDefs(defs []AttrDef) error
+	
 	// Instantiates an attr element value for a given attr UID -- typically followed by AttrElemVal.Unmarshal()
 	NewAttrElem(attrID AttrUID) (AttrElemVal, error)
 
@@ -111,10 +120,10 @@ type PinContext interface {
 
 	PinReq // Originating request info
 
-	// Marshals a CellOp and optional value to the given Tx's data store.
+	// Marshals a TxOp and optional value to the given Tx's data store.
 	//
 	// If the given attr is not enabled within this PinContext, this function is a no-op.
-	MarshalCellOp(dst *TxMsg, op CellOp, val AttrElemVal)
+	MarshalTxOp(dst *TxMsg, op TxOp, val AttrElemVal)
 
 	// PushTx pushes the given tx to the originator of this PinContext.
 	PushTx(tx *TxMsg) error

@@ -9,7 +9,7 @@ option go_package = "github.com/arcspace/go-arc-sdk/apis/arc";
 
 // import "github.com/gogo/protobuf/gogoproto/gogo.proto";  // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 
-option csharp_namespace = "ArcXR";
+option csharp_namespace = "AMP";
 
 
 enum Const {
@@ -33,23 +33,21 @@ enum Const {
 
     // DefaultServicePort  is the default TCP port used to expose arc.Host service.
     Const_DefaultServicePort = 5192;
-
+    
+	// Byte size and version of a TxMsg encoding.
+	// A TxHeader has the following layout:
+    //   Bytes  00:01 -- TxHeader version
+	//          01:04 -- TxHeader marker ('arc')
+    //          04:08 -- Tx Body size
+    //          08:12 -- Tx DataStore size
+    //          12:16 -- Reserved 
+	Const_TxHeader_Size = 16;
+	
+	// The first byte of the TxHeader is the header size and version and
+	// the following 3 bytes of a serialized TxMsg ("arc") 
+    Const_TxHeader_Marker = 0x617263; 
 }
 
-enum TxHeader {
-    TxHeader_0           = 0;
-    
-    
-    // TxHeader heads a MsgTx serialized data store
-    //   Bytes 00:03 -- Reserved (3 bytes)
-    //   Bytes 03:07 -- big endian total byte size, including header (4 bytes)
-    //   Bytes 07:08 -- TxMsg op code (1 byte)
-    TxHeader_Size        = 8;
-    TxHeader_OpOfs       = 7;
-    
-    TxHeader_OpRecvTx    = 20;
-    TxHeader_OpEOS       = 24;
-}
 
 
 
@@ -73,22 +71,35 @@ enum ReqStatus {
 
 
 
-// CellOpCode specifies a cell transaction operation.
-enum CellOpCode {
-    CellOpCode_MetaAttr    = 0; // 
-    CellOpCode_UpsertAttr  = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
-    CellOpCode_RemoveAttr  = 4; // remove single attr element
-    CellOpCode_RemoveCell  = 6; 
+// TxOpCode specifies a cell transaction operation.
+enum TxOpCode {
+    TxOpCode_MetaAttr    = 0; // 
+    TxOpCode_UpsertAttr  = 1; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
+    TxOpCode_RemoveAttr  = 4; // remove single attr element
+    TxOpCode_RemoveCell  = 6; 
 }
 
-enum CellOpFlags {
-    CellOpFlags_None          = 0;
-    CellOpFlags_TargetCell_Repeat = 0x01; // If set, CellID is same as previous
-    CellOpFlags_ParentCell_Repeat = 0x02; // If set, CellID is same as previous
-    CellOpFlags_Attr_Repeat = 0x04; // If set, AttrUID is same as previous
-    CellOpFlags_SI_Repeat     = 0x08; // If set, SeriesIndex is same as previous
+enum TxOpFlags {
+    TxOpFlags_None              = 0;
+    TxOpFlags_TargetCell_Repeat = 0x01; // If set, CellID is same as previous
+    TxOpFlags_ParentCell_Repeat = 0x02; // If set, CellID is same as previous
+    TxOpFlags_Attr_Repeat       = 0x04; // If set, AttrUID is same as previous
+    TxOpFlags_SI_Repeat         = 0x08; // If set, SeriesIndex is same as previous
 
 }
+
+// message TxSet {
+//     uint64             ReqID           = 1; // Request ID (unique per session)
+//     ReqStatus          Status          = 2; // Status of this request
+//     repeated TxOp      Ops             = 3; // Tx & Cell operations
+//     bytes              
+//     bytes              DataStore       = 4; // DataStore is a serialized data store (e.g. a protobuf message)
+// }
+
+// message AttrElem {
+//     fixed64             AttrIDx0       = 2;
+//     fixed64             AttrIDx1       = 3;
+    
 
 
 message Login {
@@ -117,27 +128,43 @@ message LoginResponse {
     bytes               HashResp        = 1;
 }
 
-/*
-message Symbol {
-    // A symbol ID is 32 bits and corresponds to a real-world const byte strings.
-    // FUTURE: IDs are int64, where client symbols IDs are < 0 and native symbols are > 0.
-    uint32              ID              = 1;
-    bytes               Name            = 2;
-}
 
 // RegisterDefs is sent by a client to register its symbols and schemas during a session.
 message RegisterDefs {
-    repeated Symbol        Symbols      = 1;
     repeated AttrSpec      Attrs        = 2;
     repeated ItemSelector  Selectors    = 4;
 }
 
+message AttrSpec {
+
+    // Composite expression / invocation of this AttrSpec in the form: 
+    //      "[{SeriesNameDesc}.{SeriesIndexType}]{ElemTypeName}"
+    //
+    // This is optional if ElemTypeUID and SeriesUID are set.
+    string              AsCanonicString = 1;
+    
+    // UID  of "{ElemTypeName}"
+    fixed64             ElemTypeUIDx0   = 3;
+    fixed64             ElemTypeUIDx1   = 4;
+
+    // UID of "{SeriesNameDesc}"
+    //
+    // An AttrSpec with no SeriesUID implies ElemTypeUID == AttrUID
+    fixed64             SeriesUIDx0     = 6;
+    fixed64             SeriesUIDx1     = 7;
+    
+    // UID of AsCanonicString.
+    fixed64             AttrUIDx0       = 8;
+    fixed64             AttrUIDx1       = 9;
+}
+
+/*
 
 // AttrSpec fully describes a cell attribute, specifying a name, element type, and series element type.
 message AttrSpec {
 
     // Composite expression / invocation of this AttrSpec in the form: 
-    //      "[{SeriesSpec}]{ElemType}:{AttrName}"
+    //      "[{SeriesDesc}.{UID_Kind}]{ElemTypeName}:{AttrName}"
     //
     // This the value is used for TxMsg.AttrID -- it references an AttrSpec.
     // e.g. "AssetRef", "AssetRef:promo", "[UTC16]Position:past-promo-shoots",
@@ -183,7 +210,7 @@ message AttrSpec {
     //   - Valid chars consist of [A-Za-z0-9_-] ('.' is not allowed)
     //
     // e.g. "", "playable", "mini", "1440p"
-    uint32              AttrName = 6; 
+    // uint32              AttrName = 6;  -- not needed since SeriesSpec can always be made unique.
     
 
 }
@@ -291,6 +318,20 @@ message PinRequest {
     // These values are 0 if PinURL is nil or does not require a CellID.
     uint64              PinCellIDx0 = 3;
     uint64              PinCellIDx1 = 4;
+    
+    // // REMINDER: the client can't ask for attrs is doesn't know are there.  
+    // //    -- maybe CellHeader contains list of Attrs that are available? 
+    // // AttrSpec expression that select which attrs of the pinned cell are to be pushed to the client.
+    // // For now, the format is a simple list ("[{SeriesSpec}]{ElemType}, ..."), but in the future, 
+    // // this could be an expr language offering features around wildcards and Series ranges.
+    // string              AttrFilter  = 10;
+    // // OR, we make it simpler: a 
+    // message AttrFilter {
+    //     fixed64            AttrIDx0       = 2;
+    //     fixed64            AttrIDx1       = 3;
+        
+    // };
+    // repeated AttrFilter AttrFilters = 11;
 
     // If set, specifies an ItemSelector that filters which attrs of the pinned cell are pushed to the client.
     uint32              ParentAttrSelector = 5;
@@ -467,9 +508,9 @@ message CryptoKey {
 }
 
 
-
+// A Glyph is a representative image or 3D graphic similar to an icon in function.
 message GlyphSet {
-
+    repeated AssetRef   Primary         = 1;
 }
 
 
@@ -484,9 +525,6 @@ message CellHeader {
     string              Subtitle     = 3; // synopsis, summary, tagline, or sub-label
     string              About        = 4; // Additional information about this item
    
-    // A Glyph is a representative image or 3D graphic similar to an icon in function.
-    repeated AssetRef   Glyphs       = 6; 
-    
     int64               Created      = 8; // Unix UTC16 timestamp (secs x 2^16)
     int64               Modified     = 9; // Unix UTC16 timestamp (secs x 2^16)        
     

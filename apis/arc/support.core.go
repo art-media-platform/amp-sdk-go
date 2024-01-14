@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/arcspace/go-arc-sdk/apis/arc/parse"
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
 
@@ -227,10 +228,57 @@ func (tid TID) CopyNext(inTID TID) {
 		}
 	}
 }
+
 func FormAttrID(attrSpec string) AttrUID {
 	return AttrUID(StringToUID(attrSpec))
 }
 
+func FormAttrSpec(attrSpecExpr string) (AttrSpec, error) {
+	expr, err := parse.ParseAttrSpecExpr(attrSpecExpr)
+	if err != nil {
+		return AttrSpec{}, err
+	}
+
+	attrID := FormAttrID(expr.AsCanonic)
+	seriesUID := FormAttrID(expr.SeriesSpec)
+	elemTypeUID := FormAttrID(expr.ElemType)
+
+	spec := AttrSpec{
+		AsCanonicString: expr.AsCanonic,
+		ElemTypeUIDx0:   elemTypeUID[0],
+		ElemTypeUIDx1:   elemTypeUID[1],
+		SeriesUIDx0:     seriesUID[0],
+		SeriesUIDx1:     seriesUID[1],
+		AttrUIDx0:       attrID[0],
+		AttrUIDx1:       attrID[1],
+	}
+
+	return spec, nil
+
+}
+
+func MustFormAttrSpec(attrSpecExpr string) AttrSpec {
+	spec, err := FormAttrSpec(attrSpecExpr)
+	if err != nil {
+		panic(err)
+	}
+	return spec
+}
+
+func MustFormAttrUID(attrSpecExpr string) AttrUID {
+	spec, err := FormAttrSpec(attrSpecExpr)
+	if err != nil {
+		panic(err)
+	}
+	return spec.AttrID()
+}
+
+func (spec *AttrSpec) AttrID() AttrUID {
+	return [2]uint64{
+		spec.AttrUIDx0,
+		spec.AttrUIDx1,
+	}
+}
 
 // Forms a CellID from uint64s.
 func CellIDFromU64(x0, x1 uint64) (id CellID) {
@@ -254,12 +302,11 @@ func (id *CellID) AssignFromU64(x0, x1 uint64) {
 // }
 
 func (id *CellID) String() string {
-	var buf[16]byte
+	var buf [16]byte
 	binary.BigEndian.PutUint64(buf[0:8], id[0])
 	binary.BigEndian.PutUint64(buf[8:16], id[1])
 	return bufs.Base32Encoding.EncodeToString(buf[:])
 }
-
 
 /*
 func (id *CellID) IsNil() bool {
@@ -340,8 +387,6 @@ func (tid *TxID) AppendAsBinary(io []byte) []byte {
 	return dst
 }
 */
-
-
 
 func (params *PinReqParams) URLPath() []string {
 	if params.URL == nil {

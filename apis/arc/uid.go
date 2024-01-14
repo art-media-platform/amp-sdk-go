@@ -19,6 +19,9 @@ var (
 
 
 func StringToUID(str string) UID {
+	if str == "" {
+		return NilUID
+	}
 	hash := crypto.MD5.New()
 	hash.Write([]byte(str))
 	digest := hash.Sum(nil)

@@ -40,7 +40,6 @@ type Transport interface {
 }
 
 // HostService attaches to a arc.Host as a child, extending host functionality.
-// FUTURE: interface HostService goes away, replaced by a host script that starts arc.Apps in a "sys.services" Context.
 type HostService interface {
 	task.Context
 

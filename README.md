@@ -1,4 +1,4 @@
-# AMP / Arc Media Platform
+# AMP / Ark Media Platform
 
 _A turn-key solution for creating high-fidelity, multi-platform 3D experiences_
 

@@ -46,7 +46,7 @@ generate:
 #   protoc: https://github.com/protocolbuffers/protobuf/releases
 	protoc \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
-	    --csharp_out "${ARC_UNITY_PATH}/Arc.Apps" \
+	    --csharp_out "${ARC_UNITY_PATH}/Arc.Runtime" \
 	    --proto_path=. \
 		apis/arc/arc.proto
 

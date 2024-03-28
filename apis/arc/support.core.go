@@ -10,8 +10,11 @@ import (
 	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
 )
 
+// URI form of a glyph typically followed by a media (mime) type.
+const GlyphURIPrefix = "amp:glyph/"
+
 // Describes an asset to be an image stream but not specify format / codec
-const UnspecifiedImageType = "image/*"
+var GenericImageType = "image/*"
 
 // UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
 //

@@ -190,7 +190,7 @@ message AttrSpec {
     //      "[{SeriesSpec}]{ElemType}:{AttrName}"
     //
     // This the value is used for Msg.AttrID -- it references an AttrSpec.
-    // e.g. "AssetRef", "AssetRef:promo", "[UTC16]Position:past-promo-shoots",
+    // e.g. "AmpTag", "AmpTag:promo", "[UTC16]Position:past-promo-shoots",
     uint32              DefID = 1;  
     
     // ElemType identifies this attr's element type and has a form like a subdomain:
@@ -200,7 +200,7 @@ message AttrSpec {
     // Valid chars are [A-Za-z0-9_-] in addition to '.' that separates identifiers..
     // 
     // e.g. 
-    //    "AssetRef", 
+    //    "AmpTag", 
     //    "GreetingAttr.tutorial_06.hello-world.learn.arcspace.systems", 
     uint32              ElemType = 3;
 
@@ -266,7 +266,7 @@ message AttrSet {
     //      "(Attrs[0],Attrs[1],..)" 
     //
     // e.g. "(CellHeader,ArtistTour)"
-    //      "(AssetRef:promoVideo,[UTC16]TourStop:summer-tour)"
+    //      "(AmpTag:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
     // Attrs is an ordered sequence of AttrSpecs (attr descriptors)
@@ -403,58 +403,70 @@ message Position {
 }
 
 
+enum QuadState {
+    QuadState_LatentOff  = 0x00;
+    QuadState_LatentOn   = 0x01;
+    QuadState_ActiveOff  = 0x10;
+    QuadState_ActiveOn   = 0x11;
+}
 
-enum AssetScheme {
-    AssetScheme_Unspecified     = 0;
-    
-    AssetScheme_InlineData      = 1;  // URI = "[data:]{mimetype}[[;base64],{data-encoding}]"
-    AssetScheme_FilePath        = 2;  // URI = "[file://]{native-pathname}"
-    AssetScheme_HttpURL         = 4;  // URI = "[http[s]://]{hostname}[:{port}]/{query}"
-    AssetScheme_CrateAsset      = 6;  // URI = "[crate-asset://]{crate-asset-uri}"
-    AssetScheme_ThemedAsset     = 7;  // URI = "{themed-asset-uri}" -- e.g. "application/x-directory" => a folder icon ("glyph")
-    
-    // AssetScheme_PlanetID        = 20; // URI = "{planet-id-string}"  and/or (UIDx0, UIDx1) are set 
-    // AssetScheme_CellID          = 21; // URI = "{cell-id-string}"    and/or (UIDx0, UIDx1) are set
-    // AssetScheme_AttrUID         = 22; // URI = "{attr-id-string}"    and/or (UIDx0, UIDx1) are set 
-    
-    // AssetScheme_TimeID          = 10; // URI = "{timeID-base32-string}" and/or (UIDx0, UIDx1) are set
-    // AssetScheme_TxHashID        = 11; // URI = "{txID-base32-string}" and/or (UIDx0, UIDx1) are set
 
-    //AssetScheme_GeoFixOrdered    IEEE128    = 20; // URI = "{geo-base32-string}"  and/or (UIDx0, UIDx1) are set
-    //AssetScheme_QuaternionOrderedIEEE2348    = 20; // URI = "{geo-base32-string}"  and/or (UIDx0, UIDx1) are set
+enum UrlScheme {
+    UrlScheme_Nil             = 0;  
+    UrlScheme_Data            = 1;  // "[data:]{mime-type}[[;base64],{data-encoding}]"
+    UrlScheme_Amp             = 2;  // "[amp:[//hostname/]]{cmd}[/{uri}]?{query}"
+    UrlScheme_File            = 3;  // "[file://]{hfs-pathname}"
+    UrlScheme_Http            = 4;  // "[http[s]://]{hostname}[:{port}]/{query}"
     
 }
 
 
-enum AssetTags {
-    AssetTags_None                  = 0; 
 
-    //AssetTags_IsPrimaryGlyph        = 0x0001; // If set, this is a primary glyph for the cell
+message AmpTag {
+    QuadState           State           = 3;
+
+    string              ContentType     = 5;  // describes URI's content type -- e.g. "image/*" -- 
     
-    AssetTags_NeedsNetwork          = 0x0100;
-    AssetTags_NoCache               = 0x0200; // If set, asset should not be cached
-}
-
-
-message AssetRef {
-    AssetScheme         Scheme          = 1;  // How URI is interpreted
-    AssetTags           Tags            = 2;
-    string              CustomTags      = 3;  // Semicolon delimited list of custom tags
-
-    string              MediaType       = 5;  // MIME type of asset -- "{content-type}/[{sub-type}]"
     string              URI             = 7;  // URI of asset
     
-    fixed64             UIDx0           = 10; // UID of asset if applicable
-    fixed64             UIDx1           = 11; // UID of asset if applicable
+    fixed64             UIDx0           = 16; // UID of asset (LSM[0], LSM[1], LSM[2])
+    fixed64             UIDx1           = 17;
+    fixed64             UIDx2           = 18;
     
+    float               Rx0             = 20; // radius along x0
+    float               Rx1             = 21; // radius along x1 
+    float               Rx2             = 22; // radius along x2
+    
+    int32               PixelWidth      = 28; // Width in pixels 
+    int32               PixelHeight     = 29; // Height in pixels
+    
+    float               MeterScale      = 30; // Scale in meters (if applicable)
+    
+    repeated AmpTag     SubTags          = 2;
 
-    int32               PixelWidth      = 15; // Width in pixels 
-    int32               PixelHeight     = 16; // Height in pixels
-    
-    float               MeterWidth      = 32;
-    float               MeterHeight     = 33;
-    float               MeterDepth      = 34;
 }
+
+
+message SheetInfo {
+    // Sheet.Series.AVPlaylist
+    // Sheet.Series.AttrTuple           -- expects series with ElemType: .AttrSet
+    // Sheet.Series.Spreadsheet         -- expects series with Addr.desc: .xy, ElemType.  ??
+    // Sheet.Series.Surface.Geo         -- expects series with Addr.desc: .wsg84
+    // Sheet.Series.Surface.Grid.Ortho  -- expects series with Addr.desc: .xy
+    // Sheet.Series.Surface.Grid.Hex    -- expects series with Addr.desc: .qr
+    // Sheet.WebBrowser                 -- expects series whose elements are URLs
+    string              AppSheetURI = 1;  
+
+    // Bound attr series (e.g. a spreadsheet's columns)
+    repeated AttrSpec   BoundSeries = 3;      
+}
+
+message SheetGroup {
+
+    repeated SheetInfo  SheetCatalog = 1;
+    
+}
+
 
 
 /*
@@ -463,11 +475,10 @@ message Content {
 
     // uint64              ByteSz = 2;
     // int64               BlobID = 3;
-    // uint64              TSI             = 2;
+    // uint64              SI             = 2;
     
     bytes               ContentData     = 3;
     string              ContentType     = 4; // MIME type (or '/' separated type pathname)
-    int64               ContentTypeID   = 5; // Symbol ID for ContentType
     
     int64               LinksCellID     = 10; // CellSetID with elements AttrSchemaID_CellBase (or nil)
     
@@ -509,18 +520,6 @@ message CryptoKey {
 }
 
 
-// Glyphs are 2D or 3D visual graphics placed into a parent unit volume.
-message GlyphSet {
-    AssetRef            Thumbnail       = 2;
-    AssetRef            Q720            = 4;
-    AssetRef            Q1024           = 6;
-    
-    fixed64             UIDx0           = 10; // any UID if applicable
-    fixed64             UIDx1           = 11; // any UID if applicable
-    
-    repeated AssetRef   Ex              = 20;
-}
-
 // CellHeader is a standard attribute for a cell that is presented .
 // An arc.App fills in what is appropriate and leaves the rest blank.
 message CellHeader {
@@ -531,14 +530,14 @@ message CellHeader {
     string              About        = 4; // Additional information about this item
    
     // A Glyph is a representative image or 3D graphic similar to an icon in function.
-    repeated AssetRef   Glyphs       = 6; 
+    repeated AmpTag     Glyphs       = 6; 
     
     int64               Created      = 8; // Unix UTC16 timestamp (secs x 2^16)
     int64               Modified     = 9; // Unix UTC16 timestamp (secs x 2^16)        
     
 
-   // If set, this (typically http:// or arc://) to reproduce this cell (with given archost session)  
-    string              PinAsURL     = 20;  
+   // If set, this (typically https:// or amp://) to reproduce this cell (with given archost session)  
+    string              CellURL      = 20;  
     
     // // If set, often a URI that causes UI (re)action.
     // string              ActionURI    = 31;  
@@ -546,7 +545,7 @@ message CellHeader {
     // Extensible and persistent link, can be any URL -- typically passed to another application or shared with a another human.
     // E.g. if 'arc://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
     // But also UI button or settings URI.
-    AssetRef            ExternalLink = 22;
+    AmpTag              ExternalLink = 22;
     
 
 }

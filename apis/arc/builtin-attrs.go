@@ -42,7 +42,7 @@ func RegisterBuiltInTypes(reg Registry) error {
 
 		&PinRequest{},
 		&CellHeader{},
-		&AmpTag{},
+		&AssetTag{},
 		&AuthToken{},
 		&Position{},
 		//&TRS{},
@@ -76,16 +76,16 @@ func ErrorToValue(v error) ElemVal {
 	return arcErr
 }
 
-func (v *AmpTag) MarshalToBuf(dst *[]byte) error {
+func (v *AssetTag) MarshalToBuf(dst *[]byte) error {
 	return MarshalPbValueToBuf(v, dst)
 }
 
-func (v *AmpTag) TypeName() string {
-	return "AmpTag"
+func (v *AssetTag) TypeName() string {
+	return "AssetTag"
 }
 
-func (v *AmpTag) New() ElemVal {
-	return &AmpTag{}
+func (v *AssetTag) New() ElemVal {
+	return &AssetTag{}
 }
 
 func (v *Err) MarshalToBuf(dst *[]byte) error {

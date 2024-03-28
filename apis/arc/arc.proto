@@ -190,7 +190,7 @@ message AttrSpec {
     //      "[{SeriesSpec}]{ElemType}:{AttrName}"
     //
     // This the value is used for Msg.AttrID -- it references an AttrSpec.
-    // e.g. "AmpTag", "AmpTag:promo", "[UTC16]Position:past-promo-shoots",
+    // e.g. "AssetTag", "AssetTag:promo", "[UTC16]Position:past-promo-shoots",
     uint32              DefID = 1;  
     
     // ElemType identifies this attr's element type and has a form like a subdomain:
@@ -200,7 +200,7 @@ message AttrSpec {
     // Valid chars are [A-Za-z0-9_-] in addition to '.' that separates identifiers..
     // 
     // e.g. 
-    //    "AmpTag", 
+    //    "AssetTag", 
     //    "GreetingAttr.tutorial_06.hello-world.learn.arcspace.systems", 
     uint32              ElemType = 3;
 
@@ -266,7 +266,7 @@ message AttrSet {
     //      "(Attrs[0],Attrs[1],..)" 
     //
     // e.g. "(CellHeader,ArtistTour)"
-    //      "(AmpTag:promoVideo,[UTC16]TourStop:summer-tour)"
+    //      "(AssetTag:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
     // Attrs is an ordered sequence of AttrSpecs (attr descriptors)
@@ -422,7 +422,7 @@ enum UrlScheme {
 
 
 
-message AmpTag {
+message AssetTag {
     QuadState           State           = 3;
 
     string              ContentType     = 5;  // describes URI's content type -- e.g. "image/*" -- 
@@ -442,7 +442,7 @@ message AmpTag {
     
     float               MeterScale      = 30; // Scale in meters (if applicable)
     
-    repeated AmpTag     SubTags          = 2;
+    repeated AssetTag   SubTags          = 2;
 
 }
 
@@ -530,7 +530,7 @@ message CellHeader {
     string              About        = 4; // Additional information about this item
    
     // A Glyph is a representative image or 3D graphic similar to an icon in function.
-    repeated AmpTag     Glyphs       = 6; 
+    repeated AssetTag   Glyphs       = 6; 
     
     int64               Created      = 8; // Unix UTC16 timestamp (secs x 2^16)
     int64               Modified     = 9; // Unix UTC16 timestamp (secs x 2^16)        
@@ -545,7 +545,7 @@ message CellHeader {
     // Extensible and persistent link, can be any URL -- typically passed to another application or shared with a another human.
     // E.g. if 'arc://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
     // But also UI button or settings URI.
-    AmpTag              ExternalLink = 22;
+    AssetTag            ExternalLink = 22;
     
 
 }

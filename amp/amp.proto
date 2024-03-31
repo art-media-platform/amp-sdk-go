@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-// package arc is an implementation-independent API for a pluggable client-server UI/UX system,
+// package amp is an implementation-independent API for a pluggable client-server UI/UX system,
 // featuring support and integration for files, media, and communication.
-package arc;
+package amp;
 
-// Tells protoc that a .proto file importing amp.proto what package import to use for Go.
-option go_package = "github.com/git-amp/amp-sdk-go/apis/arc";
+// Tells protoc that a .proto file importing amp.proto what package import to use within Go.
+option go_package = "github.com/git-amp/amp-sdk-go/amp";
 
 // import "github.com/gogo/protobuf/gogoproto/gogo.proto";  // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 
@@ -147,7 +147,7 @@ message Login {
     string              UserUID         = 1;
     
     // HostAddr is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
-    // Archost uses this to as the host name when serving URLs for the client to consume.
+    // archost uses this to as the host name when serving URLs for the client to consume.
     string              HostAddr        = 2;
     
     string              DeviceLabel     = 8;
@@ -329,7 +329,7 @@ message PinRequest {
     uint64              ParentReqID = 1;
     
     // URL specifying the cell to be pinned and whose child cells are to be pushed.
-    // Typically: [[arc://]arc-app-uri/]cell-uri..
+    // Typically: [[amp://]amp-app-uri/]cell-uri..
     string              PinURL = 2;
     
     // Pins a cell specified by its 16 byte ID and is typically a child cell of a pinned cell implied by ParentReqID.

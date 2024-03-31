@@ -1,4 +1,4 @@
-package arc
+package amp
 
 func RegisterConstSymbols(reg SessionRegistry) {
 	consts := []struct {

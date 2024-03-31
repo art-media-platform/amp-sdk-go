@@ -1,4 +1,4 @@
-package arc
+package amp
 
 import "github.com/google/uuid"
 

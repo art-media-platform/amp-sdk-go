@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/symbol"
+	"github.com/git-amp/amp-sdk-go/stdlib/symbol"
 )
 
 const kTotalEntries = 1001447

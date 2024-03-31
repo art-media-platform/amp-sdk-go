@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/log"
+	"github.com/git-amp/amp-sdk-go/stdlib/log"
 )
 
 // Starts a new Context with no parent Context.

@@ -3,10 +3,10 @@ package arc
 import (
 	"net/url"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/task"
+	"github.com/git-amp/amp-sdk-go/stdlib/task"
 )
 
-// App is how an app module is registered with an arc.Host so it can be invoked.
+// App is how an app module is registered with an amp.Host so it can be invoked.
 //
 // An App is invoked by a client or other app via the app's UID or URI.
 type App struct {
@@ -53,7 +53,7 @@ type AppContext interface {
 	PutAppCellAttr(attrSpec string, src ElemVal) error
 }
 
-// AppInstance is implemented by an App and invoked by arc.Host responding to a client pin request.
+// AppInstance is implemented by an App and invoked by amp.Host responding to a client pin request.
 type AppInstance interface {
 	AppContext // The arc runtime's app context support exposed
 
@@ -83,7 +83,7 @@ type Cell interface {
 type PinnedCell interface {
 	Cell
 
-	// Apps spawn a PinnedCell as a child task.Context of arc.AppContext.Context or as a child of another PinnedCell.
+	// Apps spawn a PinnedCell as a child task.Context of amp.AppContext.Context or as a child of another PinnedCell.
 	// This means an AppContext contains all its PinnedCells and thus Close() will close all PinnedCells.
 	Context() task.Context
 
@@ -154,3 +154,20 @@ type AttrSet struct {
 	NativeDefID uint32    // READ-ONLY
 	Attrs       []AttrDef // READ-ONLY
 }
+
+/*
+type UID3 [3]uint64 
+
+type AttrSeriesEntry struct {
+    SeriesID     UID3
+    ElemTypeID   UID3
+	AttrSpec     AttrSpec
+    
+    
+    CellID       UID3
+    AttrID       UID3
+    SI           UID3
+    Height       int64 
+    Hash         UID3  // HAshes from the previous revision 
+}
+*/

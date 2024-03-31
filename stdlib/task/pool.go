@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/utils"
+	"github.com/git-amp/amp-sdk-go/stdlib/utils"
 )
 
 type Pool struct {

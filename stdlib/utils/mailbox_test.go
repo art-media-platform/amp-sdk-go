@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/utils"
+	"github.com/git-amp/amp-sdk-go/stdlib/utils"
 )
 
 func TestMailbox(t *testing.T) {

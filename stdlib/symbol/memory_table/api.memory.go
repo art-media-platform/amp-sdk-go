@@ -1,6 +1,6 @@
 package memory_table
 
-import "github.com/arcspace/go-arc-sdk/stdlib/symbol"
+import "github.com/git-amp/amp-sdk-go/stdlib/symbol"
 
 // CreateTable creates a new memory-based symbol.Table intended to handle extreme loading.
 //

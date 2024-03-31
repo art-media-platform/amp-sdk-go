@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/generics"
+	"github.com/git-amp/amp-sdk-go/stdlib/generics"
 )
 
 // ID is a persistent integer value associated with an immutable string or buffer value.

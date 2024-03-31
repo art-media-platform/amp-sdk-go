@@ -3,8 +3,8 @@ package arc
 import (
 	"net/url"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/symbol"
-	"github.com/arcspace/go-arc-sdk/stdlib/task"
+	"github.com/git-amp/amp-sdk-go/stdlib/symbol"
+	"github.com/git-amp/amp-sdk-go/stdlib/task"
 )
 
 // Host allows app and transport services to be attached.
@@ -12,8 +12,8 @@ import (
 type Host interface {
 	task.Context
 
-	// Offers Go runtime and package level access to this Host's primary symbol and arc.App registry.
-	// The arc.Registry interface bakes security and efficiently and tries to serve as effective package manager.
+	// Offers Go runtime and package level access to this Host's primary symbol and amp.App registry.
+	// The amp.Registry interface bakes security and efficiently and tries to serve as effective package manager.
 	Registry() Registry
 
 	// StartNewSession creates a new HostSession and binds its Msg transport to a stream.
@@ -39,12 +39,12 @@ type Transport interface {
 	RecvMsg() (*Msg, error)
 }
 
-// HostService attaches to a arc.Host as a child, extending host functionality.
+// HostService attaches to a amp.Host as a child, extending host functionality.
 type HostService interface {
 	task.Context
 
 	// StartService attaches a child task to a Host and starts this HostService.
-	// This service may retain the arc.Host instance so that it can make calls to StartNewSession().
+	// This service may retain the amp.Host instance so that it can make calls to StartNewSession().
 	StartService(on Host) error
 
 	// GracefulStop initiates a polite stop of this extension and blocks until it's in a "soft" closed state,
@@ -139,7 +139,7 @@ func NewRegistry() Registry {
 
 // PinContext wraps a client request to receive a cell's state / updates.
 type PinContext interface {
-	task.Context // Started as a CHILD of the arc.PinnedCell returned by AppInstance.PinCell()
+	task.Context // Started as a CHILD of the amp.PinnedCell returned by AppInstance.PinCell()
 
 	PinReq // Originating request info
 

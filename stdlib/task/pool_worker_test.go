@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/task"
+	"github.com/git-amp/amp-sdk-go/stdlib/task"
 	"github.com/stretchr/testify/require"
 )
 

@@ -4,8 +4,8 @@ syntax = "proto3";
 // featuring support and integration for files, media, and communication.
 package arc;
 
-// Tells protoc that a .proto file importing arc.proto what package import to use for Go.
-option go_package = "github.com/arcspace/go-arc-sdk/apis/arc";
+// Tells protoc that a .proto file importing amp.proto what package import to use for Go.
+option go_package = "github.com/git-amp/amp-sdk-go/apis/arc";
 
 // import "github.com/gogo/protobuf/gogoproto/gogo.proto";  // https://stackoverflow.com/questions/43026449/gogo-proto-file-not-found
 
@@ -31,7 +31,7 @@ enum Const {
     // The encoding used is the geo-hash base32 alphabet, so that even ascii ordinal string comparisons will correctly sort encoded TIDs by time.
     Const_TIDStringLen = 52;
 
-    // DefaultServicePort  is the default TCP port used to expose arc.Host service.
+    // DefaultServicePort  is the default TCP port used to expose amp.Host service.
     Const_DefaultServicePort = 5192;
 
 }
@@ -458,7 +458,10 @@ message SheetInfo {
     string              AppSheetURI = 1;  
 
     // Bound attr series (e.g. a spreadsheet's columns)
-    repeated AttrSpec   BoundSeries = 3;      
+    repeated AttrSpec   BoundSeries = 3;     
+    
+    // In the name of the delightful and ever-optimistic future, we have a series of asset tags. 
+    //AssetTag            Self        = 5;
 }
 
 message SheetGroup {
@@ -521,7 +524,7 @@ message CryptoKey {
 
 
 // CellHeader is a standard attribute for a cell that is presented .
-// An arc.App fills in what is appropriate and leaves the rest blank.
+// An amp.App fills in what is appropriate and leaves the rest blank.
 message CellHeader {
         
     

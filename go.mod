@@ -1,4 +1,4 @@
-module github.com/arcspace/go-arc-sdk
+module github.com/git-amp/amp-sdk-go
 
 go 1.18
 

@@ -1,7 +1,7 @@
 package task
 
 import (
-	"github.com/arcspace/go-arc-sdk/stdlib/utils"
+	"github.com/git-amp/amp-sdk-go/stdlib/utils"
 )
 
 type PeriodicTask struct {

@@ -12,7 +12,7 @@ func newRegistry() Registry {
 	}
 }
 
-// Implements arc.Registry
+// Implements amp.Registry
 type registry struct {
 	mu           sync.RWMutex
 	appsByUID    map[UID]*App
@@ -37,7 +37,7 @@ func (reg *registry) ExportTo(dst SessionRegistry) error {
 	return nil
 }
 
-// Implements arc.Registry
+// Implements amp.Registry
 func (reg *registry) RegisterApp(app *App) error {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
@@ -69,7 +69,7 @@ func (reg *registry) RegisterApp(app *App) error {
 	return nil
 }
 
-// Implements arc.Registry
+// Implements amp.Registry
 func (reg *registry) GetAppByUID(appUID UID) (*App, error) {
 	reg.mu.RLock()
 	defer reg.mu.RUnlock()
@@ -82,7 +82,7 @@ func (reg *registry) GetAppByUID(appUID UID) (*App, error) {
 	}
 }
 
-// Implements arc.Registry
+// Implements amp.Registry
 func (reg *registry) GetAppForInvocation(invocation string) (*App, error) {
 	if invocation == "" {
 		return nil, ErrCode_AppNotFound.Errorf("missing app invocation")

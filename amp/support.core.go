@@ -7,7 +7,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/arcspace/go-arc-sdk/stdlib/bufs"
+	"github.com/git-amp/amp-sdk-go/stdlib/bufs"
 )
 
 // URI form of a glyph typically followed by a media (mime) type.

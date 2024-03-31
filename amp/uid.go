@@ -12,7 +12,7 @@ var (
 	UserHomePlanet = FormUID(0, 0x04)
 )
 
-// Forms an arc.UID explicitly from two uint64 values.
+// Forms an amp.UID explicitly from two uint64 values.
 func FormUID(n0, n1 uint64) UID {
 	uid := UID{}
 	shift := uint(56)

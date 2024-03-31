@@ -1715,7 +1715,7 @@ type CellHeader struct {
 	// If set, this (typically https:// or amp://) to reproduce this cell (with given archost session)
 	CellURL string `protobuf:"bytes,20,opt,name=CellURL,proto3" json:"CellURL,omitempty"`
 	// Extensible and persistent link, can be any URL -- typically passed to another application or shared with a another human.
-	// E.g. if 'arc://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
+	// E.g. if 'amp://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
 	// But also UI button or settings URI.
 	ExternalLink *AssetTag `protobuf:"bytes,22,opt,name=ExternalLink,proto3" json:"ExternalLink,omitempty"`
 }

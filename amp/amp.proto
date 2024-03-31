@@ -546,7 +546,7 @@ message CellHeader {
     // string              ActionURI    = 31;  
     
     // Extensible and persistent link, can be any URL -- typically passed to another application or shared with a another human.
-    // E.g. if 'arc://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
+    // E.g. if 'amp://...', this denotes a pinnable URI -- but could be any pinnable URL: ipfs://, https://, ...
     // But also UI button or settings URI.
     AssetTag            ExternalLink = 22;
     

@@ -46,13 +46,13 @@ generate:
 #   protoc: https://github.com/protocolbuffers/protobuf/releases
 	protoc \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
-	    --csharp_out "${ARC_UNITY_PATH}/Arc.Runtime" \
+	    --csharp_out "${ARC_UNITY_PATH}/amp.runtime/" \
 	    --proto_path=. \
 		apis/arc/arc.proto
 
 	protoc \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
-	    --csharp_out "${ARC_UNITY_PATH}/Arc.Crates" \
+	    --csharp_out "${ARC_UNITY_PATH}/amp.runtime.crates/" \
 	    --proto_path=. \
 		apis/crates/crates.proto
 

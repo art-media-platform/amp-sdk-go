@@ -3,8 +3,8 @@ package amp
 import (
 	"net/url"
 
-	"github.com/git-amp/amp-sdk-go/stdlib/symbol"
-	"github.com/git-amp/amp-sdk-go/stdlib/task"
+	"github.com/amp-space/amp-sdk-go/stdlib/symbol"
+	"github.com/amp-space/amp-sdk-go/stdlib/task"
 )
 
 // Host allows app and transport services to be attached.

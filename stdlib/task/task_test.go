@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/git-amp/amp-sdk-go/stdlib/task"
-	"github.com/git-amp/amp-sdk-go/stdlib/testutils"
+	"github.com/amp-space/amp-sdk-go/stdlib/task"
+	"github.com/amp-space/amp-sdk-go/stdlib/testutils"
 )
 
 func spawnN(p task.Context, numGoroutines int, delay time.Duration) {

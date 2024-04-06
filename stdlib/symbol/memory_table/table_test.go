@@ -3,9 +3,9 @@ package memory_table_test
 import (
 	"testing"
 
-	"github.com/git-amp/amp-sdk-go/stdlib/symbol"
-	"github.com/git-amp/amp-sdk-go/stdlib/symbol/memory_table"
-	"github.com/git-amp/amp-sdk-go/stdlib/symbol/tests"
+	"github.com/amp-space/amp-sdk-go/stdlib/symbol"
+	"github.com/amp-space/amp-sdk-go/stdlib/symbol/memory_table"
+	"github.com/amp-space/amp-sdk-go/stdlib/symbol/tests"
 )
 
 var gMemTable symbol.Table

@@ -3,7 +3,7 @@ package amp
 import (
 	"net/url"
 
-	"github.com/git-amp/amp-sdk-go/stdlib/task"
+	"github.com/amp-space/amp-sdk-go/stdlib/task"
 )
 
 // App is how an app module is registered with an amp.Host so it can be invoked.

@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/git-amp/amp-sdk-go/stdlib/log"
+	"github.com/amp-space/amp-sdk-go/stdlib/log"
 )
 
 // ctx implements Context

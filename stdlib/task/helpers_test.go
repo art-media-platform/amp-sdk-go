@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/git-amp/amp-sdk-go/stdlib/task"
-	"github.com/git-amp/amp-sdk-go/stdlib/testutils"
+	"github.com/amp-space/amp-sdk-go/stdlib/task"
+	"github.com/amp-space/amp-sdk-go/stdlib/testutils"
 )
 
 func makeItems() (item [5]*workItem) {

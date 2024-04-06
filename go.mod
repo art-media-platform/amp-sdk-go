@@ -1,4 +1,4 @@
-module github.com/git-amp/amp-sdk-go
+module github.com/amp-space/amp-sdk-go
 
 go 1.18
 

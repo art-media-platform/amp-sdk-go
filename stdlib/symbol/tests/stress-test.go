@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/amp-space/amp-sdk-go/stdlib/symbol"
+	"github.com/amp-3d/amp-sdk-go/stdlib/symbol"
 )
 
 const kTotalEntries = 1001447

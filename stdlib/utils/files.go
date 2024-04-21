@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amp-space/amp-sdk-go/stdlib/bufs"
-	"github.com/amp-space/amp-sdk-go/stdlib/errors"
+	"github.com/amp-3d/amp-sdk-go/stdlib/bufs"
+	"github.com/amp-3d/amp-sdk-go/stdlib/errors"
 )
 
 var (

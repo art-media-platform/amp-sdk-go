@@ -13,11 +13,11 @@ This is interesting to:
   
 This repo is lightweight and dependency-free so that it can be added to your project without consequence.  At a high level, the development workflow is:
 
-  1. Import [amp-sdk-go](https://github.com/amp-space/amp-sdk-go) in your Go project and expose your functionally as an `amp.App`.
-  2. Clone [amp-host-go](https://github.com/amp-space/amp-host-go) and embed and expose your Go packages within it.
+  1. Import [amp-sdk-go](https://github.com/amp-3d/amp-sdk-go) in your Go project and expose your functionally as an `amp.App`.
+  2. Clone [amp-host-go](https://github.com/amp-3d/amp-host-go) and embed and expose your Go packages within it.
   3. `make build libarchost` (with your packages embedded within it).
   4. Rapidly build a native Unity app using one of the AMP "app" templates, embedding `libarchost` within it.
-  5. At runtime, the Unity client any root `amp.Cell` of your app is "pinned" via `amp://{yourAppUID}/{yourSchema...}` while the AMP UX runtime manages the user's perceptual experience of all actively pinned URIs.
+  5. At runtime, the Unity client any root `amp.Cell` of your app is "pinned" via `amp://{yourAppTagID}/{yourSchema...}` while the AMP UX runtime manages the user's perceptual experience of all actively pinned URIs.
   
 ## Points of Interest
 
@@ -25,12 +25,12 @@ In suggested order of review for newcomers:
 
 |                          |                                                                   |
 |------------------------- | ------------------------------------------------------------------|
-| [api.task.go](https://github.com/amp-space/amp-sdk-go/blob/main/stdlib/task/api.task.go)        | A wrapper for goroutines inspired by a conventional parent-child process model and is used throughout this SDK.              |
-| [api.app.go](https://github.com/amp-space/amp-sdk-go/blob/main/amp/api.app.go)    | Interfaces for developers looking to implement an `amp.App`, defining how state is requested, pushed, and merged.                |
-| [api.host.go](https://github.com/amp-space/amp-sdk-go/blob/main/amp/api.host.go) | Defines `amp.Host` and its related types, what [`amp-host-go`](https://github.com/amp-space/amp-host-go) implements, and the abstraction that an `amp.App` plugs into.             |
+| [api.task.go](https://github.com/amp-3d/amp-sdk-go/blob/main/stdlib/task/api.task.go)        | A wrapper for goroutines inspired by a conventional parent-child process model and is used throughout this SDK.              |
+| [api.app.go](https://github.com/amp-3d/amp-sdk-go/blob/main/amp/api.app.go)    | Interfaces for developers looking to implement an `amp.App`, defining how state is requested, pushed, and merged.                |
+| [api.host.go](https://github.com/amp-3d/amp-sdk-go/blob/main/amp/api.host.go) | Defines `amp.Host` and its related types, what [`amp-host-go`](https://github.com/amp-3d/amp-host-go) implements, and the abstraction that an `amp.App` plugs into.             |
 
 ## What is `amp.App`?
 
-[`amp.App`](https://github.com/amp-space/amp-sdk-go/blob/main/amp/api.app.go) is the plugin interface for AMP.  
+[`amp.App`](https://github.com/amp-3d/amp-sdk-go/blob/main/amp/api.app.go) is the plugin interface for AMP.  
 
 Like a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state.   The stock AMP runtime offers essential apps, such as file system access, and user account services.  The less obvious power of AMP its extensibility. This is done by implementing the `amp.App` interface and registering it with the Go-based AMP runtime.  The AMP runtime then manages the user's perceptual experience of all actively pinned cells on an AMP-compatible client.

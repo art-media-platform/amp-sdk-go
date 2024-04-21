@@ -82,7 +82,7 @@ type HostSession interface {
 // Registry is where apps and types are registered -- concurrency safe.
 type Registry interface {
 
-	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid AttrSpec type expression).
+	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid TagSpec type expression).
 	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
 	// if registerAs == "", then the prototype.ElemTypeName() is used.
 	RegisterPrototype(registerAs string, prototype ElemVal) (AttrID, error)

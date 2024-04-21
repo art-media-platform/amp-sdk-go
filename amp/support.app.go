@@ -4,7 +4,7 @@ import (
 	"net/url"
 )
 
-// AttrSpecs used universally
+// TagSpecs used universally
 var (
 	CellHeaderID = MustFormAttrID("CellHeader")
 	CellLinkID   = MustFormAttrID("[Link.UID]CellHeader")

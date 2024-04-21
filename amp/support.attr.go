@@ -8,7 +8,7 @@ import (
 	"github.com/alecthomas/participle/v2/lexer"
 )
 
-type AttrSpecExpr struct {
+type TagSpecExpr struct {
 	PinLevel   int    `( @PosInt ":" )?`
 	SeriesSpec string `( "[" (@Ident)? "]" )?`
 	ElemType   string ` @Ident `
@@ -16,7 +16,12 @@ type AttrSpecExpr struct {
 	AsCanonic  string
 }
 
-func (attrID AttrID) PinLevel() int {
+type HaloTag struct {
+	
+}
+
+
+func (attrID AttrID) PinLevel() int {   // TODO: remove PinLevel!?  Just stuff it in the HaloTag spec and MD5 that.
 	return int(attrID[0] >> 61)
 }
 
@@ -44,7 +49,7 @@ func (attrID *AttrID) IsNil() bool {
 	return attrID[0] == 0 && attrID[1] == 0
 }
 
-func (spec *AttrSpec) AttrID() AttrID {
+func (spec *TagSpec) AttrID() AttrID {
 	return [2]uint64{
 		spec.AttrIDx0,
 		spec.AttrIDx1,
@@ -61,14 +66,14 @@ var attrLexer = lexer.MustSimple([]lexer.SimpleRule{
 	//{Name: "Punct", Pattern: `[[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`},
 })
 
-var attrSpecParser = participle.MustBuild[AttrSpecExpr](
+var attrSpecParser = participle.MustBuild[TagSpecExpr](
 	participle.Lexer(attrLexer),
 	participle.Elide("Whitespace"),
 	//, participle.UseLookahead(2))
 )
 
-func ParseAttrDef(attrDefExpr string) (expr *AttrSpecExpr, err error) {
-	expr, err = attrSpecParser.ParseString("", attrDefExpr)
+func ParseAttrDef(tagDefExpr string) (expr *TagSpecExpr, err error) {
+	expr, err = attrSpecParser.ParseString("", tagDefExpr)
 	if err != nil {
 		return
 	}
@@ -88,10 +93,10 @@ func ParseAttrDef(attrDefExpr string) (expr *AttrSpecExpr, err error) {
 	return
 }
 
-func FormAttrSpec(attrSpecExpr string) (AttrSpec, error) {
-	expr, err := ParseAttrDef(attrSpecExpr)
+func FormTagSpec(tagSpecExpr string) (TagSpec, error) {
+	expr, err := ParseAttrDef(tagSpecExpr)
 	if err != nil {
-		return AttrSpec{}, err
+		return TagSpec{}, err
 	}
 
 	elemTypeID := FormBaseAttrID(expr.ElemType)
@@ -103,11 +108,11 @@ func FormAttrSpec(attrSpecExpr string) (AttrSpec, error) {
 
 	if expr.PinLevel == 0 && expr.SeriesSpec == "" {
 		if elemTypeID != attrID {
-			panic("FormAttrSpec: elemType should match attrID")
+			panic("FormTagSpec: elemType should match attrID")
 		}
 	}
 
-	spec := AttrSpec{
+	spec := TagSpec{
 		AsCanonic:      expr.AsCanonic,
 		AttrIDx0:       attrID[0],
 		AttrIDx1:       attrID[1],
@@ -120,16 +125,16 @@ func FormAttrSpec(attrSpecExpr string) (AttrSpec, error) {
 	return spec, nil
 }
 
-func MustFormAttrID(attrSpecExpr string) AttrID {
-	spec, err := FormAttrSpec(attrSpecExpr)
+func MustFormAttrID(tagSpecExpr string) AttrID {
+	spec, err := FormTagSpec(tagSpecExpr)
 	if err != nil {
 		panic(err)
 	}
 	return spec.AttrID()
 }
 
-func FormAttrID(attrSpecExpr string) (AttrID, error) {
-	spec, err := FormAttrSpec(attrSpecExpr)
+func FormAttrID(tagSpecExpr string) (AttrID, error) {
+	spec, err := FormTagSpec(tagSpecExpr)
 	if err != nil {
 		return AttrID{}, err
 	}

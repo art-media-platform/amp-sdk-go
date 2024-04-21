@@ -37,8 +37,8 @@ func (reg *registry) RegisterPrototype(registerAs string, prototype ElemVal) (At
 	return attrID, err
 }
 
-func (reg *registry) RegisterAttr(attrSpecExpr string, prototype ElemVal) (AttrID, error) {
-	spec, err := FormAttrSpec(attrSpecExpr)
+func (reg *registry) RegisterAttr(tagSpecExpr string, prototype ElemVal) (AttrID, error) {
+	spec, err := FormTagSpec(tagSpecExpr)
 	if err != nil {
 		return AttrID{}, err
 	}
@@ -47,7 +47,7 @@ func (reg *registry) RegisterAttr(attrSpecExpr string, prototype ElemVal) (AttrI
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 	reg.attrDefs[attrID] = AttrDef{
-		AttrSpec:  spec,
+		TagSpec:   spec,
 		Prototype: prototype,
 	}
 	return attrID, nil
@@ -152,38 +152,24 @@ func (reg *registry) NewAttrElem(attrID AttrID) (ElemVal, error) {
 
 func (reg *registry) RegisterDefs(defs *RegisterDefs) error {
 
-	//
-	//
-	// AttrSpecs
-	for _, attrSpec := range defs.Attrs {
+	for _, tagSpec := range defs.TagSpecs {
 		def := AttrDef{
-			AttrSpec: *attrSpec,
+			TagSpec: *tagSpec,
 		}
 		reg.attrDefs[def.AttrID()] = def
 	}
-
-	//
-	//
-	// CellSpecs
-	// for _, cellSpec := range defs.Cells {
-	// 	def := CellDef{
-	// 		ClientDefID: cellSpec.DefID,
-	// 		NativeDefID: reg.clientToNativeID[cellSpec.DefID],
-	// 	}
-	// 	reg.cellDefs[def.NativeDefID] = def
-	// }
 
 	return nil
 }
 
 /*
-func (reg *registry) ResolveAttrSpec(attrSpec string) (def AttrSpec, err error) {
+func (reg *registry) ResolveTagSpec(attrSpec string) (def TagSpec, err error) {
 	expr, err := app_attr_parser.ParseAttrDef(attrSpec)
 	if err != nil {
-		return AttrSpec{}, err
+		return TagSpec{}, err
 	}
 
-	spec := AttrSpec{
+	spec := TagSpec{
 		DefID:           reg.resolveNative(attrSpec),
 		AttrName:        reg.resolveNative(expr.AttrName),
 		ElemType:        reg.resolveNative(expr.ElemType),
@@ -196,7 +182,7 @@ func (reg *registry) ResolveAttrSpec(attrSpec string) (def AttrSpec, err error) 
 		prev, exists := reg.attrDefs[spec.DefID]
 		if exists {
 			if prev.Native != spec {
-				err = ErrCode_BadSchema.Errorf("native AttrSpec %v already registered with different fields ", spec.DefID)
+				err = ErrCode_BadSchema.Errorf("native TagSpec %v already registered with different fields ", spec.DefID)
 			}
 		} else {
 			// If the client also registers the this attr spec later, the client portion will be updated.
@@ -205,7 +191,7 @@ func (reg *registry) ResolveAttrSpec(attrSpec string) (def AttrSpec, err error) 
 			}
 		}
 	} else {
-		clientSpec := AttrSpec{
+		clientSpec := TagSpec{
 			DefID:           reg.nativeToClientID[spec.DefID],
 			AttrName:        reg.nativeToClientID[spec.AttrName],
 			ElemType:        reg.nativeToClientID[spec.ElemType],
@@ -215,11 +201,11 @@ func (reg *registry) ResolveAttrSpec(attrSpec string) (def AttrSpec, err error) 
 
 		switch {
 		case clientSpec.AttrName == 0 && spec.AttrName != 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve AttrName %q for AttrSpec %q", expr.AttrName, attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve AttrName %q for TagSpec %q", expr.AttrName, attrSpec)
 		case clientSpec.ElemType == 0 && spec.ElemType != 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve ElemType %q for AttrSpec %q", expr.ElemType, attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve ElemType %q for TagSpec %q", expr.ElemType, attrSpec)
 		case clientSpec.SeriesSpec == 0 && spec.SeriesSpec != 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve SeriesSpec %q for AttrSpec %q", expr.SeriesSpec, attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve SeriesSpec %q for TagSpec %q", expr.SeriesSpec, attrSpec)
 		case clientSpec.DefID == 0:
 			err = ErrCode_BadSchema.Errorf("failed to resolve %q", attrSpec)
 		}
@@ -269,7 +255,7 @@ func (reg *registry) resolveSymbol(sym *Symbol, autoIssue bool) error {
 
 
 func (reg *registry) FormAttr(attrName string, val ElemVal) (AttrElem, error) {
-	spec := AttrSpec{
+	spec := TagSpec{
 		AttrName: attrName,
 		ElemType: val.TypeName(),
 	}
@@ -298,7 +284,7 @@ func (reg *registry) NewAttrForID(attrID uint32) (AttrElem, error) {
 	}, nil
 }
 
-func (reg *registry) ResolveAttr(spec *AttrSpec, autoIssue bool) error {
+func (reg *registry) ResolveAttr(spec *TagSpec, autoIssue bool) error {
 	var typedName string
 	hasName := len(spec.AttrName) > 0
 	if hasName {
@@ -329,7 +315,7 @@ func (reg *registry) ResolveAttr(spec *AttrSpec, autoIssue bool) error {
 		}
 	} else {
 		if spec.ElemType == "" {
-			return ErrCode_BadSchema.Error("missing AttrSpec.ElemType")
+			return ErrCode_BadSchema.Error("missing TagSpec.ElemType")
 		}
 	}
 
@@ -361,14 +347,14 @@ func (reg *registry) ResolveAttr(spec *AttrSpec, autoIssue bool) error {
 	}
 
 	if !gotName || !gotElem {
-		return ErrCode_BadSchema.Errorf("failed to resolve AttrSpec %v", spec)
+		return ErrCode_BadSchema.Errorf("failed to resolve TagSpec %v", spec)
 	}
 
 	return nil
 }
 
 func (reg *registry) RegisterAttrType(attrName string, prototype ElemVal) error {
-	spec := AttrSpec{
+	spec := TagSpec{
 		AttrName: attrName,
 		ElemType: prototype.TypeName(),
 	}
@@ -387,22 +373,22 @@ func (reg *registry) RegisterAttrType(attrName string, prototype ElemVal) error 
 	return nil
 }
 
-// func (attr *AttrSpec) String() string {
+// func (attr *TagSpec) String() string {
 //     var buf [128]byte
-//     str := fmt.Appendf(buf[:0], "AttrSpec{AttrID:%v, TypedName:%q, ValTypeID:%v, SymbolID:%v}", attr.AttrID, attr.TypedName, attr.ValTypeID, attr.SymbolID)
+//     str := fmt.Appendf(buf[:0], "TagSpec{AttrID:%v, TypedName:%q, ValTypeID:%v, SymbolID:%v}", attr.AttrID, attr.TypedName, attr.ValTypeID, attr.SymbolID)
 //     return string(str)
 // }
 
 
-func (reg *registry) registerAttr(attr *AttrSpec) error {
+func (reg *registry) registerAttr(attr *TagSpec) error {
 
 
 		if !cleanURI(&attr.AttrName) {
-			return ErrCode_BadSchema.Errorf("missing AttrSpec.TypedName in attr %q", attr.String())
+			return ErrCode_BadSchema.Errorf("missing TagSpec.TypedName in attr %q", attr.String())
 		}
 
 		if attr.AttrID == 0 {
-			return ErrCode_BadSchema.Errorf("missing AttrSpec.AttrID in attr %q", attr.TypedName)
+			return ErrCode_BadSchema.Errorf("missing TagSpec.AttrID in attr %q", attr.TypedName)
 		}
 
 		if attr.AttrSymID == 0 {
@@ -410,7 +396,7 @@ func (reg *registry) registerAttr(attr *AttrSpec) error {
 		}
 
 		if attr.SeriesType != SeriesType_Fixed && attr.BoundSI != 0 {
-			return ErrCode_BadSchema.Errorf("AttrSpec.BoundSI is set but is ignored in attr %q", attr.TypedName)
+			return ErrCode_BadSchema.Errorf("TagSpec.BoundSI is set but is ignored in attr %q", attr.TypedName)
 		}
 
 		{
@@ -424,7 +410,7 @@ func (reg *registry) registerAttr(attr *AttrSpec) error {
 				attr.ValTypeID = typeID
 			} else {
 				if attr.ValTypeID != typeID {
-					return ErrCode_BadSchema.Errorf("AttrSpec.ValTypeID (%v) for type %q does not match the registered type (%v)", attr.ValTypeID, typeID, typeID)
+					return ErrCode_BadSchema.Errorf("TagSpec.ValTypeID (%v) for type %q does not match the registered type (%v)", attr.ValTypeID, typeID, typeID)
 				}
 			}
 		}
@@ -460,7 +446,7 @@ func (reg *registry) registerAttr(attr *AttrSpec) error {
 
 
 
-func extractTypeName(attr *AttrSpec) (string, error) {
+func extractTypeName(attr *TagSpec) (string, error) {
 	extPos := strings.IndexByte(attr.TypedName, '.')
 	if extPos < 0 {
 		return "", ErrCode_BadSchema.Errorf("missing type suffix in %q", attr.TypedName)
@@ -527,7 +513,7 @@ func (schema *AttrSchema) SchemaDesc() string {
 	return path.Join(schema.CellDataModel, schema.SchemaName)
 }
 
-func (schema *AttrSchema) LookupAttr(typedName string) *AttrSpec {
+func (schema *AttrSchema) LookupAttr(typedName string) *TagSpec {
 	for _, attr := range schema.Attrs {
 		if attr.TypedName == typedName {
 			return attr
@@ -542,7 +528,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 	schema := &AttrSchema{
 		CellDataModel: valTyp.Name(),
 		SchemaName:    "on-demand-reflect",
-		Attrs:         make([]*AttrSpec, 0, numFields),
+		Attrs:         make([]*TagSpec, 0, numFields),
 	}
 
 	for i := 0; i < numFields; i++ {
@@ -553,7 +539,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 			continue
 		}
 
-		attr := &AttrSpec{
+		attr := &TagSpec{
 			TypedName: field.Name,
 			AttrID:  int32(i + 1),
 		}

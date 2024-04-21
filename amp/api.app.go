@@ -111,7 +111,7 @@ type PbValue interface {
 // ElemVal wraps cell attribute element name and serialization.
 type ElemVal interface {
 
-	// Returns the element type name (a scalar AttrSpec).
+	// Returns the element type name (a scalar TagSpec).
 	ElemTypeName() string
 
 	// Marshals this ElemVal to a buffer, reallocating if needed.
@@ -146,7 +146,7 @@ type TxOp struct {
 }
 
 type AttrDef struct {
-	AttrSpec
+	TagSpec
 	Prototype ElemVal
 }
 
@@ -158,7 +158,7 @@ type SeriesIndex [2]uint64
 // By convention, the the leading 8 bytes are a UTC16 timestamp and the trailing 8 bytes are pseudo-random.
 type CellID [3]uint64
 
-// AttrID is a UID for the canonic string representation of an AttrSpec
+// AttrID is a UID for the canonic string representation of an TagSpec
 // Leading bits are reserved to express pin detail level or layer.
 type AttrID UID
 

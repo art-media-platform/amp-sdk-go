@@ -159,14 +159,14 @@ message LoginResponse {
 
 // RegisterDefs is sent by a client to register its symbols and schemas during a session.
 message RegisterDefs {
-    repeated AttrSpec      Attrs        = 2;
+    repeated TagSpec       TagSpecs     = 2;
     repeated ItemSelector  Selectors    = 4;
 }
 
 
-message AttrSpec {
+message TagSpec {
 
-    // Composite expression / invocation of this AttrSpec in the form: 
+    // Composite expression / invocation of this TagSpec in the form: 
     //       SeriesSpec := "{SeriesNameDesc}.{SI_Format}"
     //      "{PinLevel}:[{SeriesSpec}]{ElemTypeName}"
     string              AsCanonic = 1;
@@ -181,7 +181,7 @@ message AttrSpec {
 
     // UID of "{SeriesNameDesc}"
     //
-    // An AttrSpec is "scalar" if it has no SeriesID and implies ElemTypeID == AttrID 
+    // An TagSpec is "scalar" if it has no SeriesID and implies ElemTypeID == AttrID 
     fixed64             SeriesSpecIDx0 = 10;
     fixed64             SeriesSpecIDx1 = 11;
     
@@ -222,13 +222,13 @@ message AttrSet {
     //      "(AssetTag:promoVideo,[UTC16]TourStop:summer-tour)"
     uint32              DefID          = 1;
     
-    // Attrs is an ordered sequence of AttrSpecs (attr descriptors)
+    // Attrs is an ordered sequence of TagSpecs (attr descriptors)
     repeated uint32     Attrs          = 4;
 }
 */
 
 
-// ItemSelector selects / filters a srt of items (AttrSpec descriptors)
+// ItemSelector selects / filters a srt of items (TagSpec descriptors)
 message ItemSelector {
 
     // Composite expression of this ItemSelector in the form:
@@ -248,8 +248,8 @@ message ItemSelector {
     //string              ScopeID = 1;
     
     // CellDataModel identifies a data model this schema conforms to, in effect it specifies a scope for the attached Attrs.
-    // This URI names a complete data protocol / specification that this collection of AttrSpecs conforms to (and is a subset of).
-    // To an implementing app on the Go side, this URI implies a family of valid possible AttrSpecs to choose from. 
+    // This URI names a complete data protocol / specification that this collection of TagSpecs conforms to (and is a subset of).
+    // To an implementing app on the Go side, this URI implies a family of valid possible TagSpecs to choose from. 
     //uint32              CellDataModel = 3;
 
     // This describes this *particular* AttrSchema, a particular collection of Attrs (and is implicitly scoped within CellDataModel).
@@ -419,11 +419,8 @@ message AssetTag {
 
 
 message SeriesView {
-
-    AssetTag            TabUI  = 1;     // e.g. "amp:amp-tab-av"
-
-    AttrSpec            AttrSpec = 2;
-    
+    AssetTag            TabUI    = 1; // what UI to load and present
+    TagSpec             ViewSpec = 2; // Identifies the ui view model to use for this series of columns 
     repeated SeriesView Columns  = 6; // Data series
     
 }

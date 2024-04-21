@@ -8,7 +8,7 @@ import (
 )
 
 // URI form of a glyph typically followed by a media (mime) type.
-const GlyphURIPrefix = "amp:glyph/"
+const GenericGlyphURL = "amp:glyph/"
 
 // Describes an asset to be an image stream but not specify format / codec
 var GenericImageType = "image/*"
@@ -433,7 +433,7 @@ func (tid *TxID) AppendAsBinary(io []byte) []byte {
 }
 */
 
-// Analyses an AttrSpec's SeriesSpec and returns the index class it uses.
+// Analyses an TagSpec's SeriesSpec and returns the index class it uses.
 func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
 	switch {
 	case strings.HasSuffix(seriesSpec, ".Name"):

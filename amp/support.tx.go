@@ -27,9 +27,10 @@ func NewTxMsg(genesis bool) *TxMsg {
 	tx := gTxMsgPool.Get().(*TxMsg)
 	tx.refCount = 1
 	if genesis {
-		tid := NewTimeID()
+		tid := NewTagID()
 		tx.GenesisID_0 = int64(tid[0])
 		tx.GenesisID_1 = tid[1]
+		tx.GenesisID_2 = tid[2]
 	}
 
 	return tx
@@ -54,12 +55,12 @@ var gTxMsgPool = sync.Pool{
 		return msg
 	}
 */
-func (tx *TxInfo) RouteTo() TimeID {
-	return TimeID{uint64(tx.RouteTo_0), tx.RouteTo_1}
+func (tx *TxInfo) RouteTo() TagID {
+	return TagID{uint64(tx.RouteTo_0), tx.RouteTo_1, tx.RouteTo_2}
 }
 
-func (tx *TxInfo) GenesisID() TimeID {
-	return TimeID{uint64(tx.GenesisID_0), tx.GenesisID_1}
+func (tx *TxInfo) GenesisID() TagID {
+	return TagID{uint64(tx.GenesisID_0), tx.GenesisID_1, tx.GenesisID_2}
 }
 
 func (tx *TxMsg) AddRef() {
@@ -82,14 +83,14 @@ func MarshalMetaAttr(attrSpec string, attrVal ElemVal) (*TxMsg, error) {
 	if attrSpec != "" {
 		attrSpec = attrVal.ElemTypeName()
 	}
-	attrID, err := FormAttrID(attrSpec)
+	tagSpecID, err := FormTagSpecID(attrSpec)
 	if err != nil {
 		return nil, err
 	}
 
 	metaOp := TxOp{
 		OpCode: TxOpCode_MetaAttr,
-		AttrID: attrID,
+		AttrID: tagSpecID,
 	}
 	tx := NewTxMsg(true)
 	if err = tx.MarshalOpValue(&metaOp, attrVal); err != nil {
@@ -108,7 +109,7 @@ func (tx *TxMsg) UnmarshalOpValue(idx int, out ElemVal) error {
 }
 
 // If reqID == 0, then this sends an attr to the client's session controller (vs a specific request)
-func SendMetaAttr(sess HostSession, routeTo TimeID, status ReqStatus, val ElemVal) error {
+func SendMetaAttr(sess HostSession, routeTo TagID, status ReqStatus, val ElemVal) error {
 	tx, err := MarshalMetaAttr("", val)
 	if err != nil {
 		return err
@@ -125,8 +126,7 @@ func (tx *TxMsg) ExtractMetaAttr(reg Registry) (ElemVal, error) {
 		return nil, ErrCode_MalformedTx.Error("expected meta attr")
 	}
 
-	attrID := tx.Ops[0].AttrID
-	val, err := reg.NewAttrElem(attrID)
+	val, err := reg.NewAttrElem(tx.Ops[0].AttrID)
 	if err != nil {
 		return nil, err
 	}
@@ -305,8 +305,9 @@ func (tx *TxMsg) MarshalBody(dst []byte) []byte {
 			op_cur[TxBody_TargetIDx1] = op.TargetID[1]
 			op_cur[TxBody_TargetIDx2] = op.TargetID[2]
 
-			op_cur[TxBody_AttrIDx0] = op.AttrID[0]
-			op_cur[TxBody_AttrIDx1] = op.AttrID[1]
+			op_cur[TxBody_AttrID_0] = op.AttrID[0]
+			op_cur[TxBody_AttrID_1] = op.AttrID[1]
+			op_cur[TxBody_AttrID_2] = op.AttrID[2]
 
 			op_cur[TxBody_SIx0] = op.SI[0]
 			op_cur[TxBody_SIx1] = op.SI[1]
@@ -411,8 +412,9 @@ func (tx *TxMsg) UnmarshalBody(src []byte) error {
 		op.TargetID[1] = op_cur[TxBody_TargetIDx1]
 		op.TargetID[2] = op_cur[TxBody_TargetIDx2]
 
-		op.AttrID[0] = op_cur[TxBody_AttrIDx0]
-		op.AttrID[1] = op_cur[TxBody_AttrIDx1]
+		op.AttrID[0] = op_cur[TxBody_AttrID_0]
+		op.AttrID[1] = op_cur[TxBody_AttrID_1]
+		op.AttrID[2] = op_cur[TxBody_AttrID_2]
 
 		op.SI[0] = op_cur[TxBody_SIx0]
 		op.SI[1] = op_cur[TxBody_SIx1]
@@ -428,48 +430,10 @@ func (op *TxOp) Validate() error {
 		return ErrBadTarget
 	}
 	if op.AttrID.IsNil() {
-		return ErrCode_MalformedTx.Error("missing AttrID")
+		return ErrCode_MalformedTx.Error("missing TagSpecID")
 	}
 	return nil
 }
-
-// func (op *TxOp) TargetID() CellID {
-// 	return [3]uint64{
-// 		op.TargetIDx0,
-// 		op.TargetIDx1,
-// 		op.TargetIDx2,
-// 	}
-// }
-
-// func (op *TxOp) AttrID() AttrID {
-// 	return [2]uint64{
-// 		op.AttrIDx0,
-// 		op.AttrIDx1,
-// 	}
-// }
-
-// func (op *TxOp) SI() SeriesIndex {
-// 	return [2]uint64{
-// 		op.SIx0,
-// 		op.SIx1,
-// 	}
-// }
-
-// func (op *TxOp) ParentID() CellID {
-// 	return [3]uint64{
-// 		op.ParentIDx0,
-// 		op.ParentIDx1,
-// 		op.ParentIDx2,
-// 	}
-// }
-
-// func (op *TxOp) TargetCell() CellID {
-// 	return [3]uint64{
-// 		op.TargetIDx0,
-// 		op.TargetIDx1,
-// 		op.TargetIDx2,
-// 	}
-// }
 
 func max(a, b int) int {
 	if a > b {

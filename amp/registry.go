@@ -8,9 +8,9 @@ import (
 func NewRegistry() Registry {
 	reg := &registry{
 		appsByInvoke: make(map[string]*App),
-		appsByUID:    make(map[UID]*App),
-		elemDefs:     make(map[AttrID]AttrDef),
-		attrDefs:     make(map[AttrID]AttrDef),
+		appsByTagID:  make(map[TagID]*App),
+		elemDefs:     make(map[TagID]AttrDef),
+		attrDefs:     make(map[TagID]AttrDef),
 	}
 	return reg
 }
@@ -19,16 +19,16 @@ func NewRegistry() Registry {
 type registry struct {
 	mu           sync.RWMutex
 	appsByInvoke map[string]*App
-	appsByUID    map[UID]*App
-	elemDefs     map[AttrID]AttrDef
-	attrDefs     map[AttrID]AttrDef
+	appsByTagID  map[TagID]*App
+	elemDefs     map[TagID]AttrDef
+	attrDefs     map[TagID]AttrDef
 }
 
-func (reg *registry) RegisterPrototype(registerAs string, prototype ElemVal) (AttrID, error) {
+func (reg *registry) RegisterPrototype(registerAs string, prototype ElemVal) (TagID, error) {
 
 	// by default, use the canonical name of the prototype
 	if registerAs == "" {
-		registerAs = prototype.ElemTypeName()
+		registerAs = "amp.tag." + prototype.ElemTypeName()
 	}
 	attrID, err := reg.RegisterAttr(registerAs, prototype)
 	if err != nil {
@@ -37,12 +37,12 @@ func (reg *registry) RegisterPrototype(registerAs string, prototype ElemVal) (At
 	return attrID, err
 }
 
-func (reg *registry) RegisterAttr(tagSpecExpr string, prototype ElemVal) (AttrID, error) {
-	spec, err := FormTagSpec(tagSpecExpr)
+func (reg *registry) RegisterAttr(attrSpecExpr string, prototype ElemVal) (TagID, error) {
+	spec, err := FormTagSpec(attrSpecExpr)
 	if err != nil {
-		return AttrID{}, err
+		return TagID{}, err
 	}
-	attrID := spec.AttrID()
+	attrID := spec.SpecID()
 
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
@@ -62,12 +62,12 @@ func (reg *registry) Import(other Registry) error {
 	defer src.mu.Unlock()
 
 	for _, def := range src.elemDefs {
-		reg.elemDefs[def.AttrID()] = def
+		reg.elemDefs[def.SpecID()] = def
 	}
 	for _, def := range src.attrDefs {
-		reg.attrDefs[def.AttrID()] = def
+		reg.attrDefs[def.SpecID()] = def
 	}
-	for _, app := range src.appsByUID {
+	for _, app := range src.appsByTagID {
 		if err := reg.RegisterApp(app); err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (reg *registry) RegisterApp(app *App) error {
 		return ErrCode_BadSchema.Errorf("illegal app ID: %q", app.AppID)
 	}
 
-	reg.appsByUID[app.UID] = app
+	reg.appsByTagID[app.TagID] = app
 
 	for _, invok := range app.Invocations {
 		if invok != "" {
@@ -108,13 +108,13 @@ func (reg *registry) RegisterApp(app *App) error {
 }
 
 // Implements Registry
-func (reg *registry) GetAppByUID(appUID UID) (*App, error) {
+func (reg *registry) GetAppByTagID(appTagID TagID) (*App, error) {
 	reg.mu.RLock()
 	defer reg.mu.RUnlock()
 
-	app := reg.appsByUID[appUID]
+	app := reg.appsByTagID[appTagID]
 	if app == nil {
-		return nil, ErrCode_AppNotFound.Errorf("app not found: %s", appUID)
+		return nil, ErrCode_AppNotFound.Errorf("app not found: %s", appTagID)
 	} else {
 		return app, nil
 	}
@@ -136,15 +136,15 @@ func (reg *registry) GetAppForInvocation(invocation string) (*App, error) {
 	return app, nil
 }
 
-func (reg *registry) NewAttrElem(attrID AttrID) (ElemVal, error) {
+func (reg *registry) NewAttrElem(attrSpec TagID) (ElemVal, error) {
 
 	// Often, an attrID will be a unnamed scalar attr (which means we can get the elemDef directly.
 	// This is also essential during bootstrapping when the client sends a RegisterDefs is not registered yet.
-	def, exists := reg.elemDefs[attrID]
+	def, exists := reg.elemDefs[attrSpec]
 	if !exists {
-		def, exists = reg.attrDefs[attrID]
+		def, exists = reg.attrDefs[attrSpec]
 		if !exists {
-			return nil, ErrCode_DefNotFound.Errorf("NewAttrElem: attr %s not found", attrID.String())
+			return nil, ErrCode_DefNotFound.Errorf("NewAttrElem: attr %s not found", attrSpec.String())
 		}
 	}
 	return def.Prototype.New(), nil
@@ -156,21 +156,21 @@ func (reg *registry) RegisterDefs(defs *RegisterDefs) error {
 		def := AttrDef{
 			TagSpec: *tagSpec,
 		}
-		reg.attrDefs[def.AttrID()] = def
+		reg.attrDefs[def.SpecID()] = def
 	}
 
 	return nil
 }
 
 /*
-func (reg *registry) ResolveTagSpec(attrSpec string) (def TagSpec, err error) {
-	expr, err := app_attr_parser.ParseAttrDef(attrSpec)
+func (reg *registry) ResolveTagSpec(tagSpec string) (def TagSpec, err error) {
+	expr, err := app_attr_parser.ParseAttrDef(tagSpec)
 	if err != nil {
 		return TagSpec{}, err
 	}
 
 	spec := TagSpec{
-		DefID:           reg.resolveNative(attrSpec),
+		DefID:           reg.resolveNative(tagSpec),
 		AttrName:        reg.resolveNative(expr.AttrName),
 		ElemType:        reg.resolveNative(expr.ElemType),
 		SeriesSpec:      reg.resolveNative(expr.SeriesSpec),
@@ -201,13 +201,13 @@ func (reg *registry) ResolveTagSpec(attrSpec string) (def TagSpec, err error) {
 
 		switch {
 		case clientSpec.AttrName == 0 && spec.AttrName != 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve AttrName %q for TagSpec %q", expr.AttrName, attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve AttrName %q for TagSpec %q", expr.AttrName, tagSpec)
 		case clientSpec.ElemType == 0 && spec.ElemType != 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve ElemType %q for TagSpec %q", expr.ElemType, attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve ElemType %q for TagSpec %q", expr.ElemType, tagSpec)
 		case clientSpec.SeriesSpec == 0 && spec.SeriesSpec != 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve SeriesSpec %q for TagSpec %q", expr.SeriesSpec, attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve SeriesSpec %q for TagSpec %q", expr.SeriesSpec, tagSpec)
 		case clientSpec.DefID == 0:
-			err = ErrCode_BadSchema.Errorf("failed to resolve %q", attrSpec)
+			err = ErrCode_BadSchema.Errorf("failed to resolve %q", tagSpec)
 		}
 
 		spec = clientSpec
@@ -265,7 +265,7 @@ func (reg *registry) FormAttr(attrName string, val ElemVal) (AttrElem, error) {
 
 	return AttrElem{
 		Value:  val,
-		AttrID: spec.AttrID,
+		TagSpecID: spec.TagSpecID,
 	}, nil
 }
 
@@ -280,7 +280,7 @@ func (reg *registry) NewAttrForID(attrID uint32) (AttrElem, error) {
 
 	return AttrElem{
 		Value:  typ.elemVal.New(),
-		AttrID: attrID,
+		TagSpecID: attrID,
 	}, nil
 }
 
@@ -294,13 +294,13 @@ func (reg *registry) ResolveAttr(spec *TagSpec, autoIssue bool) error {
 	reg.tokMu.RLock()
 	elemID := reg.tokCache[spec.ElemType]
 	if hasName {
-		spec.AttrID = reg.tokCache[typedName]
+		spec.TagSpecID = reg.tokCache[typedName]
 	} else {
-		spec.AttrID = elemID
+		spec.TagSpecID = elemID
 	}
 	reg.tokMu.RUnlock()
 
-	if elemID != 0 && spec.AttrID != 0 {
+	if elemID != 0 && spec.TagSpecID != 0 {
 		spec.ElemTypeID = elemID
 		return nil
 	}
@@ -325,12 +325,12 @@ func (reg *registry) ResolveAttr(spec *TagSpec, autoIssue bool) error {
 		elemID = uint32(reg.table.GetSymbolID([]byte(spec.ElemType), autoIssue))
 		gotElem = elemID != 0
 	}
-	if spec.AttrID == 0 {
+	if spec.TagSpecID == 0 {
 		if hasName {
-			spec.AttrID = uint32(reg.table.GetSymbolID([]byte(typedName), autoIssue))
-			gotName = spec.AttrID != 0
+			spec.TagSpecID = uint32(reg.table.GetSymbolID([]byte(typedName), autoIssue))
+			gotName = spec.TagSpecID != 0
 		} else {
-			spec.AttrID = elemID
+			spec.TagSpecID = elemID
 		}
 	}
 
@@ -341,7 +341,7 @@ func (reg *registry) ResolveAttr(spec *TagSpec, autoIssue bool) error {
 			reg.tokCache[spec.ElemType] = elemID
 		}
 		if gotName {
-			reg.tokCache[typedName] = spec.AttrID
+			reg.tokCache[typedName] = spec.TagSpecID
 		}
 		reg.tokMu.Unlock()
 	}
@@ -364,7 +364,7 @@ func (reg *registry) RegisterAttrType(attrName string, prototype ElemVal) error 
 	}
 
 	reg.typesMu.Lock()
-	reg.types[spec.AttrID] = attrType{
+	reg.types[spec.TagSpecID] = attrType{
 		//attrName: attrName,
 		elemVal: prototype,
 	}
@@ -375,7 +375,7 @@ func (reg *registry) RegisterAttrType(attrName string, prototype ElemVal) error 
 
 // func (attr *TagSpec) String() string {
 //     var buf [128]byte
-//     str := fmt.Appendf(buf[:0], "TagSpec{AttrID:%v, TypedName:%q, ValTypeID:%v, SymbolID:%v}", attr.AttrID, attr.TypedName, attr.ValTypeID, attr.SymbolID)
+//     str := fmt.Appendf(buf[:0], "TagSpec{TagSpecID:%v, TypedName:%q, ValTypeID:%v, SymbolID:%v}", attr.TagSpecID, attr.TypedName, attr.ValTypeID, attr.SymbolID)
 //     return string(str)
 // }
 
@@ -387,8 +387,8 @@ func (reg *registry) registerAttr(attr *TagSpec) error {
 			return ErrCode_BadSchema.Errorf("missing TagSpec.TypedName in attr %q", attr.String())
 		}
 
-		if attr.AttrID == 0 {
-			return ErrCode_BadSchema.Errorf("missing TagSpec.AttrID in attr %q", attr.TypedName)
+		if attr.TagSpecID == 0 {
+			return ErrCode_BadSchema.Errorf("missing TagSpec.TagSpecID in attr %q", attr.TypedName)
 		}
 
 		if attr.AttrSymID == 0 {
@@ -418,13 +418,13 @@ func (reg *registry) registerAttr(attr *TagSpec) error {
 		def := reg.attrsBySymbol[attr.AttrSymID]
 		if def != nil {
 			// TODO: greenlight multiple definitions of the same attr that are indentical
-			return ErrCode_BadSchema.Errorf("duplicate AttrID %v", attr.AttrID)
+			return ErrCode_BadSchema.Errorf("duplicate TagSpecID %v", attr.TagSpecID)
 		}
 		reg.attrsBySymbol[attr.AttrSymID] = &attrDef{
 			spec: *attr,
 		}
 		reg.attrsByName[attr.TypedName] = attrEntry{
-			attrID: attr.AttrID,
+			attrID: attr.TagSpecID,
 			symID:  attr.AttrSymID,
 		}
 
@@ -437,10 +437,10 @@ func (reg *registry) registerAttr(attr *TagSpec) error {
 		// }
 
 
-	// // Reorder attrs by ascending AttrID for canonic (and efficient) db access
+	// // Reorder attrs by ascending TagSpecID for canonic (and efficient) db access
 	// // NOTE: This is for a db symbol lookup table for the schema, not for the client-level declaration
 	// sort.Slice(schema.Attrs, func(i, j int) bool {
-	// 	return schema.Attrs[i].AttrID < schema.Attrs[j].AttrID
+	// 	return schema.Attrs[i].TagSpecID < schema.Attrs[j].TagSpecID
 	// })
 }
 
@@ -533,7 +533,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 
 	for i := 0; i < numFields; i++ {
 
-		// Importantly, AttrID is always set to the field index + 1, so we know what field to inspect when given an AttrID.
+		// Importantly, TagSpecID is always set to the field index + 1, so we know what field to inspect when given an TagSpecID.
 		field := valTyp.Field(i)
 		if !field.IsExported() {
 			continue
@@ -541,7 +541,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 
 		attr := &TagSpec{
 			TypedName: field.Name,
-			AttrID:  int32(i + 1),
+			TagSpecID:  int32(i + 1),
 		}
 
 		attrType := field.Type
@@ -603,7 +603,7 @@ func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) 
 		for _, ai := range schema.Attrs {
 			if ai.TypedName == field.Name {
 				for _, msg := range msgs {
-					if msg.AttrID == ai.AttrID {
+					if msg.TagSpecID == ai.TagSpecID {
 						msg.LoadVal(dst.Field(fi).Addr().Interface())
 						goto nextField
 					}
@@ -641,7 +641,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 		for _, attr := range schema.Attrs {
 			msg := tx.AddMsg()
 			msg.Op = MsgOp_PushAttr
-			msg.AttrID = attr.AttrID
+			msg.TagSpecID = attr.TagSpecID
 			for i := 0; i < numFields; i++ {
 				if valType.Field(i).Name == attr.TypedName {
 					msg.setVal(src.Field(i).Interface())
@@ -686,17 +686,17 @@ func (req *CellReq) GetChildSchema(modelURI string) *AttrSchema {
 	return nil
 }
 
-func (req *CellReq) PushBeginPin(target CellID) {
+func (req *CellReq) PushBeginPin(target TagID) {
 	m := NewTxMsg()
-	m.CellID = target.U64()
+	m.TagID = target.U64()
 	m.Op = MsgOp_PinCell
 	req.PushTx(m)
 }
 
-func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
+func (req *CellReq) PushInsertCell(target TagID, schema *AttrSchema) {
 	if schema != nil {
 		m := NewTxMsg()
-		m.CellID = target.U64()
+		m.TagID = target.U64()
 		m.Op = MsgOp_InsertChildCell
 		m.ValType = int32(ValType_SchemaID)
 		m.ValInt = int64(schema.SchemaID)
@@ -705,16 +705,16 @@ func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
 }
 
 // Pushes the given attr to the client
-func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, val Value) {
+func (req *CellReq) PushAttr(target TagID, schema *AttrSchema, attrURI string, val Value) {
 	attr := schema.LookupAttr(attrURI)
 	if attr == nil {
 		return
 	}
 
 	m := NewTxMsg()
-	m.CellID = target.U64()
+	m.TagID = target.U64()
 	m.Op = MsgOp_PushAttr
-	m.AttrID = attr.AttrID
+	m.TagSpecID = attr.TagSpecID
 	if attr.SeriesType == SeriesType_Fixed {
 		m.SI = attr.BoundSI
 	}
@@ -728,7 +728,7 @@ func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, 
 func (req *CellReq) PushCheckpoint(err error) {
 	m := NewTxMsg()
 	m.Op = MsgOp_Commit
-	m.CellID = req.PinCell.U64()
+	m.TagID = req.PinCell.U64()
 	if err != nil {
 		m.setVal(err)
 	}

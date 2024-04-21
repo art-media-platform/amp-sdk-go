@@ -6,12 +6,12 @@ import (
 
 // TagSpecs used universally
 var (
-	CellHeaderID = MustFormAttrID("CellHeader")
-	CellLinkID   = MustFormAttrID("[Link.UID]CellHeader")
-
-	//ErrAttrID        = FormAttrID(((*Err)(nil)).ElemTypeName())
-	//LinksAttr     = FormAttrID("[Name.UID]Links")
-	//PositionAttr   = FormAttrID("[CoordinateScheme.UID]Position")
+	CellHeaderAttrID = MustFormAttrSpec("amp.tag.CellHeader") // CellLink??
+	
+	//CellLinkID   = MustFormAttrSpec("amp.tag.[Link.TagID]CellHeader")
+	//ErrTagSpecID        = FormTagSpecID(((*Err)(nil)).ElemTypeName())
+	//LinksAttr     = FormTagSpecID("[Name.TagID]Links")
+	//PositionAttr   = FormTagSpecID("[CoordinateScheme.TagID]Position")
 )
 
 // This file contains types and interfaces intended to ease an arc app development.

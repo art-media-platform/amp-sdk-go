@@ -2,7 +2,7 @@ package amp
 
 import (
 	"bytes"
-	"fmt"
+	fmt "fmt"
 	io "io"
 	"testing"
 )
@@ -26,17 +26,6 @@ func TestExpr(t *testing.T) {
 		}
 	}
 
-	uid := StringToUID("hello")
-	uuid := uid.ToUUID()
-	uuidStr := uuid.String()
-	if uuidStr != "5d41402a-bc4b-2a76-b971-9d911017c592" {
-		t.Errorf("StringToUID failed")
-	}
-	parsedUID, err := ParseUUID(uuidStr)
-	if err != nil || parsedUID != uid {
-		t.Errorf("ParseUUID failed")
-	}
-
 }
 
 func TestTxSerialize(t *testing.T) {
@@ -49,14 +38,14 @@ func TestTxSerialize(t *testing.T) {
 	{
 		op := TxOp{
 			OpCode:   TxOpCode_MetaAttr,
-			ParentID: CellID{1, 2, 3},
-			TargetID: CellID{4, 555, 666},
-			AttrID:   AttrID{32232, 32334},
+			ParentID: TagID{1, 2, 3},
+			TargetID: TagID{4, 555, 666},
+			AttrID:   TagID{111312232, 22232334444},
 			SI:       SeriesIndex{7383, 76549},
 		}
 		tx.MarshalOpValue(&op, &Login{
-			UserUID:  "alan1",
-			HostAddr: "batwing ave",
+			UserTagID: "alan1",
+			HostAddr:  "batwing ave",
 		})
 		tx.DataStore = append(tx.DataStore, []byte("bytes not used but stored -- not normal!")...)
 
@@ -67,8 +56,8 @@ func TestTxSerialize(t *testing.T) {
 			data = append(data, data...)
 		}
 		tx.MarshalOpValue(&op, &Login{
-			UserUID:  "cmdr6",
-			HostAddr: string(data),
+			UserTagID: "cmdr6",
+			HostAddr:  string(data),
 		})
 
 		op.SI[0] = 111111
@@ -118,12 +107,12 @@ func (r *bufReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func TestNewTimeID(t *testing.T) {
-	var prevIDs [64]TimeID
+func TestNewTagID(t *testing.T) {
+	var prevIDs [64]TagID
 
-	prevIDs[0] = TimeID{100, (^uint64(0)) - 500}
+	prevIDs[0] = TagID{100, (^uint64(0)) - 500}
 
-	delta := TimeID{100, 100}
+	delta := TagID{100, 100}
 	for i := 1; i < 64; i++ {
 		prevIDs[i] = prevIDs[i-1].Add(delta)
 	}
@@ -131,21 +120,21 @@ func TestNewTimeID(t *testing.T) {
 		prev := prevIDs[i-1]
 		curr := prevIDs[i]
 		if prev.CompareTo(curr) >= 0 {
-			t.Errorf("TimeID.Add() returned a non-increasing value: %v <= %v", prev, curr)
+			t.Errorf("TagID.Add() returned a non-increasing value: %v <= %v", prev, curr)
 		}
 		if curr.Sub(prev) != delta {
-			t.Errorf("TimeID.Diff() returned a wrong value: %v != %v", curr.Sub(prev), delta)
+			t.Errorf("TagID.Diff() returned a wrong value: %v != %v", curr.Sub(prev), delta)
 		}
 	}
 
-	epsilon := TimeID{0, TimeID_EntropyMask}
+	epsilon := TagID{0, TagID_EntropyMask}
 
 	for i := range prevIDs {
-		prevIDs[i] = NewTimeID()
+		prevIDs[i] = NewTagID()
 	}
 
 	for i := 0; i < 10000000; i++ {
-		now := NewTimeID()
+		now := NewTagID()
 
 		for _, prev := range prevIDs {
 			prev = prev.Sub(epsilon)
@@ -159,12 +148,12 @@ func TestNewTimeID(t *testing.T) {
 }
 
 func TestEncodings(t *testing.T) {
-	tid := TimeID{0x7777777777777777, 0x123456789abcdef0}
+	tid := TagID{0x7777777777777777, 0x123456789abcdef0}
 	if tid.Base32Suffix() != "g2ectrrh" {
-		t.Errorf("TimeID.Base32Suffix() failed")
+		t.Errorf("TagID.Base32Suffix() failed")
 	}
 	if tid.Base16Suffix() != "bcdef0" {
-		t.Errorf("TimeID.Base16Suffix() failed")
+		t.Errorf("TagID.Base16Suffix() failed")
 	}
 
 }

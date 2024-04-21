@@ -3,12 +3,12 @@ package amp
 import (
 	"net/url"
 
-	"github.com/amp-space/amp-sdk-go/stdlib/task"
+	"github.com/amp-3d/amp-sdk-go/stdlib/task"
 )
 
 // App is how an app module is registered with an amp.Host so it can be invoked.
 //
-// An App is invoked by a client or other app via the app's UID or URI.
+// An App is invoked by a client or other app via the app's TagID or URI.
 type App struct {
 
 	// AppID identifies this app with form "{AppNameID}.{FamilyID}.{PublisherID}" -- e.g. "filesys.hosting.arcspace.systems"
@@ -18,10 +18,10 @@ type App struct {
 	//
 	// AppID form is consistent with a URL domain name (and subdomains).
 	AppID        string
-	UID          UID      // Universally unique and persistent ID for this module (and the module's "home" planet if present)
+	TagID        TagID    // Universally unique and persistent ID for this module (and the module's "home" planet if present)
 	Desc         string   // Human-readable description of this app
 	Version      string   // "v{MajorVers}.{MinorID}.{RevID}"
-	Dependencies []UID    // Module UIDs this app may access
+	Dependencies []TagID  // Module TagIDs this app may access
 	Invocations  []string // Additional aliases that invoke this app
 	AttrDecl     []string // Attrs to be resolved and registered with a HostSession
 
@@ -37,20 +37,20 @@ type AppContext interface {
 	Session() HostSession // Access to underlying Session
 
 	// Returns the absolute file system path of the app's local read-write directory.
-	// This directory is scoped by the app's UID.
+	// This directory is scoped by the app's TagID.
 	LocalDataPath() string
 
 	// Issues a mew cell ID guaranteed to be universally unique.
-	// This should not be called concurrently with other IssueCellID() calls.
-	IssueCellID() CellID
+	// This should not be called concurrently with other IssueTagID() calls.
+	IssueTagID() TagID
 
 	// Gets the named attribute from the user's home planet -- used high-level app settings.
-	// The attr is scoped by both the app UID so key collision with other users or apps is not possible.
+	// The attr is scoped by both the app TagID so key collision with other users or apps is not possible.
 	// This is how an app can store and retrieve settings.
-	GetAppAttr(attrSpec string, dst ElemVal) error
+	GetAppAttr(tagSpec string, dst ElemVal) error
 
 	// Write analog for GetAppAttr()
-	PutAppAttr(attrSpec string, src ElemVal) error
+	PutAppAttr(tagSpec string, src ElemVal) error
 }
 
 // AppInstance is implemented by an App and invoked by amp.Host responding to a client pin request.
@@ -76,7 +76,7 @@ type AppInstance interface {
 type Cell interface {
 
 	// Returns this cell's immutable info.
-	Info() CellID
+	Info() TagID
 }
 
 // PinnedCell is how your app encapsulates a pinned cell to the host runtime and thus clients.
@@ -126,10 +126,10 @@ type ElemVal interface {
 
 // TxMsg is workhorse generic transport serialization sent between client and host.
 type TxMsg struct {
-	TxInfo 
-	refCount  int32     // see AddRef() / ReleaseRef()
-	Ops       []TxOp    // ordered operations to perform on the target
-	DataStore []byte    // marshalled data store for Ops serialized data
+	TxInfo
+	refCount  int32  // see AddRef() / ReleaseRef()
+	Ops       []TxOp // ordered operations to perform on the target
+	DataStore []byte // marshalled data store for Ops serialized data
 }
 
 // TxOp is an atomic operation on a target cell and is a unit of change (or message) for any target.
@@ -137,9 +137,9 @@ type TxMsg struct {
 // Note that x0 is the most significant and x2 is least significant bytes.
 type TxOp struct {
 	OpCode       TxOpCode
-	TargetID     CellID      // Target cell to operate on
-	ParentID     CellID      // Parent cell of the target cell
-	AttrID       AttrID      // Attribute to operate on
+	TargetID     TagID       // Target cell to operate on
+	ParentID     TagID       // Parent cell of the target cell
+	AttrID       TagID       // Attribute to operate on
 	SI           SeriesIndex // Index of the data being mutated
 	DataStoreOfs int64       // Offset into TxMsg.DataStore
 	DataLen      int64       // Length of data in TxMsg.DataStore
@@ -153,18 +153,9 @@ type AttrDef struct {
 // SeriesIndex
 type SeriesIndex [2]uint64
 
-// CellID is globally unique Cell identifier that globally identifies a cell.
-//
-// By convention, the the leading 8 bytes are a UTC16 timestamp and the trailing 8 bytes are pseudo-random.
-type CellID [3]uint64
-
-// AttrID is a UID for the canonic string representation of an TagSpec
+// TagSpecID is a tag for the canonic string representation of an TagSpec
 // Leading bits are reserved to express pin detail level or layer.
-type AttrID UID
+type TagSpecID TagID
 
-func (id AttrID) String() string {
-	return UID(id).String()
-}
-
-// Leading bits of AttrID are reserved to express pin detail level or layer.
+// Leading bits of TagSpecID are reserved to express pin detail level or layer.
 const PinLayerBits = 3

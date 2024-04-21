@@ -139,13 +139,13 @@ func (v *CellHeader) New() ElemVal {
 }
 
 func (v *CellHeader) SetCreatedAt(t time.Time) {
-	tid := ConvertToTimeID(t, false)
+	tid := TimeToTagID(t, false)
 	v.CreatedAt_0 = int64(tid[0])
 	v.CreatedAt_1 = tid[1]
 }
 
 func (v *CellHeader) SetModifiedAt(t time.Time) {
-	tid := ConvertToTimeID(t, false)
+	tid := TimeToTagID(t, false)
 	v.ModifiedAt_0 = int64(tid[0])
 	v.ModifiedAt_1 = tid[1]
 }
@@ -198,29 +198,21 @@ func (v *PinRequest) New() ElemVal {
 	return &PinRequest{}
 }
 
-func (v *PinRequest) PinCell() CellID {
+func (v *PinRequest) SetTagID(id TagID) {
+	v.GetCell_0 = int64(id[0])
+	v.GetCell_1 = id[1]
+	v.GetCell_2 = id[2]
+}
+
+func (v *PinRequest) ContextID() TagID {
+	return TagIDFromInts(v.ContextID_0, v.ContextID_1)
+}
+
+func (v *PinRequest) TargetCell() TagID {
 	return [3]uint64{
-		v.PinCellIDx0,
-		v.PinCellIDx1,
-		v.PinCellIDx2,
-	}
-}
-
-func (v *PinRequest) SetCellID(id CellID) {
-	v.PinCellIDx0 = id[0]
-	v.PinCellIDx1 = id[1]
-	v.PinCellIDx2 = id[2]
-}
-
-func (v *PinRequest) ContextID() TimeID {
-	return TimeIDFromInts(v.ContextID_0, v.ContextID_1)
-}
-
-func (v *PinRequest) TargetCell() CellID {
-	return [3]uint64{
-		v.PinCellIDx0,
-		v.PinCellIDx1,
-		v.PinCellIDx2,
+		uint64(v.GetCell_0),
+		v.GetCell_1,
+		v.GetCell_2,
 	}
 }
 
@@ -231,4 +223,12 @@ func (v *PinRequest) FormLogLabel() string {
 		str = fmt.Append(str, " ", v.PinURL)
 	}
 	return string(str)
+}
+
+func (attr *TagSpec) SpecID() TagID {
+	return TagID{
+		uint64(attr.AttrSpecIDx0),
+		attr.AttrSpecIDx1,
+		attr.AttrSpecIDx2,
+	}
 }

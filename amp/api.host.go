@@ -3,7 +3,7 @@ package amp
 import (
 	"net/url"
 
-	"github.com/amp-space/amp-sdk-go/stdlib/task"
+	"github.com/amp-3d/amp-sdk-go/stdlib/task"
 )
 
 // Host allows app and transport services to be attached.
@@ -76,7 +76,7 @@ type HostSession interface {
 
 	// Gets the currently running AppInstance for an AppID.
 	// If the requested app is not running and autoCreate is set, a new instance is created and started.
-	GetAppInstance(appID UID, autoCreate bool) (AppInstance, error)
+	GetAppInstance(appID TagID, autoCreate bool) (AppInstance, error)
 }
 
 // Registry is where apps and types are registered -- concurrency safe.
@@ -85,17 +85,17 @@ type Registry interface {
 	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid TagSpec type expression).
 	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
 	// if registerAs == "", then the prototype.ElemTypeName() is used.
-	RegisterPrototype(registerAs string, prototype ElemVal) (AttrID, error)
+	RegisterPrototype(registerAs string, prototype ElemVal) (TagID, error)
 
 	// Imports all the types and apps from another registry.
 	// When a HostSession is created, its registry starts by importing the Host's registry.
 	Import(other Registry) error
 
-	// Registers an app by its UUID, URI, and schemas it supports.
+	// Registers an app by its UTagID, URI, and schemas it supports.
 	RegisterApp(app *App) error
 
-	// Looks-up an app by UUID -- READ ONLY ACCESS
-	GetAppByUID(appUID UID) (*App, error)
+	// Looks-up an app by UTagID -- READ ONLY ACCESS
+	GetAppByTagID(appID TagID) (*App, error)
 
 	// Selects the app that best matches an invocation string.
 	GetAppForInvocation(invocation string) (*App, error)
@@ -103,8 +103,8 @@ type Registry interface {
 	// Registers a block of symbol, attr, cell, and selector definitions for a client.
 	RegisterDefs(defs *RegisterDefs) error
 
-	// Instantiates an attr element value for a given attr UID -- typically followed by ElemVal.Unmarshal()
-	NewAttrElem(attrID AttrID) (ElemVal, error)
+	// Instantiates an attr element value for a given attr TagID -- typically followed by ElemVal.Unmarshal()
+	NewAttrElem(attrSpecID TagID) (ElemVal, error)
 }
 
 // PinContext wraps a client request to receive a cell's state / updates.
@@ -129,5 +129,5 @@ type PinContext interface {
 type PinOp interface {
 	RawRequest() PinRequest
 	URL() *url.URL
-	ContextID() TimeID
+	ContextID() TagID
 }

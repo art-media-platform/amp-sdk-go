@@ -17,11 +17,9 @@ type TagSpecExpr struct {
 }
 
 type HaloTag struct {
-	
 }
 
-
-func (attrID AttrID) PinLevel() int {   // TODO: remove PinLevel!?  Just stuff it in the HaloTag spec and MD5 that.
+func (attrID TagSpecID) PinLevel() int { // TODO: remove PinLevel!?  Just stuff it in the HaloTag spec and MD5 that.
 	return int(attrID[0] >> 61)
 }
 
@@ -33,27 +31,20 @@ const (
 	pinLevelShift = 64 - PinLevelBits
 )
 
-func (attrID *AttrID) ApplyPinLevel(pinLevel int) {
+func (attrID *TagSpecID) ApplyPinLevel(pinLevel int) {
 	attrID[0] &^= pinLevelMask
 	attrID[0] |= uint64(pinLevel) << pinLevelShift
 }
 
-// Generates the AttrID for the given raw attr element type name (vs from an attr spec expression).
-func FormBaseAttrID(canonicExpr string) AttrID {
-	attrID := AttrID(StringToUID(canonicExpr))
+// Generates the TagSpecID for the given raw attr element type name (vs from an attr spec expression).
+func FormBaseTagSpecID(canonicExpr string) TagSpecID {
+	attrID := TagSpecID(StringToTagID(canonicExpr))
 	attrID[0] &^= pinLevelMask
 	return attrID
 }
 
-func (attrID *AttrID) IsNil() bool {
+func (attrID *TagSpecID) IsNil() bool {
 	return attrID[0] == 0 && attrID[1] == 0
-}
-
-func (spec *TagSpec) AttrID() AttrID {
-	return [2]uint64{
-		spec.AttrIDx0,
-		spec.AttrIDx1,
-	}
 }
 
 var attrLexer = lexer.MustSimple([]lexer.SimpleRule{
@@ -66,14 +57,14 @@ var attrLexer = lexer.MustSimple([]lexer.SimpleRule{
 	//{Name: "Punct", Pattern: `[[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`},
 })
 
-var attrSpecParser = participle.MustBuild[TagSpecExpr](
+var tagSpecParser = participle.MustBuild[TagSpecExpr](
 	participle.Lexer(attrLexer),
 	participle.Elide("Whitespace"),
 	//, participle.UseLookahead(2))
 )
 
 func ParseAttrDef(tagDefExpr string) (expr *TagSpecExpr, err error) {
-	expr, err = attrSpecParser.ParseString("", tagDefExpr)
+	expr, err = tagSpecParser.ParseString("", tagDefExpr)
 	if err != nil {
 		return
 	}
@@ -93,18 +84,18 @@ func ParseAttrDef(tagDefExpr string) (expr *TagSpecExpr, err error) {
 	return
 }
 
-func FormTagSpec(tagSpecExpr string) (TagSpec, error) {
-	expr, err := ParseAttrDef(tagSpecExpr)
+func FormTagSpec(canonicAttrSpecExpr string) (TagSpec, error) {
+	expr, err := ParseAttrDef(canonicAttrSpecExpr)
 	if err != nil {
 		return TagSpec{}, err
 	}
 
-	elemTypeID := FormBaseAttrID(expr.ElemType)
+	elemTypeID := FormBaseTagSpecID(expr.ElemType)
 
-	attrID := FormBaseAttrID(expr.AsCanonic)
+	attrID := FormBaseTagSpecID(expr.AsCanonic)
 	attrID.ApplyPinLevel(expr.PinLevel)
 
-	seriesID := StringToUID(expr.SeriesSpec)
+	seriesID := StringToTagID(expr.SeriesSpec)
 
 	if expr.PinLevel == 0 && expr.SeriesSpec == "" {
 		if elemTypeID != attrID {
@@ -113,30 +104,32 @@ func FormTagSpec(tagSpecExpr string) (TagSpec, error) {
 	}
 
 	spec := TagSpec{
-		AsCanonic:      expr.AsCanonic,
-		AttrIDx0:       attrID[0],
-		AttrIDx1:       attrID[1],
-		ElemTypeIDx0:   elemTypeID[0],
-		ElemTypeIDx1:   elemTypeID[1],
-		SeriesSpecIDx0: seriesID[0],
+		AsCanonic:      canonicAttrSpecExpr,
+		AttrSpecIDx0:   int64(attrID[0]),
+		AttrSpecIDx1:   attrID[1],
+		AttrSpecIDx2:   attrID[2],
+		ElemSpecIDx0:   int64(elemTypeID[0]),
+		ElemSpecIDx1:   elemTypeID[1],
+		ElemSpecIDx2:   elemTypeID[2],
+		SeriesSpecIDx0: int64(seriesID[0]),
 		SeriesSpecIDx1: seriesID[1],
+		SeriesSpecIDx2: seriesID[2],
 	}
-
 	return spec, nil
 }
 
-func MustFormAttrID(tagSpecExpr string) AttrID {
+func MustFormAttrSpec(tagSpecExpr string) TagID {
 	spec, err := FormTagSpec(tagSpecExpr)
 	if err != nil {
 		panic(err)
 	}
-	return spec.AttrID()
+	return spec.SpecID()
 }
 
-func FormAttrID(tagSpecExpr string) (AttrID, error) {
+func FormTagSpecID(tagSpecExpr string) (TagID, error) {
 	spec, err := FormTagSpec(tagSpecExpr)
 	if err != nil {
-		return AttrID{}, err
+		return TagID{}, err
 	}
-	return spec.AttrID(), nil
+	return spec.SpecID(), nil
 }

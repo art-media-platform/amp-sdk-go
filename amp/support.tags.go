@@ -1,10 +1,11 @@
 package amp
 
 import (
-	"strings"
+	"crypto/md5"
+	"encoding/binary"
 	"time"
 
-	"github.com/amp-space/amp-sdk-go/stdlib/bufs"
+	"github.com/amp-3d/amp-sdk-go/stdlib/bufs"
 )
 
 // URI form of a glyph typically followed by a media (mime) type.
@@ -13,49 +14,69 @@ const GenericGlyphURL = "amp:glyph/"
 // Describes an asset to be an image stream but not specify format / codec
 var GenericImageType = "image/*"
 
-// TimeID is a signed 16 byte UTC time index in big endian form, with 80 bits (10 bytes) of fractional precision.
+// TagID is a signed 16 byte UTC time index in big endian form, with 80 bits (10 bytes) of fractional precision.
 // This means there are 47 bits dedicated for whole seconds => +/- 4.4 million years
 //
-// Note: (TimeID[0] >> 16) yields a standard 64-bit Unix UTC time.
-type TimeID [2]uint64
-
-var NilTimeID = TimeID{}
+// Note: (TagID[0] >> 16) yields a standard 64-bit Unix UTC time.
+type TagID [3]uint64
 
 const (
-	TimeID_x0_SecondsShift = 16                  // shift to get the 64-bit Unix time from TimeID[0]
-	TimeID_NanosecStep     = uint64(0x44B82FA1C) // 1<<64 div 1/1e9 -- reflects Go's single nanosecond resolution spread over a 64 bits
-	TimeID_EntropyMask     = uint64(0x3FFFFFFFF) // entropy bit mask for TimeID[1] -- slightly smaller than 1 ns resolution
+	TagID_x0_SecondsShift = 16                  // shift to get the 64-bit Unix time from TagID[0]
+	TagID_NanosecStep     = uint64(0x44B82FA1C) // 1<<64 div 1/1e9 -- reflects Go's single nanosecond resolution spread over a 64 bits
+	TagID_EntropyMask     = uint64(0x3FFFFFFFF) // entropy bit mask for TagID[1] -- slightly smaller than 1 ns resolution
 )
 
-func TimeIDFromInts(x0 int64, x1 uint64) TimeID {
-	return TimeID{uint64(x0), x1}
+func TagIDFromInts(x0 int64, x1 uint64) TagID {
+	return TagID{uint64(x0), x1}
 }
 
-// Returns the current time as a TimeID, statistically guaranteed to be unique even when called in rapid succession.
-func NewTimeID() TimeID {
-	return ConvertToTimeID(time.Now(), true)
+// Returns the current time as a TagID, statistically guaranteed to be unique even when called in rapid succession.
+func NewTagID() TagID {
+	return TimeToTagID(time.Now(), true)
 }
 
-func ConvertToTimeID(t time.Time, addEntropy bool) TimeID {
+func TimeToTagID(t time.Time, addEntropy bool) TagID {
 	ns_b10 := uint64(t.Nanosecond())
-	ns_f64 := ns_b10 * TimeID_NanosecStep // map 0..999999999 to 0..(2^64-1)
+	ns_f64 := ns_b10 * TagID_NanosecStep // map 0..999999999 to 0..(2^64-1)
 
-	t_00_06 := uint64(t.Unix()) << TimeID_x0_SecondsShift
-	t_07_08 := ns_f64 >> (64 - TimeID_x0_SecondsShift)
-	t_09_15 := ns_f64 << TimeID_x0_SecondsShift
+	t_00_06 := uint64(t.Unix()) << TagID_x0_SecondsShift
+	t_06_08 := ns_f64 >> (64 - TagID_x0_SecondsShift)
+	t_08_15 := ns_f64 << TagID_x0_SecondsShift
 	if addEntropy {
-		gTimeIDSeed = ns_f64 ^ (gTimeIDSeed * 5237732522753)
-		t_09_15 ^= gTimeIDSeed & TimeID_EntropyMask
+		gTagIDSeed = ns_f64 ^ (gTagIDSeed * 5237732522753)
+		t_08_15 ^= gTagIDSeed & TagID_EntropyMask
 	}
 
-	tid := TimeID{
-		t_00_06 | uint64(t_07_08),
-		t_09_15,
+	tid := TagID{
+		0,
+		t_00_06 | uint64(t_06_08),
+		t_08_15,
 	}
 	return tid
 }
 
-func (tid TimeID) CompareTo(oth TimeID) int {
+func StringToTagID(canonicExpr string) TagID {
+	if canonicExpr == "" {
+		return TagID{}
+	}
+	hasher := md5.New()
+	hasher.Write([]byte(canonicExpr))
+
+	var hashBuf [16]byte
+	hash := hasher.Sum(hashBuf[:0])
+	tagID := TagID{
+		0,
+		binary.LittleEndian.Uint64(hash[0:8]),
+		binary.LittleEndian.Uint64(hash[8:16]),
+	}
+	return tagID
+}
+
+func (id TagID) String() string {
+	return id.Base32Suffix()
+}
+
+func (tid TagID) CompareTo(oth TagID) int {
 	if tid[0] < oth[0] {
 		return -1
 	}
@@ -71,8 +92,8 @@ func (tid TimeID) CompareTo(oth TimeID) int {
 	return 0
 }
 
-func (tid TimeID) Add(oth TimeID) TimeID {
-	sum := TimeID{
+func (tid TagID) Add(oth TagID) TagID {
+	sum := TagID{
 		tid[0] + oth[0],
 		tid[1] + oth[1],
 	}
@@ -83,8 +104,8 @@ func (tid TimeID) Add(oth TimeID) TimeID {
 	return sum
 }
 
-func (tid TimeID) Sub(oth TimeID) TimeID {
-	diff := TimeID{
+func (tid TagID) Sub(oth TagID) TagID {
+	diff := TagID{
 		tid[0] - oth[0],
 		tid[1] - oth[1],
 	}
@@ -96,30 +117,30 @@ func (tid TimeID) Sub(oth TimeID) TimeID {
 }
 
 // Returns Unix UTC time in milliseconds
-func (tid TimeID) UnixMilli() int64 {
+func (tid TagID) UnixMilli() int64 {
 	return int64(tid[0]*1000) >> 16
 }
 
 // Returns Unix UTC time in seconds
-func (tid TimeID) Unix() int64 {
+func (tid TagID) Unix() int64 {
 	return int64(tid[0]) >> 16
 }
 
-func (tid TimeID) IsNil() bool {
-	return tid[0] == 0 && tid[1] == 0
+func (tid TagID) IsNil() bool {
+	return tid[0] == 0 && tid[1] == 0 && tid[2] == 0
 }
 
-func (tid *TimeID) SetFromInts(x0 int64, x1 uint64) {
+func (tid *TagID) SetFromInts(x0 int64, x1 uint64) {
 	tid[0] = uint64(x0)
 	tid[1] = x1
 }
 
-func (tid TimeID) ToInts() (int64, uint64) {
+func (tid TagID) ToInts() (int64, uint64) {
 	return int64(tid[0]), tid[1]
 }
 
 // Base32Suffix returns the last few digits of this TID in string form (for easy reading, logs, etc)
-func (tid TimeID) Base32Suffix() string {
+func (tid TagID) Base32Suffix() string {
 	const lcm_bits = 40 // divisible by 5 (bits) and 8 (bytes).
 	const lcm_bytes = lcm_bits / 8
 
@@ -132,11 +153,10 @@ func (tid TimeID) Base32Suffix() string {
 	return base32
 }
 
-const HexChars = "0123456789abcdef"
-
 // Base16Suffix returns the last few digits of this TID in string form (for easy reading, logs, etc)
-func (tid TimeID) Base16Suffix() string {
+func (tid TagID) Base16Suffix() string {
 	const nibbles = 6
+	const HexChars = "0123456789abcdef"
 
 	var suffix [nibbles]byte
 	for i := uint(0); i < nibbles; i++ {
@@ -148,86 +168,83 @@ func (tid TimeID) Base16Suffix() string {
 	return base16
 }
 
-var gTimeIDSeed = uint64(0x3773000000003773)
+// CopyNext copies the given TID and increments it by 1, typically useful for seeking the next entry after a given one.
+func (tid TagID) ImprintTag(other TagID) TagID {
+	return TagID{
+		tid[0] ^ other[0],
+		tid[1] ^ other[1],
+		tid[2] ^ other[2],
+	}
+}
 
-// UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
-//
-// Shifting this value to the right 16 bits will yield standard Unix time.
-// This means there are 47 bits dedicated for seconds, implying a limit 4.4 million years.
-//type UTC16 int64
+// Forms an amp.UID explicitly from two uint64 values.
+func IntsToTag(x0 int64, x1, x2 uint64) TagID {
+	return TagID{
+		uint64(x0),
+		x1,
+		x2,
+	}
+}
 
-// TID identifies a specific planet, node, or transaction.
-//
-// Unless otherwise specified a TID in the wild should always be considered read-only.
-// type TID []byte
+var gTagIDSeed = uint64(0x3773000000003773)
 
-// // TIDBuf is embedded UTC16 value followed by a 24 byte hash.
-// type TIDBuf [TIDBinaryLen]byte
+var (
+	NilTag         = TagID{}
+	DevicePlanet   = IntsToTag(0, 0, 1)
+	HostPlanet     = IntsToTag(0, 0, 2)
+	AppHomePlanet  = IntsToTag(0, 0, 3)
+	UserHomePlanet = IntsToTag(0, 0, 4)
+)
 
-// // Byte size of a TID, a hash with a leading embedded big endian binary time index.
-// const TIDBinaryLen = int(Const_TIDBinaryLen)
+func BytesToTag(in []byte) (tid TagID, err error) {
+	var buf [24]byte
+	startAt := max(0, 24-len(in))
+	copy(buf[startAt:], in)
 
-// // ASCII string length of a CellTID encoded into its base32 form.
-// const TIDStringLen = int(Const_TIDStringLen)
+	tid[0] = binary.BigEndian.Uint64(buf[0:8])
+	tid[1] = binary.BigEndian.Uint64(buf[8:16])
+	tid[2] = binary.BigEndian.Uint64(buf[16:24])
+	return tid, nil
+}
 
-// // nilTID is a zeroed TID that denotes a void/nil/zero value of a TID
-// var nilTID = TID{}
-
-// const (
-// 	SI_DistantFuture = UTC16(0x7FFFFFFFFFFFFFFF)
-// )
+func (tid TagID) AppendTo(dst []byte) []byte {
+	dst = binary.BigEndian.AppendUint64(dst, tid[0])
+	dst = binary.BigEndian.AppendUint64(dst, tid[1])
+	dst = binary.BigEndian.AppendUint64(dst, tid[2])
+	return dst
+}
 
 /*
-// Converts milliseconds to UTC16.
-func ConvertMsToUTC(ms int64) UTC16 {
-	return UTC16((ms << 16) / 1000)
-}
-
-// Converts UTC16 to a time.Time.
-func (t UTC16) ToTime() time.Time {
-	return time.Unix(int64(t>>16), int64(t&0xFFFF)*15259)
-}
-
-
-// TID is a convenience function that returns the TID contained within this TxID.
-func (tid *TIDBuf) TID() TID {
-	return tid[:]
-}
-
-// Base32 returns this TID in Base32 form.
-func (tid *TIDBuf) Base32() string {
-	return bufs.Base32Encoding.EncodeToString(tid[:])
-}
-
-// IsNil returns true if this TID length is 0 or is equal to NilTID
-func (tid TID) IsNil() bool {
-	if len(tid) == 0 {
-		return true
+// ParseUID decodes s into a UID or returns an error.  Accepted forms:
+//   - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+//   - urn:uuid:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+//   - {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
+//   - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.
+func ParseUUID(s string) (TagID, error) {
+	uidBytes, err := uuid.Parse(s)
+	if err != nil {
+		return TagID{}, err
 	}
-
-	if bytes.Equal(tid, nilTID[:]) {
-		return true
-	}
-
-	return false
+	return Bin24ToTag(uidBytes[:])
 }
 
-// Clone returns a duplicate of this TID
-func (tid TID) Clone() TID {
-	dupe := make([]byte, len(tid))
-	copy(dupe, tid)
-	return dupe
+// MustParseUID decodes s into a UID or panics -- see ParseUID().
+func MustParseUID(s string) UID {
+	uidBytes := uuid.MustParse(s)
+	uid, _ := BytesToUID(uidBytes[:])
+	return uid
 }
 
-// Buf is a convenience function that make a new TxID from a TID byte slice.
-func (tid TID) Buf() (buf TIDBuf) {
-	copy(buf[:], tid)
-	return buf
+// String returns the string form of uid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx or "" if uuid is zero.
+func (uid UID) ToUUID() (uuid uuid.UUID) {
+	binary.BigEndian.PutUint64(uuid[:8], uid[0])
+	binary.BigEndian.PutUint64(uuid[8:], uid[1])
+	return uuid
 }
 
-// Base32 returns this TID in Base32 form.
-func (tid TID) Base32() string {
-	return bufs.Base32Encoding.EncodeToString(tid)
+// String returns the string form of uid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx or "" if uuid is zero.
+func (uid UID) String() string {
+	return uid.ToUUID().String()
 }
 
 // Appends the base 32 ASCII encoding of this TID to the given buffer
@@ -243,7 +260,6 @@ func (tid TID) AppendAsBase32(in []byte) []byte {
 	bufs.Base32Encoding.Encode(buf[len(in):needed], tid)
 	return buf
 }
-
 
 // SetTimeAndHash writes the given timestamp and the right-most part of inSig into this TID.
 //
@@ -264,44 +280,6 @@ func (tid TID) SetHash(hash []byte) {
 			tid[i] = hash[i]
 		}
 	}
-}
-
-// SetUTC16 writes the given UTC16 into this TID
-func (tid TID) SetUTC(t UTC16) {
-	tid[0] = byte(t >> 56)
-	tid[1] = byte(t >> 48)
-	tid[2] = byte(t >> 40)
-	tid[3] = byte(t >> 32)
-	tid[4] = byte(t >> 24)
-	tid[5] = byte(t >> 16)
-	tid[6] = byte(t >> 8)
-	tid[7] = byte(t)
-}
-
-// ExtractUTC16 returns the unix timestamp embedded in this TID (a unix timestamp in 1<<16 seconds UTC)
-func (tid TID) ExtractUTC() UTC16 {
-	t := int64(tid[0])
-	t = (t << 8) | int64(tid[1])
-	t = (t << 8) | int64(tid[2])
-	t = (t << 8) | int64(tid[3])
-	t = (t << 8) | int64(tid[4])
-	t = (t << 8) | int64(tid[5])
-	t = (t << 8) | int64(tid[6])
-	t = (t << 8) | int64(tid[7])
-
-	return UTC16(t)
-}
-
-// ExtractTime returns the unix timestamp embedded in this TID (a unix timestamp in seconds UTC)
-func (tid TID) ExtractTime() int64 {
-	t := int64(tid[0])
-	t = (t << 8) | int64(tid[1])
-	t = (t << 8) | int64(tid[2])
-	t = (t << 8) | int64(tid[3])
-	t = (t << 8) | int64(tid[4])
-	t = (t << 8) | int64(tid[5])
-
-	return t
 }
 
 // SelectEarlier looks in inTime a chooses whichever is earlier.
@@ -329,29 +307,8 @@ func (tid TID) SelectEarlier(t UTC16) bool {
 	return false
 }
 
-// CopyNext copies the given TID and increments it by 1, typically useful for seeking the next entry after a given one.
-func (tid TID) CopyNext(inTID TID) {
-	copy(tid, inTID)
-	for j := len(tid) - 1; j > 0; j-- {
-		tid[j]++
-		if tid[j] > 0 {
-			break
-		}
-	}
-}
-*/
-// // Forms a CellID from uint64s.
-// func CellIDFromU64(x0, x1 uint64) (id CellID) {
-// 	id.AssignFromU64(x0, x1)
-// 	return id
-// }
-
-func (id *CellID) IsNil() bool {
-	return id[0] == 0 && id[1] == 0 && id[2] == 0
-}
-
-// func StringToCellID(s string) CellID {
-// 	uid := StringToUID(s)
+// func StringToTagID(s string) TagID {
+// 	uid := StringToTagID(s)
 // 	return [3]uint64{
 // 	   0,
 // 	   uid[0],
@@ -359,25 +316,25 @@ func (id *CellID) IsNil() bool {
 // 	}
 // }
 
-// func (id *CellID) AssignFromU64(x0, x1 uint64) {
+// func (id *TagID) AssignFromU64(x0, x1 uint64) {
 // 	binary.BigEndian.PutUint64(id[0:8], x0)
 // 	binary.BigEndian.PutUint64(id[8:16], x1)
 // }
 
-// func (id *CellID) ExportAsU64() (x0, x1 uint64) {
+// func (id *TagID) ExportAsU64() (x0, x1 uint64) {
 // 	x0 = binary.BigEndian.Uint64(id[0:8])
 // 	x1 = binary.BigEndian.Uint64(id[8:16])
 // 	return
 // }
 
-// func (id *CellID) String() string {
+// func (id *TagID) String() string {
 // 	return bufs.Base32Encoding.EncodeToString(id[:])
 // }
 
 /*
-// Issues a CellID using the given random number generator to generate the UID hash portion.
-func IssueCellID(rng *rand.Rand) (id CellID) {
-	return CellIDFromU64(uint64(ConvertToUTC16(time.Now())), rng.Uint64())
+// Issues a TagID using the given random number generator to generate the TagID hash portion.
+func IssueTagID(rng *rand.Rand) (id TagID) {
+	return TagIDFromU64(uint64(ConvertToUTC16(time.Now())), rng.Uint64())
 }
 
 // TID identifies a Tx (or Cell) by secure hash ID.
@@ -433,17 +390,6 @@ func (tid *TxID) AppendAsBinary(io []byte) []byte {
 }
 */
 
-// Analyses an TagSpec's SeriesSpec and returns the index class it uses.
-func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
-	switch {
-	case strings.HasSuffix(seriesSpec, ".Name"):
-		return SeriesIndexType_Name
-	default:
-		return SeriesIndexType_Literal
-	}
-}
-
-
 /*
 
 // ReadCell loads a cell with the given URI having the inferred schema (built from its fields using reflection).
@@ -481,7 +427,7 @@ func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) 
 		for _, ai := range schema.Attrs {
 			if ai.TypedName == field.Name {
 				for _, msg := range msgs {
-					if msg.AttrID == ai.AttrID {
+					if msg.TagSpecID == ai.TagSpecID {
 						msg.LoadVal(dst.Field(fi).Addr().Interface())
 						goto nextField
 					}
@@ -519,7 +465,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 		for _, attr := range schema.Attrs {
 			msg := tx.AddMsg()
 			msg.Op = MsgOp_PushAttr
-			msg.AttrID = attr.AttrID
+			msg.TagSpecID = attr.TagSpecID
 			for i := 0; i < numFields; i++ {
 				if valType.Field(i).Name == attr.TypedName {
 					msg.setVal(src.Field(i).Interface())
@@ -564,17 +510,17 @@ func (req *CellReq) GetChildSchema(modelURI string) *AttrSchema {
 	return nil
 }
 
-func (req *CellReq) PushBeginPin(target CellID) {
+func (req *CellReq) PushBeginPin(target TagID) {
 	m := NewTxMsg()
-	m.CellID = target.U64()
+	m.TagID = target.U64()
 	m.Op = MsgOp_PinCell
 	req.PushTx(m)
 }
 
-func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
+func (req *CellReq) PushInsertCell(target TagID, schema *AttrSchema) {
 	if schema != nil {
 		m := NewTxMsg()
-		m.CellID = target.U64()
+		m.TagID = target.U64()
 		m.Op = MsgOp_InsertChildCell
 		m.ValType = int32(ValType_SchemaID)
 		m.ValInt = int64(schema.SchemaID)
@@ -583,16 +529,16 @@ func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
 }
 
 // Pushes the given attr to the client
-func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, val Value) {
+func (req *CellReq) PushAttr(target TagID, schema *AttrSchema, attrURI string, val Value) {
 	attr := schema.LookupAttr(attrURI)
 	if attr == nil {
 		return
 	}
 
 	m := NewTxMsg()
-	m.CellID = target.U64()
+	m.TagID = target.U64()
 	m.Op = MsgOp_PushAttr
-	m.AttrID = attr.AttrID
+	m.TagSpecID = attr.TagSpecID
 	if attr.SeriesType == SeriesType_Fixed {
 		m.SI = attr.BoundSI
 	}
@@ -606,7 +552,7 @@ func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, 
 func (req *CellReq) PushCheckpoint(err error) {
 	m := NewTxMsg()
 	m.Op = MsgOp_Commit
-	m.CellID = req.PinCell.U64()
+	m.TagID = req.PinCell.U64()
 	if err != nil {
 		m.setVal(err)
 	}

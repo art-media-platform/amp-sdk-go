@@ -44,13 +44,13 @@ type AppContext interface {
 	// This should not be called concurrently with other IssueCellID() calls.
 	IssueCellID() CellID
 
-	// Gets the named cell and attribute from the user's home planet -- used high-level app settings.
+	// Gets the named attribute from the user's home planet -- used high-level app settings.
 	// The attr is scoped by both the app UID so key collision with other users or apps is not possible.
 	// This is how an app can store and retrieve settings.
-	GetAppCellAttr(attrSpec string, dst ElemVal) error
+	GetAppAttr(attrSpec string, dst ElemVal) error
 
-	// Write analog for GetAppCellAttr()
-	PutAppCellAttr(attrSpec string, src ElemVal) error
+	// Write analog for GetAppAttr()
+	PutAppAttr(attrSpec string, src ElemVal) error
 }
 
 // AppInstance is implemented by an App and invoked by amp.Host responding to a client pin request.
@@ -63,7 +63,7 @@ type AppInstance interface {
 	// Celled when the app is pin the cell IAW with the given request.
 	// If parent != nil, this is the context of the request.
 	// If parent == nil, this app was invoked without out a parent cell / context.
-	PinCell(parent PinnedCell, req PinReq) (PinnedCell, error)
+	PinCell(parent PinnedCell, req PinOp) (PinnedCell, error)
 
 	// Handles a meta message sent to this app, which could be any attr type.
 	HandleURL(*url.URL) error
@@ -88,7 +88,7 @@ type PinnedCell interface {
 	Context() task.Context
 
 	// Pins the requested cell (typically a child cell).
-	PinCell(req PinReq) (PinnedCell, error)
+	PinCell(req PinOp) (PinnedCell, error)
 
 	// Pushes this cell and child cells to the client.
 	// Exits when either:
@@ -98,7 +98,7 @@ type PinnedCell interface {
 	ServeState(ctx PinContext) error
 
 	// Merges a set of incoming changes into this pinned cell. -- a "write" operation
-	MergeUpdate(tx *Msg) error
+	MergeTx(tx *TxMsg) error
 }
 
 // Serialization abstraction
@@ -111,11 +111,11 @@ type PbValue interface {
 // ElemVal wraps cell attribute element name and serialization.
 type ElemVal interface {
 
-	// Returns the element type name (a degenerate AttrSpec).
-	TypeName() string
+	// Returns the element type name (a scalar AttrSpec).
+	ElemTypeName() string
 
 	// Marshals this ElemVal to a buffer, reallocating if needed.
-	MarshalToBuf(dst *[]byte) error
+	MarshalToStore(in []byte) (out []byte, err error)
 
 	// Unmarshals and merges value state from a buffer.
 	Unmarshal(src []byte) error
@@ -124,50 +124,47 @@ type ElemVal interface {
 	New() ElemVal
 }
 
-// MultiTx is a multi-cell state update for a pinned cell or a container of meta attrs.
-type MultiTx struct {
-	ReqID   uint64 // allows replies to be routed to the originator
-	Status  ReqStatus
-	CellTxs []CellTx
+// TxMsg is workhorse generic transport serialization sent between client and host.
+type TxMsg struct {
+	TxInfo 
+	refCount  int32     // see AddRef() / ReleaseRef()
+	Ops       []TxOp    // ordered operations to perform on the target
+	DataStore []byte    // marshalled data store for Ops serialized data
 }
 
-// CellTx is a state update for a cell pushed to a client.
-type CellTx struct {
-	Op         CellTxOp      // The tx operation to perform
-	TargetCell CellID        // The cell being modified
-	ElemsPb    []*AttrElemPb // Attr element run (serialized)
-}
-
-type AttrElem struct {
-	Val    ElemVal // Val is the abstraction interface allowing serialization and type string-ification
-	SI     int64   // SI is the SeriesIndex, which is described in the AttrSpec.SeriesIndexType
-	AttrID uint32  // AttrID is the native ID (AttrSpec.DefID) that fully names an AttrSpec
+// TxOp is an atomic operation on a target cell and is a unit of change (or message) for any target.
+// Values are typically LSM sorted, so use low order bytes before high order bytes.
+// Note that x0 is the most significant and x2 is least significant bytes.
+type TxOp struct {
+	OpCode       TxOpCode
+	TargetID     CellID      // Target cell to operate on
+	ParentID     CellID      // Parent cell of the target cell
+	AttrID       AttrID      // Attribute to operate on
+	SI           SeriesIndex // Index of the data being mutated
+	DataStoreOfs int64       // Offset into TxMsg.DataStore
+	DataLen      int64       // Length of data in TxMsg.DataStore
 }
 
 type AttrDef struct {
-	Client AttrSpec
-	Native AttrSpec
+	AttrSpec
+	Prototype ElemVal
 }
 
-type AttrSet struct {
-	ClientDefID uint32    // READ-ONLY
-	NativeDefID uint32    // READ-ONLY
-	Attrs       []AttrDef // READ-ONLY
+// SeriesIndex
+type SeriesIndex [2]uint64
+
+// CellID is globally unique Cell identifier that globally identifies a cell.
+//
+// By convention, the the leading 8 bytes are a UTC16 timestamp and the trailing 8 bytes are pseudo-random.
+type CellID [3]uint64
+
+// AttrID is a UID for the canonic string representation of an AttrSpec
+// Leading bits are reserved to express pin detail level or layer.
+type AttrID UID
+
+func (id AttrID) String() string {
+	return UID(id).String()
 }
 
-/*
-type UID3 [3]uint64 
-
-type AttrSeriesEntry struct {
-    SeriesID     UID3
-    ElemTypeID   UID3
-	AttrSpec     AttrSpec
-    
-    
-    CellID       UID3
-    AttrID       UID3
-    SI           UID3
-    Height       int64 
-    Hash         UID3  // HAshes from the previous revision 
-}
-*/
+// Leading bits of AttrID are reserved to express pin detail level or layer.
+const PinLayerBits = 3

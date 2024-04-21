@@ -9,8 +9,9 @@ import (
 
 // Options when publishing an asset
 type PublishOpts struct {
-	Expiry   time.Duration // If <= 0, the publisher chooses the expiration period
-	HostAddr string        // Domain or IP address used in the generated URL; if empty -> "localhost"
+	Expiry    time.Duration // If <= 0, the publisher chooses the expiration period
+	HostAddr  string        // Domain or IP address used in the generated URL; if empty -> "localhost"
+	OnExpired func()        // Called when the asset expires
 }
 
 // AssetPublisher publishes a MediaAsset to a randomly generated URL until the idle expiration is reached.

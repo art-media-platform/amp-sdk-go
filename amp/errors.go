@@ -5,12 +5,13 @@ import (
 )
 
 var (
+	ErrMalformedTx   = ErrCode_MalformedTx.Error("bad varint")
 	ErrStreamClosed  = ErrCode_NotConnected.Error("stream closed")
 	ErrCellNotFound  = ErrCode_CellNotFound.Error("cell not found")
 	ErrPinCtxClosed  = ErrCode_PinContextClosed.Error("pin context closed")
 	ErrNotPinnable   = ErrCode_PinFailed.Error("not pinnable")
 	ErrUnimplemented = ErrCode_PinFailed.Error("not implemented")
-	ErrBadCellTx     = ErrCode_MalformedTx.Error("missing cell spec / target cell")
+	ErrBadTarget     = ErrCode_MalformedTx.Error("missing target ID")
 	ErrNothingToPin  = ErrCode_PinFailed.Error("nothing to pin")
 	ErrShuttingDown  = ErrCode_ShuttingDown.Error("shutting down")
 	ErrTimeout       = ErrCode_Timeout.Error("timeout")

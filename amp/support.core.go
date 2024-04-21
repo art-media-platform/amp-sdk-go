@@ -1,11 +1,8 @@
 package amp
 
 import (
-	"bytes"
-	"encoding/binary"
 	"strings"
 	"time"
-	"unsafe"
 
 	"github.com/amp-space/amp-sdk-go/stdlib/bufs"
 )
@@ -16,45 +13,171 @@ const GlyphURIPrefix = "amp:glyph/"
 // Describes an asset to be an image stream but not specify format / codec
 var GenericImageType = "image/*"
 
+// TimeID is a signed 16 byte UTC time index in big endian form, with 80 bits (10 bytes) of fractional precision.
+// This means there are 47 bits dedicated for whole seconds => +/- 4.4 million years
+//
+// Note: (TimeID[0] >> 16) yields a standard 64-bit Unix UTC time.
+type TimeID [2]uint64
+
+var NilTimeID = TimeID{}
+
+const (
+	TimeID_x0_SecondsShift = 16                  // shift to get the 64-bit Unix time from TimeID[0]
+	TimeID_NanosecStep     = uint64(0x44B82FA1C) // 1<<64 div 1/1e9 -- reflects Go's single nanosecond resolution spread over a 64 bits
+	TimeID_EntropyMask     = uint64(0x3FFFFFFFF) // entropy bit mask for TimeID[1] -- slightly smaller than 1 ns resolution
+)
+
+func TimeIDFromInts(x0 int64, x1 uint64) TimeID {
+	return TimeID{uint64(x0), x1}
+}
+
+// Returns the current time as a TimeID, statistically guaranteed to be unique even when called in rapid succession.
+func NewTimeID() TimeID {
+	return ConvertToTimeID(time.Now(), true)
+}
+
+func ConvertToTimeID(t time.Time, addEntropy bool) TimeID {
+	ns_b10 := uint64(t.Nanosecond())
+	ns_f64 := ns_b10 * TimeID_NanosecStep // map 0..999999999 to 0..(2^64-1)
+
+	t_00_06 := uint64(t.Unix()) << TimeID_x0_SecondsShift
+	t_07_08 := ns_f64 >> (64 - TimeID_x0_SecondsShift)
+	t_09_15 := ns_f64 << TimeID_x0_SecondsShift
+	if addEntropy {
+		gTimeIDSeed = ns_f64 ^ (gTimeIDSeed * 5237732522753)
+		t_09_15 ^= gTimeIDSeed & TimeID_EntropyMask
+	}
+
+	tid := TimeID{
+		t_00_06 | uint64(t_07_08),
+		t_09_15,
+	}
+	return tid
+}
+
+func (tid TimeID) CompareTo(oth TimeID) int {
+	if tid[0] < oth[0] {
+		return -1
+	}
+	if tid[0] > oth[0] {
+		return 1
+	}
+	if tid[1] < oth[1] {
+		return -1
+	}
+	if tid[1] > oth[1] {
+		return 1
+	}
+	return 0
+}
+
+func (tid TimeID) Add(oth TimeID) TimeID {
+	sum := TimeID{
+		tid[0] + oth[0],
+		tid[1] + oth[1],
+	}
+	if sum[1] < tid[1] {
+		sum[0]++
+		sum[1] = ^sum[1] - 1
+	}
+	return sum
+}
+
+func (tid TimeID) Sub(oth TimeID) TimeID {
+	diff := TimeID{
+		tid[0] - oth[0],
+		tid[1] - oth[1],
+	}
+	if diff[1] > tid[1] {
+		diff[0]--
+		diff[1] = ^diff[1] + 1
+	}
+	return diff
+}
+
+// Returns Unix UTC time in milliseconds
+func (tid TimeID) UnixMilli() int64 {
+	return int64(tid[0]*1000) >> 16
+}
+
+// Returns Unix UTC time in seconds
+func (tid TimeID) Unix() int64 {
+	return int64(tid[0]) >> 16
+}
+
+func (tid TimeID) IsNil() bool {
+	return tid[0] == 0 && tid[1] == 0
+}
+
+func (tid *TimeID) SetFromInts(x0 int64, x1 uint64) {
+	tid[0] = uint64(x0)
+	tid[1] = x1
+}
+
+func (tid TimeID) ToInts() (int64, uint64) {
+	return int64(tid[0]), tid[1]
+}
+
+// Base32Suffix returns the last few digits of this TID in string form (for easy reading, logs, etc)
+func (tid TimeID) Base32Suffix() string {
+	const lcm_bits = 40 // divisible by 5 (bits) and 8 (bytes).
+	const lcm_bytes = lcm_bits / 8
+
+	var suffix [lcm_bytes]byte
+	for i := uint(0); i < lcm_bytes; i++ {
+		shift := uint(8 * (lcm_bytes - 1 - i))
+		suffix[i] = byte(tid[1] >> shift)
+	}
+	base32 := bufs.Base32Encoding.EncodeToString(suffix[:])
+	return base32
+}
+
+const HexChars = "0123456789abcdef"
+
+// Base16Suffix returns the last few digits of this TID in string form (for easy reading, logs, etc)
+func (tid TimeID) Base16Suffix() string {
+	const nibbles = 6
+
+	var suffix [nibbles]byte
+	for i := uint(0); i < nibbles; i++ {
+		shift := uint(4 * (nibbles - 1 - i))
+		hex := byte(tid[1]>>shift) & 0xF
+		suffix[i] = HexChars[hex]
+	}
+	base16 := string(suffix[:])
+	return base16
+}
+
+var gTimeIDSeed = uint64(0x3773000000003773)
+
 // UTC16 is a signed UTC timestamp, storing the elapsed 1/65536 second ticks since Jan 1, 1970 UTC.
 //
 // Shifting this value to the right 16 bits will yield standard Unix time.
 // This means there are 47 bits dedicated for seconds, implying a limit 4.4 million years.
-type UTC16 int64
+//type UTC16 int64
 
 // TID identifies a specific planet, node, or transaction.
 //
 // Unless otherwise specified a TID in the wild should always be considered read-only.
-type TID []byte
+// type TID []byte
 
-// TIDBuf is embedded UTC16 value followed by a 24 byte hash.
-type TIDBuf [TIDBinaryLen]byte
+// // TIDBuf is embedded UTC16 value followed by a 24 byte hash.
+// type TIDBuf [TIDBinaryLen]byte
 
-// Byte size of a TID, a hash with a leading embedded big endian binary time index.
-const TIDBinaryLen = int(Const_TIDBinaryLen)
+// // Byte size of a TID, a hash with a leading embedded big endian binary time index.
+// const TIDBinaryLen = int(Const_TIDBinaryLen)
 
-// ASCII string length of a CellTID encoded into its base32 form.
-const TIDStringLen = int(Const_TIDStringLen)
+// // ASCII string length of a CellTID encoded into its base32 form.
+// const TIDStringLen = int(Const_TIDStringLen)
 
-// nilTID is a zeroed TID that denotes a void/nil/zero value of a TID
-var nilTID = TID{}
+// // nilTID is a zeroed TID that denotes a void/nil/zero value of a TID
+// var nilTID = TID{}
 
-const (
-	SI_DistantFuture = UTC16(0x7FFFFFFFFFFFFFFF)
-)
+// const (
+// 	SI_DistantFuture = UTC16(0x7FFFFFFFFFFFFFFF)
+// )
 
-// Converts a time.Time to a UTC16.
-func ConvertToUTC16(t time.Time) UTC16 {
-	time16 := t.Unix() << 16
-	frac := uint16((2199 * (uint32(t.Nanosecond()) >> 10)) >> 15)
-	return UTC16(time16 | int64(frac))
-}
-
-// Similar to time.Now() but returns a UTC16.
-func Now() UTC16 {
-	return ConvertToUTC16(time.Now())
-}
-
+/*
 // Converts milliseconds to UTC16.
 func ConvertMsToUTC(ms int64) UTC16 {
 	return UTC16((ms << 16) / 1000)
@@ -65,10 +188,6 @@ func (t UTC16) ToTime() time.Time {
 	return time.Unix(int64(t>>16), int64(t&0xFFFF)*15259)
 }
 
-// Converts UTC16 to milliseconds.
-func (t UTC16) ToMs() int64 {
-	return (int64(t>>8) * 1000) >> 8
-}
 
 // TID is a convenience function that returns the TID contained within this TxID.
 func (tid *TIDBuf) TID() TID {
@@ -125,17 +244,6 @@ func (tid TID) AppendAsBase32(in []byte) []byte {
 	return buf
 }
 
-// SuffixStr returns the last few digits of this TID in string form (for easy reading, logs, etc)
-func (tid TID) SuffixStr() string {
-	const summaryStrLen = 5
-
-	R := len(tid)
-	L := R - summaryStrLen
-	if L < 0 {
-		L = 0
-	}
-	return bufs.Base32Encoding.EncodeToString(tid[L:R])
-}
 
 // SetTimeAndHash writes the given timestamp and the right-most part of inSig into this TID.
 //
@@ -231,34 +339,40 @@ func (tid TID) CopyNext(inTID TID) {
 		}
 	}
 }
-
-// CellID is unique Cell identifier that globally identifies a cell.
-type CellID [16]byte
-
-// Forms a CellID from uint64s.
-func CellIDFromU64(x0, x1 uint64) (id CellID) {
-	id.AssignFromU64(x0, x1)
-	return id
-}
+*/
+// // Forms a CellID from uint64s.
+// func CellIDFromU64(x0, x1 uint64) (id CellID) {
+// 	id.AssignFromU64(x0, x1)
+// 	return id
+// }
 
 func (id *CellID) IsNil() bool {
-	return *(*int64)(unsafe.Pointer(id)) == 0 && *(*int64)(unsafe.Pointer(&id[8])) == 0
+	return id[0] == 0 && id[1] == 0 && id[2] == 0
 }
 
-func (id *CellID) AssignFromU64(x0, x1 uint64) {
-	binary.BigEndian.PutUint64(id[0:8], x0)
-	binary.BigEndian.PutUint64(id[8:16], x1)
-}
+// func StringToCellID(s string) CellID {
+// 	uid := StringToUID(s)
+// 	return [3]uint64{
+// 	   0,
+// 	   uid[0],
+// 	   uid[1],
+// 	}
+// }
 
-func (id *CellID) ExportAsU64() (x0, x1 uint64) {
-	x0 = binary.BigEndian.Uint64(id[0:8])
-	x1 = binary.BigEndian.Uint64(id[8:16])
-	return
-}
+// func (id *CellID) AssignFromU64(x0, x1 uint64) {
+// 	binary.BigEndian.PutUint64(id[0:8], x0)
+// 	binary.BigEndian.PutUint64(id[8:16], x1)
+// }
 
-func (id *CellID) String() string {
-	return bufs.Base32Encoding.EncodeToString(id[:])
-}
+// func (id *CellID) ExportAsU64() (x0, x1 uint64) {
+// 	x0 = binary.BigEndian.Uint64(id[0:8])
+// 	x1 = binary.BigEndian.Uint64(id[8:16])
+// 	return
+// }
+
+// func (id *CellID) String() string {
+// 	return bufs.Base32Encoding.EncodeToString(id[:])
+// }
 
 /*
 // Issues a CellID using the given random number generator to generate the UID hash portion.
@@ -319,10 +433,6 @@ func (tid *TxID) AppendAsBinary(io []byte) []byte {
 }
 */
 
-func (id ConstSymbol) Ord() uint32 {
-	return uint32(id)
-}
-
 // Analyses an AttrSpec's SeriesSpec and returns the index class it uses.
 func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
 	switch {
@@ -333,20 +443,6 @@ func GetSeriesIndexType(seriesSpec string) SeriesIndexType {
 	}
 }
 
-func (params *PinReqParams) URLPath() []string {
-	if params.URL == nil {
-		return nil
-	}
-	path := params.URL.Path
-	if path != "" && path[0] == '/' {
-		path = path[1:]
-	}
-	return strings.Split(path, "/")
-}
-
-func (params *PinReqParams) Params() *PinReqParams {
-	return params
-}
 
 /*
 
@@ -469,20 +565,20 @@ func (req *CellReq) GetChildSchema(modelURI string) *AttrSchema {
 }
 
 func (req *CellReq) PushBeginPin(target CellID) {
-	m := NewMsg()
+	m := NewTxMsg()
 	m.CellID = target.U64()
 	m.Op = MsgOp_PinCell
-	req.PushUpdate(m)
+	req.PushTx(m)
 }
 
 func (req *CellReq) PushInsertCell(target CellID, schema *AttrSchema) {
 	if schema != nil {
-		m := NewMsg()
+		m := NewTxMsg()
 		m.CellID = target.U64()
 		m.Op = MsgOp_InsertChildCell
 		m.ValType = int32(ValType_SchemaID)
 		m.ValInt = int64(schema.SchemaID)
-		req.PushUpdate(m)
+		req.PushTx(m)
 	}
 }
 
@@ -493,7 +589,7 @@ func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, 
 		return
 	}
 
-	m := NewMsg()
+	m := NewTxMsg()
 	m.CellID = target.U64()
 	m.Op = MsgOp_PushAttr
 	m.AttrID = attr.AttrID
@@ -504,17 +600,17 @@ func (req *CellReq) PushAttr(target CellID, schema *AttrSchema, attrURI string, 
 	if attr.ValTypeID != 0 { // what is this for!?
 		m.ValType = int32(attr.ValTypeID)
 	}
-	req.PushUpdate(m)
+	req.PushTx(m)
 }
 
 func (req *CellReq) PushCheckpoint(err error) {
-	m := NewMsg()
+	m := NewTxMsg()
 	m.Op = MsgOp_Commit
 	m.CellID = req.PinCell.U64()
 	if err != nil {
 		m.setVal(err)
 	}
-	req.PushUpdate(m)
+	req.PushTx(m)
 }
 
 */

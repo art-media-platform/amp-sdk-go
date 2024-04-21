@@ -35,11 +35,11 @@ generate:
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.runtime/" \
 	    --proto_path=. \
-		amp/amp.proto
+		amp/api.amp.sdk.proto
 
 	protoc \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.runtime.crates/" \
 	    --proto_path=. \
-		crates/crates.proto
+		crates/api.amp.crates.proto
 

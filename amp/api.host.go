@@ -3,7 +3,6 @@ package amp
 import (
 	"net/url"
 
-	"github.com/amp-space/amp-sdk-go/stdlib/symbol"
 	"github.com/amp-space/amp-sdk-go/stdlib/task"
 )
 
@@ -14,7 +13,7 @@ type Host interface {
 
 	// Offers Go runtime and package level access to this Host's primary symbol and amp.App registry.
 	// The amp.Registry interface bakes security and efficiently and tries to serve as effective package manager.
-	Registry() Registry
+	HostRegistry() Registry
 
 	// StartNewSession creates a new HostSession and binds its Msg transport to a stream.
 	StartNewSession(parent HostService, via Transport) (HostSession, error)
@@ -30,13 +29,13 @@ type Transport interface {
 	// Called when this stream should close because the associated parent host session is closing or has closed.
 	Close() error
 
-	// SendMsg sends a Msg to the remote client.
+	// SendSTx sends a Msg to the remote client.
 	// ErrStreamClosed is used to denote normal stream close.
-	SendMsg(m *Msg) error
+	SendTx(tx *TxMsg) error
 
-	// RecvMsg blocks until it receives a Msg or the stream is done.
+	// RecvTx blocks until it receives a Msg or the stream is done.
 	// ErrStreamClosed is used to denote normal stream close.
-	RecvMsg() (*Msg, error)
+	RecvTx() (*TxMsg, error)
 }
 
 // HostService attaches to a amp.Host as a child, extending host functionality.
@@ -58,11 +57,8 @@ type HostService interface {
 // HostSession in an open client session with a Host.
 // Closing is initiated via task.Context.Close().
 type HostSession interface {
-	task.Context    // Underlying task context
-	SessionRegistry // How symbols and types registered and resolved
-
-	// Called when this session is newly opened to set up the SessionRegistry
-	InitSessionRegistry(symTable symbol.Table)
+	task.Context // Underlying task context
+	Registry     // How symbols and types registered and resolved
 
 	// Returns the running AssetPublisher instance for this session.
 	AssetPublisher() AssetPublisher
@@ -73,10 +69,10 @@ type HostSession interface {
 	// Sends a readied Msg to the client for handling.
 	// If msg.ReqID == 0, the attr is sent to the client's session controller (for sending session meta messages).
 	// On exit, the given msg should not be referenced further.
-	SendMsg(msg *Msg) error
+	SendTx(tx *TxMsg) error
 
 	// PinCell resolves and pins a requested cell.
-	PinCell(req PinReq) (PinContext, error)
+	PinCell(req PinOp) (PinContext, error)
 
 	// Gets the currently running AppInstance for an AppID.
 	// If the requested app is not running and autoCreate is set, a new instance is created and started.
@@ -86,13 +82,14 @@ type HostSession interface {
 // Registry is where apps and types are registered -- concurrency safe.
 type Registry interface {
 
-	// Registers an element value type (ElemVal) as a prototype under its AttrElemType (also a valid AttrSpec type expression).
-	// If an entry already exists (common for a type used by multiple apps), an error is returned and is a no-op.
-	// This and ResolveAttrSpec() allow NewElemVal() to work.
-	RegisterElemType(prototype ElemVal)
+	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid AttrSpec type expression).
+	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
+	// if registerAs == "", then the prototype.ElemTypeName() is used.
+	RegisterPrototype(registerAs string, prototype ElemVal) (AttrID, error)
 
-	// When a HostSession creates a new SessionRegistry(), this populates it with its registered ElemTypes.
-	ExportTo(dst SessionRegistry) error
+	// Imports all the types and apps from another registry.
+	// When a HostSession is created, its registry starts by importing the Host's registry.
+	Import(other Registry) error
 
 	// Registers an app by its UUID, URI, and schemas it supports.
 	RegisterApp(app *App) error
@@ -102,71 +99,35 @@ type Registry interface {
 
 	// Selects the app that best matches an invocation string.
 	GetAppForInvocation(invocation string) (*App, error)
-}
-
-// SessionRegistry manages a HostSession's symbol and type definitions -- concurrency safe.
-type SessionRegistry interface {
-
-	// Returns the symbol table for a session a technique sometimes also known as interning.
-	ClientSymbols() symbol.Table
-
-	// Translates a native symbol ID to a client symbol ID, returning false if not found.
-	NativeToClientID(nativeID uint32) (clientID uint32, found bool)
-
-	// Registers an ElemVal as a prototype under its element type name..
-	// This and ResolveAttrSpec() allow NewElemVal() to work.
-	RegisterElemType(prototype ElemVal) error
 
 	// Registers a block of symbol, attr, cell, and selector definitions for a client.
 	RegisterDefs(defs *RegisterDefs) error
 
-	// Resolves an AttrSpec into useful symbols, auto-registering the AttrSpec as needed.
-	// Typically used during AppInstance.OnNew() to get the AttrIDs that correspond to the AttrSpecs it will send later.
-	//
-	// If native === true, the spec is resolved with native symbols (vs client symbols).
-	//
-	// See AttrSpec docs.
-	ResolveAttrSpec(attrSpec string, native bool) (AttrSpec, error)
-
-	// Instantiates an attr element value for an AttrID -- typically followed by ElemVal.Unmarshal()
-	NewAttrElem(attrDefID uint32, native bool) (ElemVal, error)
-}
-
-// NewRegistry returns a new Registry
-func NewRegistry() Registry {
-	return newRegistry()
+	// Instantiates an attr element value for a given attr UID -- typically followed by ElemVal.Unmarshal()
+	NewAttrElem(attrID AttrID) (ElemVal, error)
 }
 
 // PinContext wraps a client request to receive a cell's state / updates.
 type PinContext interface {
 	task.Context // Started as a CHILD of the amp.PinnedCell returned by AppInstance.PinCell()
 
-	PinReq // Originating request info
+	Op() PinOp // Originating request info
 
-	// Looks up the given AttrSpec and returns its AttrID.
-	// Returns 0 if the AttrSpec is not registered or not enabled within this PinContext.
-	GetAttrID(attrSpec string) uint32
+	// Marshals a TxOp and optional value to the given Tx's data store.
+	//
+	// If the given attr is not enabled within this PinContext, this function is a no-op.
+	MarshalTxOp(dst *TxMsg, op TxOp, val ElemVal)
 
 	// PushTx pushes the given tx to this PinContext
-	PushUpdate(tx *Msg) error
+	PushTx(tx *TxMsg) error
 
 	// App returns the resolved AppContext that is servicing this PinContext
 	App() AppContext
 }
 
-// PinReq is support wrapper for PinRequest, a client request to pin a cell.
-type PinReq interface {
-	Params() *PinReqParams
-	URLPath() []string
-}
-
-// PinReqParams implements PinReq
-type PinReqParams struct {
-	PinReq   PinRequest
-	PinCell  CellID
-	URL      *url.URL
-	ReqID    uint64    // Request ID needed to route to the originator
-	LogLabel string    // info string for logging and debugging
-	Outlet   chan *Msg // send to this channel to transmit to the request originator
-
+// PinOp is a client request to pin a cell.
+type PinOp interface {
+	RawRequest() PinRequest
+	URL() *url.URL
+	ContextID() TimeID
 }

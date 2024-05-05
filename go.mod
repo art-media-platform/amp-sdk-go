@@ -3,7 +3,6 @@ module github.com/amp-3d/amp-sdk-go
 go 1.18
 
 require (
-	github.com/alecthomas/participle/v2 v2.1.1
 	github.com/brynbellomy/klog v0.0.0-20200414031930-87fbf2e555ae
 	github.com/gogo/protobuf v1.3.2
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c

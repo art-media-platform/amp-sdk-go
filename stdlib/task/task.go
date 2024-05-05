@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/amp-3d/amp-sdk-go/stdlib/log"
+	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 )
 
 // ctx implements Context
@@ -156,6 +157,10 @@ func (p *ctx) Value(key interface{}) interface{} {
 	return nil
 }
 
+func (p *ctx) ID() tag.ID {
+	return p.task.ID
+}
+
 func (p *ctx) TaskRef() interface{} {
 	return p.task.TaskRef
 }
@@ -177,11 +182,9 @@ func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []run
 		}
 	}
 	prefix = append(prefix, icon, ' ')
-		
 	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.ContextID(), string(prefix), ctx.Label()))
-	
 	icon = '┃'
-	if lastChild { 
+	if lastChild {
 		icon = ' '
 	}
 	prefix = append(prefix[:len(prefix)-2], icon, ' ', ' ', ' ', ' ')
@@ -209,6 +212,9 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 	}
 	if task != nil {
 		child.task = *task
+	}
+	if child.task.ID.IsNil() {
+		child.task.ID = tag.New()
 	}
 	if child.task.Label == "" {
 		child.task.Label = fmt.Sprintf("ctx_%d", child.id)

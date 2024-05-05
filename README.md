@@ -17,7 +17,7 @@ This repo is lightweight and dependency-free so that it can be added to your pro
   2. Clone [amp-host-go](https://github.com/amp-3d/amp-host-go) and embed and expose your Go packages within it.
   3. `make build libarchost` (with your packages embedded within it).
   4. Rapidly build a native Unity app using one of the AMP "app" templates, embedding `libarchost` within it.
-  5. At runtime, the Unity client any root `amp.Cell` of your app is "pinned" via `amp://{yourAppTagID}/{yourSchema...}` while the AMP UX runtime manages the user's perceptual experience of all actively pinned URIs.
+  5. At runtime, the Unity client any root `amp.Cell` of your app is "pinned" via `amp://{yourAppNameID}/{yourSchema...}` while the AMP UX runtime manages the user's perceptual experience of all actively pinned URIs.
   
 ## Points of Interest
 

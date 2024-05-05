@@ -5,62 +5,77 @@ import (
 	fmt "fmt"
 	io "io"
 	"testing"
+
+	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 )
 
-func TestExpr(t *testing.T) {
-	var tsts = []string{
-		"elem-type.org",
-		"[UTC16]elem",
-		"elem:name",
-		"elem-type.org:name",
-		"[Surface.Name]elem:name",
-		"[Locale.Name]elem-type:name.ext",
-	}
-
-	for _, tst := range tsts {
-		expr, err := ParseAttrDef(tst)
-		if err != nil {
-			fmt.Printf("%-30s %v\n", tst, err)
-		} else {
-			fmt.Printf("%-30s %-15v %-15v %-15v\n", tst, expr.SeriesSpec, expr.ElemType, expr.AttrName)
+/*
+	func TestExpr(t *testing.T) {
+		var tsts = []string{
+			"elem-type.org",
+			"[UTC16]elem",
+			"elem:name",
+			"elem-type.org:name",
+			"[Surface.Name]elem:name",
+			"[Locale.Name]elem-type:name.ext",
 		}
-	}
+
+		for _, tst := range tsts {
+			expr, err := ParseAttrDef(tst)
+			if err != nil {
+				fmt.Printf("%-30s %v\n", tst, err)
+			} else {
+				fmt.Printf("%-30s %-15v %-15v %-15v\n", tst, expr.SeriesSpec, expr.ElemType, expr.AttrName)
+			}
+		}
 
 }
-
+*/
 func TestTxSerialize(t *testing.T) {
 	// Test serialization of a simple TxMsg
 
 	tx := NewTxMsg(true)
 	tx.Status = ReqStatus_Syncing
-	tx.RouteTo_0 = 888854513
-	tx.RouteTo_1 = 7777435
+	tx.ContextID_0 = 888854513
+	tx.ContextID_1 = 7777435
+	tx.ContextID_2 = 77743773
 	{
 		op := TxOp{
 			OpCode:   TxOpCode_MetaAttr,
-			ParentID: TagID{1, 2, 3},
-			TargetID: TagID{4, 555, 666},
-			AttrID:   TagID{111312232, 22232334444},
-			SI:       SeriesIndex{7383, 76549},
+			TargetID: tag.ID{4, 555, 666},
+			AttrID:   tag.ID{111312232, 22232334444},
+			SI:       tag.ID{7383, 76549, 3773},
+			Hash:     0xfeedbeef,
 		}
-		tx.MarshalOpValue(&op, &Login{
-			UserTagID: "alan1",
-			HostAddr:  "batwing ave",
+		tx.MarshalOp(&op, &Login{
+			UserUID:  "alan1",
+			HostAddr: "batwing ave",
 		})
 		tx.DataStore = append(tx.DataStore, []byte("bytes not used but stored -- not normal!")...)
 
 		op.SI[1] = 50454123
-		op.ParentID[2] = 40411236
-		data := []byte("hello.world-")
+		op.Height = 234
+		data := []byte("hello-world")
 		for i := 0; i < 7; i++ {
 			data = append(data, data...)
 		}
-		tx.MarshalOpValue(&op, &Login{
-			UserTagID: "cmdr6",
-			HostAddr:  string(data),
+		tx.MarshalOp(&op, &Login{
+			UserUID:  "cmdr6",
+			HostAddr: string(data),
 		})
 
+		for i := 0; i < 5500; i++ {
+			op.SI[0] = uint64(i)
+			if i%5 == 0 {
+				op.Height += 1
+			}
+			tx.MarshalOp(&op, &LoginResponse{
+				HashResponse: append(data, fmt.Sprintf("-%d", i)...),
+			})
+		}
+
 		op.SI[0] = 111111
+		op.Hash = 55445544
 		op.OpCode = TxOpCode_RemoveAttr
 		tx.MarshalOpWithBuf(&op, nil)
 	}
@@ -87,7 +102,7 @@ func TestTxSerialize(t *testing.T) {
 	for i, op1 := range tx.Ops {
 		op2 := tx2.Ops[i]
 
-		if op1.OpCode != op2.OpCode || op1.TargetID != op2.TargetID || op1.ParentID != op2.ParentID || op1.AttrID != op2.AttrID || op1.SI != op2.SI || op1.DataStoreOfs != op2.DataStoreOfs || op1.DataLen != op2.DataLen {
+		if op1.OpCode != op2.OpCode || op1.TargetID != op2.TargetID || op1.AttrID != op2.AttrID || op1.SI != op2.SI || op1.DataOfs != op2.DataOfs || op1.DataLen != op2.DataLen {
 			t.Errorf("ReadTxMsg failed: Op mismatch")
 		}
 	}
@@ -107,12 +122,12 @@ func (r *bufReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func TestNewTagID(t *testing.T) {
-	var prevIDs [64]TagID
+func TestNewTag(t *testing.T) {
+	var prevIDs [64]tag.ID
 
-	prevIDs[0] = TagID{100, (^uint64(0)) - 500}
+	prevIDs[0] = tag.ID{100, (^uint64(0)) - 500}
 
-	delta := TagID{100, 100}
+	delta := tag.ID{100, 100}
 	for i := 1; i < 64; i++ {
 		prevIDs[i] = prevIDs[i-1].Add(delta)
 	}
@@ -120,25 +135,26 @@ func TestNewTagID(t *testing.T) {
 		prev := prevIDs[i-1]
 		curr := prevIDs[i]
 		if prev.CompareTo(curr) >= 0 {
-			t.Errorf("TagID.Add() returned a non-increasing value: %v <= %v", prev, curr)
+			t.Errorf("tag.ID.Add() returned a non-increasing value: %v <= %v", prev, curr)
 		}
 		if curr.Sub(prev) != delta {
-			t.Errorf("TagID.Diff() returned a wrong value: %v != %v", curr.Sub(prev), delta)
+			t.Errorf("tag.ID.Diff() returned a wrong value: %v != %v", curr.Sub(prev), delta)
 		}
 	}
 
-	epsilon := TagID{0, TagID_EntropyMask}
+	epsilon := tag.ID{0, tag.EntropyMask}
 
 	for i := range prevIDs {
-		prevIDs[i] = NewTagID()
+		prevIDs[i] = tag.New()
 	}
 
 	for i := 0; i < 10000000; i++ {
-		now := NewTagID()
+		now := tag.New()
+		fence := now.Sub(epsilon)
 
 		for _, prev := range prevIDs {
-			prev = prev.Sub(epsilon)
-			if now.CompareTo(prev) < 0 {
+			comp := prev.CompareTo(fence)
+			if comp >= 0 {
 				t.Errorf("%v > %v ", prev, now)
 			}
 		}
@@ -148,12 +164,12 @@ func TestNewTagID(t *testing.T) {
 }
 
 func TestEncodings(t *testing.T) {
-	tid := TagID{0x7777777777777777, 0x123456789abcdef0}
+	tid := tag.ID{0x7777777777777777, 0x123456789abcdef0}
 	if tid.Base32Suffix() != "g2ectrrh" {
-		t.Errorf("TagID.Base32Suffix() failed")
+		t.Errorf("tag.ID.Base32Suffix() failed")
 	}
-	if tid.Base16Suffix() != "bcdef0" {
-		t.Errorf("TagID.Base16Suffix() failed")
+	if tid.Base16Suffix() != "abcdef0" {
+		t.Errorf("tag.ID.Base16Suffix() failed")
 	}
 
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/amp-3d/amp-sdk-go/stdlib/log"
+	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 )
 
 // Starts a new Context with no parent Context.
@@ -31,6 +32,7 @@ type Task struct {
 	// This will not enter into effect unless OnRun is given or a child is started.
 	IdleClose time.Duration
 
+	ID             tag.ID                  // ID is a universally unique identifier -- auto assigned if nil
 	TaskRef        any                     // TaskRef is offered for open-ended use
 	Label          string                  // Label is used for logging and debugging
 	OnStart        func(ctx Context) error // Blocking fn called in StartChild(). If err, ctx.Close() is called and Go() returns the err and OnRun is never called.
@@ -51,6 +53,9 @@ type Context interface {
 
 	// Includes functionality and behavior of a context.Context.
 	context.Context
+
+	// Returns the ID of this Context -- from task.Task.ID (or auto-assigned if nil)
+	ID() tag.ID
 
 	// Returns Task.Ref passed into StartChild()
 	TaskRef() interface{}

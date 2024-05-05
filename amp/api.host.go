@@ -3,6 +3,7 @@ package amp
 import (
 	"net/url"
 
+	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 	"github.com/amp-3d/amp-sdk-go/stdlib/task"
 )
 
@@ -64,19 +65,19 @@ type HostSession interface {
 	AssetPublisher() AssetPublisher
 
 	// Returns info about this user and session
-	LoginInfo() Login
+	Auth() Login
 
 	// Sends a readied Msg to the client for handling.
 	// If msg.ReqID == 0, the attr is sent to the client's session controller (for sending session meta messages).
 	// On exit, the given msg should not be referenced further.
 	SendTx(tx *TxMsg) error
 
-	// PinCell resolves and pins a requested cell.
-	PinCell(req PinOp) (PinContext, error)
+	// NewPin resolves and pins a requested cell.
+	NewPinContext(req PinOp) (PinContext, error)
 
 	// Gets the currently running AppInstance for an AppID.
 	// If the requested app is not running and autoCreate is set, a new instance is created and started.
-	GetAppInstance(appID TagID, autoCreate bool) (AppInstance, error)
+	GetAppInstance(appTag tag.ID, autoCreate bool) (AppInstance, error)
 }
 
 // Registry is where apps and types are registered -- concurrency safe.
@@ -85,38 +86,30 @@ type Registry interface {
 	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid TagSpec type expression).
 	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
 	// if registerAs == "", then the prototype.ElemTypeName() is used.
-	RegisterPrototype(registerAs string, prototype ElemVal) (TagID, error)
+	RegisterPrototype(context tag.Spec, prototype ElemVal) tag.Spec
 
 	// Imports all the types and apps from another registry.
 	// When a HostSession is created, its registry starts by importing the Host's registry.
 	Import(other Registry) error
 
-	// Registers an app by its UTagID, URI, and schemas it supports.
+	// Registers an app by its UTag, URI, and schemas it supports.
 	RegisterApp(app *App) error
 
-	// Looks-up an app by UTagID -- READ ONLY ACCESS
-	GetAppByTagID(appID TagID) (*App, error)
+	// Looks-up an app by Tag -- READ ONLY ACCESS
+	GetAppByTag(appTag tag.ID) (*App, error)
 
 	// Selects the app that best matches an invocation string.
 	GetAppForInvocation(invocation string) (*App, error)
 
-	// Registers a block of symbol, attr, cell, and selector definitions for a client.
-	RegisterDefs(defs *RegisterDefs) error
-
-	// Instantiates an attr element value for a given attr TagID -- typically followed by ElemVal.Unmarshal()
-	NewAttrElem(attrSpecID TagID) (ElemVal, error)
+	// Instantiates an attr element value for a given attr spec -- typically followed by ElemVal.Unmarshal()
+	NewAttrElem(attrSpec tag.ID) (ElemVal, error)
 }
 
 // PinContext wraps a client request to receive a cell's state / updates.
 type PinContext interface {
-	task.Context // Started as a CHILD of the amp.PinnedCell returned by AppInstance.PinCell()
+	task.Context // Started as a CHILD of the amp.Pin returned by AppInstance.NewPin()
 
 	Op() PinOp // Originating request info
-
-	// Marshals a TxOp and optional value to the given Tx's data store.
-	//
-	// If the given attr is not enabled within this PinContext, this function is a no-op.
-	MarshalTxOp(dst *TxMsg, op TxOp, val ElemVal)
 
 	// PushTx pushes the given tx to this PinContext
 	PushTx(tx *TxMsg) error
@@ -127,7 +120,8 @@ type PinContext interface {
 
 // PinOp is a client request to pin a cell.
 type PinOp interface {
-	RawRequest() PinRequest
-	URL() *url.URL
-	ContextID() TagID
+	ContextID() tag.ID
+	Requesting() PinRequest
+	URL() (*url.URL, error)
+	URLValue(key string, mustExist bool) (string, error)
 }

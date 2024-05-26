@@ -4,41 +4,20 @@ import (
 	"bytes"
 	fmt "fmt"
 	io "io"
+	"reflect"
 	"testing"
 
 	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 )
 
-/*
-	func TestExpr(t *testing.T) {
-		var tsts = []string{
-			"elem-type.org",
-			"[UTC16]elem",
-			"elem:name",
-			"elem-type.org:name",
-			"[Surface.Name]elem:name",
-			"[Locale.Name]elem-type:name.ext",
-		}
-
-		for _, tst := range tsts {
-			expr, err := ParseAttrDef(tst)
-			if err != nil {
-				fmt.Printf("%-30s %v\n", tst, err)
-			} else {
-				fmt.Printf("%-30s %-15v %-15v %-15v\n", tst, expr.SeriesSpec, expr.ElemType, expr.AttrName)
-			}
-		}
-
-}
-*/
 func TestTxSerialize(t *testing.T) {
 	// Test serialization of a simple TxMsg
 
 	tx := NewTxMsg(true)
-	tx.Status = ReqStatus_Syncing
-	tx.ContextID_0 = 888854513
-	tx.ContextID_1 = 7777435
-	tx.ContextID_2 = 77743773
+	tx.Status = OpStatus_Syncing
+	tx.RequestID_0 = 888854513
+	tx.RequestID_1 = 7777435
+	tx.RequestID_2 = 77743773
 	{
 		op := TxOp{
 			OpCode:   TxOpCode_MetaAttr,
@@ -76,7 +55,7 @@ func TestTxSerialize(t *testing.T) {
 
 		op.SI[0] = 111111
 		op.Hash = 55445544
-		op.OpCode = TxOpCode_RemoveAttr
+		op.OpCode = TxOpCode_DeleteAttr
 		tx.MarshalOpWithBuf(&op, nil)
 	}
 
@@ -122,54 +101,29 @@ func (r *bufReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-func TestNewTag(t *testing.T) {
-	var prevIDs [64]tag.ID
-
-	prevIDs[0] = tag.ID{100, (^uint64(0)) - 500}
-
-	delta := tag.ID{100, 100}
-	for i := 1; i < 64; i++ {
-		prevIDs[i] = prevIDs[i-1].Add(delta)
+func TestRegistry(t *testing.T) {
+	reg := NewRegistry()
+	spec := reg.RegisterPrototype(tag.FormSpec(AttrSpec, "av"), &Tag{}, "")
+	if spec.Canonic != AttrSpec.Canonic+".av.Tag" {
+		t.Fatal("RegisterPrototype failed")
 	}
-	for i := 1; i < 64; i++ {
-		prev := prevIDs[i-1]
-		curr := prevIDs[i]
-		if prev.CompareTo(curr) >= 0 {
-			t.Errorf("tag.ID.Add() returned a non-increasing value: %v <= %v", prev, curr)
-		}
-		if curr.Sub(prev) != delta {
-			t.Errorf("tag.ID.Diff() returned a wrong value: %v != %v", curr.Sub(prev), delta)
-		}
+	if spec.ID != tag.FormSpec(tag.Spec{}, "amp.app.attr.av.Tag").ID {
+		t.Fatalf("tag.FormSpec failed")
 	}
-
-	epsilon := tag.ID{0, tag.EntropyMask}
-
-	for i := range prevIDs {
-		prevIDs[i] = tag.New()
+	if spec.ID != tag.FormSpec(tag.FormSpec(AppSpec, "attr.av"), "Tag").ID {
+		t.Fatalf("tag.FormSpec failed")
 	}
-
-	for i := 0; i < 10000000; i++ {
-		now := tag.New()
-		fence := now.Sub(epsilon)
-
-		for _, prev := range prevIDs {
-			comp := prev.CompareTo(fence)
-			if comp >= 0 {
-				t.Errorf("%v > %v ", prev, now)
-			}
-		}
-
-		prevIDs[i&63] = now
+	if spec.ID.Base32Suffix() != "e39qymem" {
+		t.Fatalf("unexpected spec.ID: %v", spec.ID)
 	}
-}
-
-func TestEncodings(t *testing.T) {
-	tid := tag.ID{0x7777777777777777, 0x123456789abcdef0}
-	if tid.Base32Suffix() != "g2ectrrh" {
-		t.Errorf("tag.ID.Base32Suffix() failed")
+	if spec.ID.Base32() != "000000000000002hp5x0uxmq2m5h01vke39qymem" {
+		t.Errorf("tag.ID.Base32() failed")
 	}
-	if tid.Base16Suffix() != "abcdef0" {
-		t.Errorf("tag.ID.Base16Suffix() failed")
+	elem, err := reg.NewAttrElem(spec.ID)
+	if err != nil {
+		t.Fatalf("NewAttrElem failed: %v", err)
 	}
-
+	if reflect.TypeOf(elem) != reflect.TypeOf(&Tag{}) {
+		t.Fatalf("NewAttrElem returned wrong type: %v", reflect.TypeOf(elem))
+	}
 }

@@ -3,52 +3,75 @@ package tag
 import (
 	"crypto/md5"
 	"encoding/binary"
+	"encoding/hex"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/amp-3d/amp-sdk-go/stdlib/bufs"
 )
 
 var (
-	sTagSeparator = regexp.MustCompile(`[/\\\.:\s]+`)
+	sTagSeparator = regexp.MustCompile(`[/\\\.:\s\~]+`) // Which delimiters?  'significant" delimiters.
 )
 
 const (
-	CanonicTagSeparator = '.'
+	CanonicWithRune = '.'
+	CanonicHideRune = '~'
 )
+
+type Literal struct {
+	ID
+	Token string // UTF8 human readable exact / canonical glyph or alias of ID -- 24 rune courtesy limit
+}
 
 // Composite tag expression syntax
 //
-//	tag.Spec := "[{utf8_tag}[.:/\]*]*{utf8_leaf_tag} ""
+//	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
 //
 // Note how a tag spec with no delimeters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
 type Spec struct {
-	Canonic string
 	ID      ID
-	Leaf    ID // ID of right-most tag
+	Canonic string
+	Tags    []Literal
 }
 
-func (spec Spec) String() string {
+func (spec Spec) CanonicString() string {
+	if spec.Canonic == "" {
+		b := strings.Builder{}
+		for _, tag := range spec.Tags {
+			if b.Len() > 0 {
+				b.WriteRune(CanonicWithRune)
+			}
+			b.WriteString(tag.Token)
+		}
+		spec.Canonic = b.String()
+	}
 	return spec.Canonic
 }
 
 // LeafTags splits the tag spec the given number of tags for the right.
 // E.g. LeafTags(2) on "a.b.c.d.ee" yields ("a.b.c", "d.ee")
 func (spec Spec) LeafTags(n int) (string, string) {
+	if n <= 0 {
+		return spec.Canonic, ""
+	}
+
 	expr := spec.Canonic
 	R := len(expr)
 	for p := R - 1; p >= 0; p-- {
-		if expr[p] == CanonicTagSeparator {
+		switch expr[p] {
+		case CanonicWithRune:
+			fallthrough
+		case CanonicHideRune:
 			n--
-			if n == 0 {
+			if n <= 0 {
 				return expr[:p], expr[p+1:]
 			}
 		}
 	}
 	return "", expr
 }
-
-type TagSeries []string
 
 // ID is a signed 24 byte UTC time index in big endian form, with 6 bytes of signed seconds and 10 bytes of fractional precision.
 // This means there are 47 bits dedicated for whole seconds => +/- 4.4 million years
@@ -70,6 +93,63 @@ func New() ID {
 	return FromTime(time.Now(), true)
 }
 
+func (id ID) IsNil() bool {
+	return id[0] == 0 && id[1] == 0 && id[2] == 0
+}
+
+func (id ID) IsSet() bool {
+	return id[0] != 0 || id[1] != 0 || id[2] != 0
+}
+
+// This operator is commutative and associative, and is used to generate a new ID from two existing ones.
+// Since this is commutative, it is reversible, and means tag literals are order independent.
+func (id ID) With(other ID) ID {
+	return ID{
+		id[0] + other[0],
+		id[1] + other[1], // overflow is normal
+		id[2] + other[2], // overflow is normal
+	}
+}
+
+// Entanges this ID with another, producing a new ID.
+func (id ID) Hide(other ID) ID {
+	return ID{
+		id[0] - other[0],
+		id[1] - other[1], // overflow is normal
+		id[2] - other[2], // overflow is normal
+	}
+}
+
+func (id ID) WithToken(tagToken string) ID {
+	return id.WithLiteral([]byte(tagToken))
+}
+
+func (id ID) WithLiteral(tagLiteral []byte) ID {
+	return id.With(LiteralID(tagLiteral))
+}
+
+func LiteralID(tagLiteral []byte) ID {
+	var hashBuf [16]byte
+
+	hasher := md5.New()
+	hasher.Write(tagLiteral)
+	hash := hasher.Sum(hashBuf[:0])
+
+	return ID{
+		0, // tag / token ops don't have to affect hash[0]
+		binary.LittleEndian.Uint64(hash[0:]),
+		binary.LittleEndian.Uint64(hash[8:]),
+	}
+}
+
+func FromString(unclean string) ID {
+	tagLiteral := sTagSeparator.ReplaceAll([]byte(unclean), nil)
+	return LiteralID(tagLiteral)
+}
+func FromToken(tagToken string) ID {
+	return LiteralID([]byte(tagToken))
+}
+
 func FromTime(t time.Time, addEntropy bool) ID {
 	ns_b10 := uint64(t.Nanosecond())
 	ns_f64 := ns_b10 * NanosecStep // map 0..999999999 to 0..(2^64-1)
@@ -85,7 +165,7 @@ func FromTime(t time.Time, addEntropy bool) ID {
 	tag := ID{
 		t_00_06 | uint64(t_06_08),
 		t_08_15,
-		0, // Tags generated this way don't need more entropy
+		0, // Tags generated this way don't need more entropy?
 	}
 	return tag
 }
@@ -111,61 +191,37 @@ func Join(prefixTags, suffixTags string) string {
 	return prefixTags + suffixTags
 }
 
-func SplitTags(tagsExpr string) TagSeries {
-	return sTagSeparator.Split(tagsExpr, 73)
-}
-
-func (tags TagSeries) FormSpec(context ID) Spec {
-	if len(tags) == 0 {
-		return Spec{}
-	}
-
-	spec := Spec{}
-	canonic := make([]byte, 0, 64)
-
-	for i, tagToken := range tags {
-		if tagToken == "" { // empty tokens are no-ops
-			continue
-		}
-		if len(canonic) > 0 {
-			canonic = append(canonic, CanonicTagSeparator)
-		}
-		canonic = append(canonic, []byte(tagToken)...)
-
-		// last token is the element or "extension" tag
-		if i == len(tags)-1 {
-			spec.Leaf = FromString(ID{}, tagToken)
-		}
-	}
-
-	spec.ID = FromLiteral(ID{}, canonic)
-	spec.Canonic = string(canonic)
-	return spec
-}
-
 func FormSpec(context Spec, subTags string) Spec {
-	prefixTags := sTagSeparator.Split(context.Canonic, 73)
-	suffixTags := sTagSeparator.Split(subTags, 37)
-	tags := TagSeries(append(prefixTags, suffixTags...))
-	return tags.FormSpec(ID{})
-}
 
-func FromString(context ID, tagToken string) ID {
-	return FromLiteral(context, []byte(tagToken))
-}
-
-func FromLiteral(context ID, tagLiteral []byte) ID {
-	var hashBuf [16]byte
-
-	hasher := md5.New()
-	hasher.Write(tagLiteral)
-	hash := hasher.Sum(hashBuf[:0])
-
-	return ID{
-		context[0], // tag / token ops never affect hash[0]
-		context[1] ^ binary.LittleEndian.Uint64(hash[0:]),
-		context[2] ^ binary.LittleEndian.Uint64(hash[8:]),
+	spec := Spec{
+		ID:   context.ID,
+		Tags: make([]Literal, 0, 8),
 	}
+
+	canonic := make([]byte, 0, len(context.Canonic)+len(subTags))
+	canonic = append(canonic, context.Canonic...)
+	tags := sTagSeparator.Split(subTags, 37)
+	if len(tags) > 0 {
+
+		for _, ti := range tags {
+			if ti == "" { // empty tokens are no-ops
+				continue
+			}
+			if len(canonic) > 0 {
+				canonic = append(canonic, CanonicWithRune)
+			}
+			canonic = append(canonic, []byte(ti)...)
+			literal := Literal{
+				ID:    LiteralID([]byte(ti)),
+				Token: ti,
+			}
+			spec.Tags = append(spec.Tags, literal)
+			spec.ID = spec.ID.With(literal.ID)
+		}
+		spec.Canonic = string(canonic)
+	}
+
+	return spec
 }
 
 func (id ID) String() string {
@@ -235,10 +291,6 @@ func (tag ID) Unix() int64 {
 	return int64(tag[0]) >> 16
 }
 
-func (tag ID) IsNil() bool {
-	return tag[0] == 0 && tag[1] == 0 && tag[2] == 0
-}
-
 func (tag *ID) SetFromInts(x0 int64, x1 uint64) {
 	tag[0] = uint64(x0)
 	tag[1] = x1
@@ -246,6 +298,21 @@ func (tag *ID) SetFromInts(x0 int64, x1 uint64) {
 
 func (tag ID) ToInts() (int64, uint64, uint64) {
 	return int64(tag[0]), tag[1], tag[2]
+}
+
+// Returns this tag.ID in canonic Base32 form
+func (tag ID) Base32() string {
+	var buf [25]byte // (25 * 8) % 5 == 0
+	binary := tag.AppendTo(buf[:1])
+	str := bufs.Base32Encoding.EncodeToString(binary)
+	return str
+}
+
+func (tag ID) Base16() string {
+	buf := make([]byte, 0, 48)
+	tagBytes := tag.AppendTo(buf)
+	str := hex.EncodeToString(tagBytes)
+	return str
 }
 
 // Base32Suffix returns the last few digits of this TID in string form (for easy reading, logs, etc)
@@ -256,7 +323,7 @@ func (tag ID) Base32Suffix() string {
 	var suffix [lcm_bytes]byte
 	for i := uint(0); i < lcm_bytes; i++ {
 		shift := uint(8 * (lcm_bytes - 1 - i))
-		suffix[i] = byte(tag[1] >> shift)
+		suffix[i] = byte(tag[2] >> shift)
 	}
 	base32 := bufs.Base32Encoding.EncodeToString(suffix[:])
 	return base32
@@ -270,7 +337,7 @@ func (tag ID) Base16Suffix() string {
 	var suffix [nibbles]byte
 	for i := uint(0); i < nibbles; i++ {
 		shift := uint(4 * (nibbles - 1 - i))
-		hex := byte(tag[1]>>shift) & 0xF
+		hex := byte(tag[2]>>shift) & 0xF
 		suffix[i] = HexChars[hex]
 	}
 	base16 := string(suffix[:])
@@ -295,6 +362,8 @@ func IntsToID(x0 int64, x1, x2 uint64) ID {
 	}
 }
 
+type LSMKey [24]byte
+
 var gTagSeed = uint64(0x3773000000003773)
 
 var (
@@ -317,6 +386,58 @@ func (tag ID) AppendTo(dst []byte) []byte {
 	dst = binary.BigEndian.AppendUint64(dst, tag[1])
 	dst = binary.BigEndian.AppendUint64(dst, tag[2])
 	return dst
+}
+
+func (tag ID) ToLSM() LSMKey {
+	var lsm LSMKey
+	tag.Put24(lsm[:])
+	return lsm
+}
+
+func From24(lsm []byte) (id ID) {
+	id[0] = uint64(FromZigZag(binary.BigEndian.Uint64(lsm[0:])))
+	id[1] = binary.BigEndian.Uint64(lsm[8:])
+	id[2] = binary.BigEndian.Uint64(lsm[16:])
+	return
+}
+
+func From16(lsm []byte) (id ID) {
+	id[0] = 0
+	id[1] = binary.BigEndian.Uint64(lsm[0:])
+	id[2] = binary.BigEndian.Uint64(lsm[8:])
+	return
+}
+
+func (tag ID) Put24(dst []byte) {
+	binary.BigEndian.PutUint64(dst[0:], ToZigZag(int64(tag[0])))
+	binary.BigEndian.PutUint64(dst[8:], tag[1])
+	binary.BigEndian.PutUint64(dst[16:], tag[2])
+}
+
+func (tag ID) Put16(dst []byte) {
+	if tag[0] != 0 {
+		panic("tag[0] != 0")
+	}
+	binary.BigEndian.PutUint64(dst[0:], tag[1])
+	binary.BigEndian.PutUint64(dst[8:], tag[2])
+}
+
+// Encodes a int64 to a zig-zag uint64
+func ToZigZag(x int64) uint64 {
+	ux := uint64(x) << 1
+	if x < 0 {
+		ux = ^ux
+	}
+	return ux
+}
+
+// Decodes a zig-zag uint64 to a int64
+func FromZigZag(ux uint64) int64 {
+	x := ux >> 1
+	if ux&1 != 0 {
+		x = ^x
+	}
+	return int64(x)
 }
 
 func max(a, b int) int {

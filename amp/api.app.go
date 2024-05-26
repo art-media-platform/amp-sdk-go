@@ -1,16 +1,9 @@
 package amp
 
 import (
-	"net/url"
-
+	"github.com/amp-3d/amp-sdk-go/stdlib/media"
 	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 	"github.com/amp-3d/amp-sdk-go/stdlib/task"
-)
-
-var (
-	AppSpec  = tag.FormSpec(tag.Spec{}, "amp.app")
-	AttrSpec = tag.FormSpec(AppSpec, "attr")
-	//MetaAttrSpec = FormSpec(AttrSpec, "meta")
 )
 
 // App is how an app module is registered with an amp.Host so it can be invoked.~
@@ -18,27 +11,28 @@ var (
 // An App is invoked by a client or other app via the app's Tag or URI.
 type App struct {
 
-	// TagSpec identifies this app with form "{AppNameID}.{FamilyID}.{PublisherID}" -- e.g. "filesys.hosting.arcspace.systems"
+	// tag.Spec identifies this app with form "amp.app.{PublisherID}.{FamilyID}.{AppNameID}" -- e.g. "amp.app.os.filesys.posix"
 	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "arcspace.systems"
 	//   - FamilyID:    encompassing namespace ID used to group related apps (no spaces or punctuation)
 	//   - AppNameID:   identifies this app within its parent family and domain (no spaces or punctuation)
 	//
-	AppSpec      tag.Spec  // Universally unique and persistent ID for this module (and the module's "home" planet if present)
-	Desc         string    // Human-readable description of this app
-	Version      string    // "v{MajorVers}.{MinorID}.{RevID}"
+	AppSpec      tag.Spec // Universally unique and persistent ID for this module (and the module's "home" planet if present)
+	Desc         string   // Human-readable description of this app
+	Version      string   // "v{MajorVers}.{MinorID}.{RevID}"
 	Dependencies []tag.ID // Module Tags this app may access
-	Invocations  []string  // Additional aliases that invoke this app
-	AttrDecl     []string  // Attrs to be resolved and registered with a HostSession
+	Invocations  []string // Additional aliases that invoke this app
+	AttrDecl     []string // Attrs to be resolved and registered with a HostSession
 
 	// NewAppInstance is the entry point for an App.
-	// Called when an App is invoked on an active User session and is not yet running.
-	NewAppInstance func() AppInstance
+	// Called when an App is first invoked on an active User session and is not yet running.
+	// Blocks minimally and returns quickly.
+	NewAppInstance func(ctx AppContext) (AppInstance, error)
 }
 
 // AppContext is provided by the amp runtime to an AppInstance for support and context.
 type AppContext interface {
 	task.Context          // Allows select{} for graceful handling of app shutdown
-	AssetPublisher        // Allows an app to publish assets for client consumption
+	media.Publisher       // Allows an app to publish assets for client consumption
 	Session() HostSession // Access to underlying Session
 
 	// Returns the absolute file system path of the app's local read-write directory.
@@ -47,58 +41,78 @@ type AppContext interface {
 
 	// Gets the named attribute from the user's home planet -- used high-level app settings.
 	// The attr is scoped by both the app Tag so key collision with other users or apps is not possible.
-	// This is how an app can store and retrieve settings.
-	GetAppAttr(attrSpec tag.Spec, dst ElemVal) error
+	// This is how an app can store and retrieve its settings for the current user.
+	GetAppAttr(attrSpec tag.ID, dst ElemVal) error
 
 	// Write analog for GetAppAttr()
-	PutAppAttr(attrSpec tag.Spec, src ElemVal) error
+	PutAppAttr(attrSpec tag.ID, src ElemVal) error
+}
+
+// Pinner is characterized by the ability to emit Pins.
+type Pinner interface {
+
+	// Creates or finds Pin for the given request.
+	ServeRequest(req Requester) (Pin, error)
 }
 
 // AppInstance is implemented by an App and invoked by amp.Host responding to a client pin request.
 type AppInstance interface {
-	AppContext // amp's app runtime support exposed
+	AppContext
+	Pinner
 
-	// Instantiation callback made immediately after App.NewAppInstance() -- typically resolves app-specific type specs.
-	OnNew(this AppContext) error
-	
-	// aka CreateNewCell with feed template, 
-	// Installs or "mints" the attributes onto a target
-	MintNewFeed(managedTarget Pin, template FeedGenesis) error
+	// Validates a request and performs any needed setup.
+	// This åis a chance for an app to perform operations such refreshing an auth token.
+	// Following this call, ServeRequest() is called.
+	MakeReady(req Requester) error
 
-	// Pins the requested cell or URL
-	// If from != nil, it is the invoking context of the request.
-	// If from == nil, there is no parent context and the request is typically a URL.
-	NewPin(from Pin, req PinOp) (Pin, error)
-
-	// Handles a meta message sent to this app, which could be any attr type.
-	HandleURL(*url.URL) error
-
-	// Called exactly once when an app is signaled to close.
+	// Called exactly once when this App closes
 	OnClosing()
 }
 
-// Pin is how your app encapsulates a pinned URI to the host runtime and thus clients.
+// Pin is a attribute state connection to an amp.App.
+// The handling App is responsible for updating the Requester with state changes as requested.
 type Pin interface {
+	Pinner
 
-	// Apps spawn a Pin as a child task.Context of amp.AppContext.Context or as a child of another Pin.
-	// This means an AppContext contains all its Pins and thus Close() will close all Pins.
+	// Apps start a Pin as a child Context of amp.AppContext.Context or as a child of another Pin.
+	// This means an AppContext contains all its Pins and thus Close() will close all Pins (and child requests).
+	// This is used to know if a request is still being served and to close it if needed.
 	Context() task.Context
 
-	// Pins the requested cell from the context of this Pin (typically a child cell).
-	// Called from within AppInstance.NewPin() since an app may require preparation, such a renewing a session.
-	PinSub(req PinOp) (Pin, error)
-
-	// Pushes this cell and child cells to the client.
+	// Pushes state until all requested attrs are synced.
+	//
 	// Exits when:
-	//   - ctx.Closing() is signaled, or
+	//   - to.Closing() is signaled, or
 	//   - state has been pushed to the client and no more updates are possible, or
 	//   - state has been pushed initially but PinFlags_CloseOnSync is set, or
 	//   - an error occurs
-	ServeState(ctx PinContext) error
+	//ServeRequest(to Requester) error
 
-	// Merges a set of incoming changes into this pinned cell. -- a "write" operation
-	MergeTx(tx *TxMsg) error
+	// // Asks this Pin to handle a client request.
+	// //
+	// // Usually a Pin starts a child context to perform blocking work able to serve the given request,
+	// // and returns it wrapped in a RequestHandler.
+	// //
+	// // If (nil, nil) is returned, the app handled the request immediately.
+	// HandleRequest(op Request) (RequestHandler, error)
+
+	// Processes, queues, or otherwise handles a changeset sent to this Pin.
+	// Concurrent friendly -- each client request having a tx to submit calls this method from its own goroutine.
+	// tx is READ ONLY.
+	// CommitTx(tx *TxMsg) error
 }
+
+// // Wraps the task an App issues in response to Pin.HandleRequest()
+// type RequestHandler interface {
+
+// 	// The owning Pin that spawned this RequestHandler.
+// 	ParentPin() Pin
+
+// 	// This RequestHandler's context -- a child context of the associated Pin.
+// 	// Used to know if a request is still being served and to close it if needed.
+// 	Context() task.Context
+
+// }
 
 // Serialization abstraction
 type PbValue interface {
@@ -110,8 +124,8 @@ type PbValue interface {
 // ElemVal wraps cell attribute element name and serialization.
 type ElemVal interface {
 
-	// Returns the element type name (a scalar TagSpec).
-	ElemTypeName() string
+	// Returns the element type name (a scalar tag.Spec).
+	ElemTypeName() string // TODO: use generics for default name
 
 	// Marshals this ElemVal to a buffer, reallocating if needed.
 	MarshalToStore(in []byte) (out []byte, err error)
@@ -136,13 +150,14 @@ type TxMsg struct {
 // Note that x0 is the most significant and x2 is least significant bytes.
 type TxOp struct {
 	OpCode   TxOpCode
+	FromID   tag.ID // Directed link -- FromID to TargetID
 	TargetID tag.ID // Target to operate on
 	AttrID   tag.ID // Attribute to operate on
 	SI       tag.ID // Index of the data being mutated
-	Height   uint64  // Content revision "height"
-	Hash     uint64  // hash of genesis tag from of the Tx containing this op
-	DataLen  uint64  // Length of data in TxMsg.DataStore
-	DataOfs  uint64  // Offset into TxMsg.DataStore
+	Height   uint64 // parent tx height -- see "height" in https://peerlinks.io/protocol.html
+	Hash     uint64 // parent tx hash (conflict resolution)
+	DataLen  uint64 // Length of data in TxMsg.DataStore
+	DataOfs  uint64 // Offset into TxMsg.DataStore
 }
 
 type AttrDef struct {
@@ -150,6 +165,6 @@ type AttrDef struct {
 	Prototype ElemVal
 }
 
-// TagSpecID is a tag for the canonic string representation of an TagSpec
+// TagSpecID is a tag for the canonic string representation of an tag.Spec
 // Leading bits are reserved to express pin detail level or layer.
 type TagSpecID tag.ID

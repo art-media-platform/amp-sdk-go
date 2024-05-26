@@ -49,38 +49,52 @@ enum Const {
 	// The first byte of the TxHeader is the header size and version and
 	// the following 3 bytes of a serialized TxMsg ("amp") 
     Const_TxHeader_Marker = 0x616D70; 
+    
+    // בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ
+    // Oh Lord, please bless this project, those who fight for it, and those who lay their life on Your altar.
+    Const_Invocation = 3773;
 }
 
 
 
 // TxOpCode specifies a particular cell transaction operation.
 enum TxOpCode {
-    TxOpCode_Nil        = 0x00;
-    TxOpCode_MetaAttr   = 0x01; // Used for session-level meta events (e.g. login, etc)
-    TxOpCode_UpsertAttr = 0x02; // If the first CellTx, this is the pinned cell, otherwise it is a child cell
-    TxOpCode_RemoveAttr = 0x04; // remove attr element
-    TxOpCode_RemoveCell = 0x10; 
+    TxOpCode_Nil        = 0; // No-op
+    
+    TxOpCode_MetaAttr   = 1; // Used for session-level meta events (e.g. login, etc)
+    TxOpCode_UpsertAttr = 2; // If FromID is set, add link from FromID to TargetID
+    TxOpCode_DeleteAttr = 4; // remove attr element
+    TxOpCode_DeleteCell = 5; // remove cell and all its attributes
+    
+    TxOpCode_UpsertLink = 7; // upsert link from FromID to TargetID
+    TxOpCode_DeleteLink = 8; // remove link from FromID to TargetID
 }
 
 
 // TxBody contains a max number of uint64 fields usable for any purpose.
 enum TxField {
     TxField_0   = 0;
-    TxField_MaxFields = 24;
     
-    TxField_TargetIDx0 = 1;
-    TxField_TargetIDx1 = 2;
-    TxField_TargetIDx2 = 3;
+    TxField_FromID_0 = 1;
+    TxField_FromID_1 = 2;
+    TxField_FromID_2 = 3;
     
-    TxField_AttrID_0 = 4;
-    TxField_AttrID_1 = 5;
-    TxField_AttrID_2 = 6;
+    TxField_TargetID_0 = 4;
+    TxField_TargetID_1 = 5;
+    TxField_TargetID_2 = 6;
+    
+    TxField_AttrID_0 = 7;
+    TxField_AttrID_1 = 8;
+    TxField_AttrID_2 = 9;
     
     TxField_SI_0 = 10;
     TxField_SI_1 = 11;
     TxField_SI_2 = 12;
     
     TxField_Hash = 13;
+    
+    TxField_NumFields = 14;
+    TxField_MaxFields = 24;
 }
 
 
@@ -88,23 +102,29 @@ enum TxField {
 message TxInfo {
 
     // communicates request status / completion.
-    ReqStatus           Status = 2;
+    OpStatus            Status = 2;
     
     // The number of TxOps in this TxMsg.
     uint64              NumOps = 4;
-    
-    // A globally unique Tag at when this Tx was created.
-    int64               GenesisID_0 = 7;
-    fixed64             GenesisID_1 = 8;
-    fixed64             GenesisID_2 = 9;
-    
-    // Identifies an originating / requesting / associated client or listener.
-    int64               ContextID_0 = 10;
-    fixed64             ContextID_1 = 11;
-    fixed64             ContextID_2 = 12;
-    
-}
 
+    // A universally unique tag assigned when this Tx was created.
+    // Used to identify this tx and also serves as context ID for subsequent responses.
+    int64               GenesisID_0 = 5;
+    fixed64             GenesisID_1 = 6;
+    fixed64             GenesisID_2 = 7;
+    
+    // This is the GenesisID of the initial request.
+    // If 0, this denotes a context-free request and is not dependent on another tx.
+    int64               RequestID_0 = 10;
+    fixed64             RequestID_1 = 11;
+    fixed64             RequestID_2 = 12;
+    
+    // Home "planet" or "cell" and allied trust chains 
+    int64               RootElementID_0 = 13;
+    fixed64             RootElementID_1 = 14;
+    fixed64             RootElementID_2 = 15;
+
+}
 
 enum SelectOp {
     SelectOp_Neutral = 0;
@@ -112,22 +132,22 @@ enum SelectOp {
     SelectOp_Exclude = 2;
 }
 
-// ReqStatus allows a sender to express the status of a request.
-enum ReqStatus {
+// OpStatus allows a sender to express the status of a request.
+enum OpStatus {
 
-    // The request is in the process of being formed
-    ReqStatus_NotStarted   = 0;
+    // Op / request has not yet been submitted
+    OpStatus_NotStarted = 0;
     
-    // Denotes that the request is in progress.
-    ReqStatus_Syncing      = 1;
+    // Op / request is in progress
+    OpStatus_Syncing    = 1;
     
-    // Sent by the host to signal that this ReqID up to date and the client state is stable / synchronized.
-    // This generally drives UI updates or other aggregate cell dependencies.
-    ReqStatus_Synced       = 2;
+    // Sent by the host to signal that the op up to date and the client state is stable / synchronized.
+    // This typically drives UI updates or other dependencies requiring a stable state.
+    OpStatus_Synced     = 2;
     
     // From the client to host, this signals to close / cancel the op associated with ReqID.
     // From the host to client, this signals that the given request ID has been closed / discarded.
-    ReqStatus_Closed       = 3;
+    OpStatus_Closed     = 3;
 }
 
 // Login -- STEP 1: client -> host
@@ -135,17 +155,17 @@ message Login {
 
     // A byte string identifying user who is logging in (lot limited to UTF8)
     // This is typically a username or a persistent Tag issued by the device OS when the app is (re)installed. 
-    string              UserUID     = 1;
+    string             UserUID     = 1;
     
     // HostAddr is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
     // archost uses this to as the host name when serving URLs for the client to consume.
-    string              HostAddr    = 2;
+    string             HostAddr    = 2;
     
-    string              DeviceLabel = 8;
-    string              DeviceUID   = 9; 
+    string             DeviceLabel = 8;
+    string             DeviceUID   = 9; 
     
     // Current or previous checkpoint -- optional
-    AuthCheckpoint      Checkpoint  = 10;
+    AuthCheckpoint     Checkpoint  = 10;
 }
 
 // LoginChallenge -- STEP 2: host -> client
@@ -162,88 +182,57 @@ message LoginResponse {
 message AuthCheckpoint {
     string              Token = 1;
 
-    TagAttr             SessionTag = 10;
-    TagAttr             MemberTag  = 11;
+    Tag                 Session = 10;
+    Tag                 Member  = 11;
 
     // List of available channel types that a host emits at runtime so a client knows what kind of channel types are available.  
-    TagAttr             HomeFeed = 9;
+    Tag                 HomeFeed = 9;
 
 }
 
-message HelloWorld {
+enum PinSync {
 
-}
-
-
-/*
-message TagSpec {
-
-    // Composite tag expression syntax
-    //       TagSpec := "[{utf8_tag}[.:/\]*]*{utf8_ElemTypeDesc} ""
-    //
-    // Note how a tag spec with no delimeters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
-    string              AsCanonic = 1;
-    
-    // Tag of AsCanonicString.
-    int64               TagSpecIDx0 = 3;
-    fixed64             TagSpecIDx1 = 4;
-    fixed64             TagSpecIDx2 = 5;
-    
-    
-    // Tag of "{ElemTypeDesc}"
-    int64               ElemSpecIDx0 = 6;
-    fixed64             ElemSpecIDx1 = 7;
-    fixed64             ElemSpecIDx2 = 8;
-
-}
-*/
-enum PinFlags {
-    PinFlags_None             = 0;
-
-	// If set, Pin.ServeState() causes this request (PinContext) to automatically close once state is pushed and synchronized.
-	// Otherwise, the request remains open and the client will receive any state updates until closed.
-    // This is useful when only a snapshot of the cell is needed.
-    PinFlags_CloseOnSync      = 0x04;
-    
-    // If set, a pinned cell will not send any state updates to the client.
+    // If set, a pin request will not send any state responses to the client.
     // This is useful when only writing to a cell and no state updates are needed.
-    PinFlags_NoSync           = 0x08;
+    PinSync_None = 0;
     
+	// If set, a pin request will be automatically closed once state is pushed / synchronized.
+    // This is useful when only a snapshot of the cell is needed.
+    PinSync_CloseOnSync = 1;
+    
+    // If set, a pin request will remain open even after state is synced.
+    // In this mode, he client will receive any state updates until the request is explicitly closed.
+    PinSync_Maintain = 2;
 }
 
-// HandleURL is used as a meta attribute handle a URL, such as an oauth request (host to client) or an oauth response (client to host).
-// TODO: make just a uniquely named Link
-message HandleURL {
-    string              URL = 1;
-}
-
-// Requests the creation of a new feed template (attr streams) to be pinned (or half-duplex channel) on the given cell / tag, returning CellInfo allowing new channels to be added to it.
-// By convention, every cell carries a "amp.feed.genesis.TagEpoch" feed which in turn is a tag.Time series of []TagEpoch.
-//    series expressing state for the cell's permissions and the channel catalog.
-message FeedGenesis {
-    TagAttr             MintToTarget = 1;
-    
-    // Attribute specs to subscribe to.
-    repeated TagFeed    MintInstance = 2;
-}
 
 
 // PinRequest is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.  
 message PinRequest {
 
-    TagAttr             PinURL = 1;
+    // Specifies a target URL or tag / cell ID to be pinned with the above available mint templates available.
+    Tag          PinTarget = 2;
     
-    // The {cell tag.ID}{attr tag.ID} to sync / pin / send.
-    repeated TagAttr    SyncAttrs  = 7;
+    // Attributes to be pinned (synced) -- if nil, all attrs are pinned
+    repeated Tag PinAttrs  = 4;
     
-    // Bit options for this request.
-    PinFlags            Flags = 10;
+    // Options for this request.
+    PinSync      PinSync   = 6;
+    
+    // // If set, PinTarget.URL is an external URL redirected for internal handling -- e.g. oauth request (host to client) or an oauth response (client to host).
+    // bool         ExternalURL = 10;
 
     // Delimited list of "semi-ordered" tags to filter the pinned cell.
     // ((:/\.\|)*{(-_\|\w)+})+
-    string              TagQueryExpr = 16;
+    //string              TagQueryExpr = 16;
     
 }
+
+// LaunchURL is used as a meta attribute handle a URL, such as an oauth request (host to client) or an oauth response (client to host).
+message LaunchURL {
+    string URL = 1;
+}
+
 
 
 // CordType describes how to interpret coordinates contained in a Position.
@@ -256,13 +245,6 @@ enum CordType {
     CordType_Geoid_WGS84     = 11; // U is lat, V is long, W is altitude (m)
 }
 
-// message GridPos {    
-//     int64               U           = 3; 
-//     int64               V           = 4;
-//     int64               W           = 5;
-// }
-// message GeoPos {
-// }
 
 // Position describes a position in space and/or time using a given coordinate system.
 message Position {
@@ -285,12 +267,17 @@ enum Enable {
 
 
 enum UrlScheme {
-    UrlScheme_Nil             = 0;  
-    UrlScheme_Data            = 1;  // "[data:]{mime-type}[[;base64],{data-encoding}]"
-    UrlScheme_Amp             = 2;  // "[amp:[//hostname/]]{cmd}[/{uri}]?{query}"
-    UrlScheme_File            = 3;  // "[file://]{hfs-pathname}"
-    UrlScheme_Http            = 4;  // "[http[s]://]{hostname}[:{port}]/{query}"
+    UrlScheme_Nil             = 0;
+    UrlScheme_Unrecognized    = 1;  // Unrecognized URL scheme
+    UrlScheme_Http            = 2;  // "[http[s]://]{hostname}[:{port}]/{query}"
+    UrlScheme_Data            = 3;  // "[data:]{mime-type}[[;base64],{data-encoding}]"
+    UrlScheme_File            = 4;  // "[file://]{hfs-pathname}"
+    UrlScheme_Amp             = 7;  // "[amp:[//app-alias/]]{cmd}[/{uri}]?{query}"
     
+    UrlScheme_Ipfs            = 17; // "[ipfs://]{hash}"
+    UrlScheme_Ipns            = 18; // "[ipns://]{hash}"
+    UrlScheme_Magnet          = 19; // "[magnet:]{query}"
+    UrlScheme_Git             = 20; // "[git://]{hostname}/{repo}[/{path}]"
 }
 
 
@@ -302,8 +289,16 @@ enum Metric {
     Metric_TrapezoDodecahedronMillimeter = 4; // TODO
 }
 
+enum TagUse {
+    TagUse_Unspecified  = 0;
+    TagUse_Pinnable     = 1; // attr specification that can be instantiated (which can cost resources)
+    TagUse_Glyph        = 2; // references a visual icon or glyph 
+    TagUse_Link         = 3; // references a public and independent / external link 
+    TagUse_Stream       = 4; // consumable video, audio, and other stream asset types ~1-300 mb
+    TagUse_Content      = 5; // denotes this Tag is a content link
+}
 
-// TagAttr is a multi-use workhorse link where all fields are optional and whose meaning is contextual.
+// Tag is a multi-use workhorse. All fields are optional and whose meaning is contextual.
 //
 // Often used to reference an asset, a Link can reference any resource, a show, project, episode, or XR beacon. 
 // The tagging naming convention describes a semi-ordered list of UTF tags.  
@@ -311,119 +306,190 @@ enum Metric {
 //      It is up to amp-search-dev-tag-specification to order search results based on tag filters (case sensitive, time ranges, or any UTF8 enum identifier)
 //      By convention, tags are case sensitive by default, however there are many filter presets -- This is how people "type or speak search"
 //      "Two tag rule" -- if you can think of two or more other tags in an order ranking, then do that instead.
-message TagAttr {
-    //Enable              State = 3;
+message Tag {
 
-    // Identifies a specific TagAttrSpec that this Link is an instance of.
-    int64   Tag_0 = 2;
-    fixed64 Tag_1 = 3;
-    fixed64 Tag_2 = 4;
+    TagUse  Use = 1;
 
-    // Identifies an attribute element series type (i.e. a data channel identifier with an implied SI format).
-    int64   AttrSpec_0 = 5;
-    fixed64 AttrSpec_1 = 6;
-    fixed64 AttrSpec_2 = 7;
+    // Identifies a specific target tag ID this link points to.
+    int64   TagID_0 = 2;
+    fixed64 TagID_1 = 3;
+    fixed64 TagID_2 = 4;
+
+    // // Identifies an attribute specification type (i.e. a data channel identifier with an implied SI format).
+    // int64   AttrID_0 = 5;
+    // fixed64 AttrID_1 = 6;
+    // fixed64 AttrID_2 = 7;
     
-    int64   SI_0 = 10;
-    fixed64 SI_1 = 11;
-    fixed64 SI_2 = 12;
     
-    string  URL         = 13; // e.g. "https://...", "amp://...", "ipfs://...", "file://...", "data:..."
-    string  ContentType = 14; // e.g. "text/html", "image/png", "image/*", 
-    bytes   Attachment  = 15; // inline content -- e.g. rtf text, inline thumbnails, cache fragments
-
+    string URL         = 13; // e.g. "https://...", "amp://...", "ipfs://...", "file://...", "data:..."
+    string ContentType = 14; // e.g. "text/html", "image/png", "image/*", 
+    bytes  Attachment  = 15; // inline content -- e.g. rtf text, inline thumbnails, cache fragments
+    
+    // Extensible 
+    //repeated Tag Tags = 16;
 
     // Implies a specific interpretation or spatial encoding of the size metric values
     //      exp(LogScale) => units linear scale metric -
-    //           e.g.  0.0 => 1, 1 => e^1,  3773.7337 => e^(8.23582016170069) ... )
+    //      e.g.  0.0 => 1, 1 => e^1,  3773.7337 => e^(8.23582016170069) ... )
     //double              LogScale   = 25; // natural log of the unit-to-physical scale metric (default 0.0 => 1.0)
     
-    Metric              Metric = 16;
-    double              Size_0 = 17;
-    double              Size_1 = 18;
-    double              Size_2 = 19;
+    Metric Metric = 26; // specifies the metric system used for the size metric values
+    float  Size_0 = 27; // x0 => width, x1 => height, x2 => depth
+    float  Size_1 = 28;
+    float  Size_2 = 29;
     
-    repeated TagAttr    SubAttrs = 24;
 }
 
 
 
-
-// TagHeader is a standard attribute for aa UI-visualized 24-byte time-based hashname.
-// An amp.App fills in what is appropriate and leaves the rest blank.
+// TagTab maps to a visual tab for a Tag -- complete with fields for user consumption.
 message TagTab {
 
-    string  Label       = 1; // utf8-text -- title, name, or primary label
-    string  Caption     = 2; // utf8 text -- short synopsis, summary, slogan, or "tagline"
-    string  About       = 3; // utf8 text -- amplifying information -- should be a short paragraph or less 
+    string  Label      = 1; // utf8-text -- title, name, or primary label
+    string  Caption    = 2; // utf8 text -- short synopsis, summary, slogan, or "tagline"
+    string  About      = 3; // utf8 text -- amplifying information -- should be a short paragraph or less 
     
-    int64   CreatedAt   = 8; // UTC << 16
-    int64   ModifiedAt  = 9; // UTC << 16
+    int64   CreatedAt  = 6; // UTC << 16
+    int64   ModifiedAt = 7; // UTC << 16  
+    
+    repeated Tag Tags  = 9; // glyphs, links, literals, pinnable attrs, or attr series references (in a data store) 
 
-    // Any URL or binary (tag) address to open / pin
-    // E.g. if 'amp://...', this denotes a pinnable URL -- but could be any pinnable URL: ipfs://, https://, ...
-    TagAttr Link        = 20;      
 }
 
 
 
+/*
 
-// TagFeed is a public channel specification / declaration / definition. 
-// In general, for incoming TagFeed, a corresponding client pin op, UI tab, and UI sheet (though the sheet may often be hidden or obscured). 
+// ChannelSpec declares the presence of a particular set of attr series that, if pinned, have a particular format and intended usage.
+//
+// In general, for incoming FeedInfo, a corresponding client pin op, UI tab, and UI sheet (though the sheet may often be hidden or obscured). 
 //
 // Most streams have 3-4 AttrFeeds:
 //      amp.tag.feed.[item.ID]TagTab
-//      amp.tag.feed.items.genesis.[]TagEpoch
-message TagFeed {
+//      amp.tag.feed.items.genesis.[]EpochDelta
+message ChannelSpec {  // AttrLayer, AttrSheet, AttrBundle, AttrSet
 
-    TagAttr             App        = 1; // optional -- specifies a particular app
-    TagAttr             FeedSpec   = 2; // specifies TagFeed element schema; feed data model descriptor "amp.tag.spec.data.TagTab" -- essential for the UI to "find" its Go-side app / driver.
-    TagAttr             TabUI      = 4; // tab UI to load and present to the user
-    TagAttr             SheetUI    = 5; // sheet UI to load and present to the user
+    // Specifies an attr element and/or sequence format. 
+    //    e.g. "amp.app.attr.os.EpochDelta" -
+    //
+    // This value implies an format and interpretation of the data elements in this series and their collective meaning, 
+    // and typically invokes particular UI elements that specifically handle or visualize the elements of this series.
+    //
+    // Any particular format spec can imply the existence of any number of attr series (e.g. an attr that binds particular attr series as columns).
+    string              FormatSpec = 2; 
     
-    repeated TagAttr    AttrFeeds  = 7; // keys subscribed for proper channel functioning. (e.g. "amp.tag.sync.keys.{app|channel|group|user}")
+    // Specifies an attr usage and/or intention -- e.g. "index"
+    // 
+    // This can be considered a suffix to the SeriesSpec, and is used to refine UI presentation and behavior as appropriate.
+    string              ContextSpec = 3;
     
-    repeated TagFeed    SubFeeds   = 9; // collection of attrs / channels -- potentially circular
+    // Specifies a specific instance of this format and context spec.
+    // 
+    // This means the spec that is actually pinned is "{FormatSpec}.{ContextSpec}.{InstanceID}"
+    //Tag                 InstanceID = 4;
+
+    // Optional sub collection of feeds also part of this feed - e.g. columns of a spreadsheet
+    //repeated Feed       Elements = 9; 
+}
+
+
+
+// By convention, every cell carries a "amp.feed.genesis.EpochDelta" feed which in turn is a tag.Time series of []EpochDelta.
+//    series expressing state for the cell's permissions and the channel catalog.
+message EpochDelta {
+    
+    // typically 1-4 ops that define default user and permission hive transactions, corresponding permissions tokens, and tag-wide public tokens
+    // by convention, the first follows the "constitution rule" where you list things like organization or group mission and offer a purpose.Tag that goes into ore detail about purpose and mission.
+    //
+    // These essentially sequential edits to a permissions key-value store
+    // TagIDs (ops)
+    //      "text/amp.tag.epoch.entries.{clear|write}.{admin|commons|group}"
+    //      "text/amp.tag.epoch.entries.{clear|write}.{admin|commons|group}"
+    repeated Tag        PermissionsOps = 2;
+    
+    repeated string     ChannelSpecs = 4;
+    repeated FeedInfo   RemoveFeeds = 5;
 
 }
 
-/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 The U.S.C Social Experiment
  - people "vote" on what they want
  - we're making a voting os app -- invoke blockchains
 
+-- there were penned as  channels, but the actual pb declarations are update elements.
+-- suffix ideas: Rev, Delta, Op, Tx, Item, Entry, Edit
 */
-message TagBallotBox {
+message Ballot {
 
 }
 
 
-message TagNotes {
+message NotesEntry {
 
 }
 
 
 //  "amp.tag.spec.talk.spec.message"
-message TagChat {
+message ChatEntry {
     
 }
 
-message TagSpreadsheet {
+message SpreadsheetEntry {
     // SI is QSR
     // 
 }
 
 
-message TagSurfaceGrid {
+message SpatialPlacement {
     // SI: coord
     // ElemType: tag.ID (where tag is CellID or is a hard asset ref)
+    
+ 	// Expresses the position of this placement in space.
+	// The coordinate system is specified within (or implied) from the hosting attribute spec.
+	// Here's to the 3 domains that reflect completeness: alpha (finite), omega (unending), and the inaccessible cardinal(s) -- https://www.youtube.com/watch?v=SrU9YDoXE88
+    double  Pos0   = 1;
+    double  Pos1   = 2;
+    double  Pos2   = 3;
+    
+	// Expresses the scale of this Node.
+	// If all three values are 0, they are all implicitly 1.
+	// If Scale2 or Scale3 == 0, then they are each implicitly Scale1.
+	float   Scale0 = 4;
+	float   Scale1 = 5;
+	float   Scale2 = 6;
+	
+	// Expresses the orientation of this placement using Euler angles.
+	float   EulerX = 7;
+	float   EulerY = 8;
+	float   EulerZ = 9;
+
 }
 
-message TagSurfaceGeo {
-    // SI: geohash
-    // ElemType: tag.ID (where tag is CellID or is a hard asset ref)
-}
 
 
 message TagPlayableMedia {
@@ -433,24 +499,6 @@ message TagPlayableMedia {
 }
 
 message TagPlaylist {
-
-}
-
-
-
-message TagEpoch {
-    
-    // typically 1-4 ops that define default user and permission hive transactions, corresponding permissions tokens, and tag-wide public tokens
-    // by convention, the first follows the "constitution rule" where you list things like organization or group mission and offer a purpose.TagAttr that goes into ore detail about purpose and mission.
-    //
-    // These essentially sequential edits to a permissions key-value store
-    // TagIDs (ops)
-    //      "text/amp.tag.epoch.entries.{clear|write}.{admin|commons|group}"
-    //      "text/amp.tag.epoch.entries.{clear|write}.{admin|commons|group}"
-    repeated TagAttr    PermissionsOps = 2;
-    
-    repeated TagFeed    InsertFeeds = 4;
-    repeated TagFeed    RemoveFeeds = 5;
 
 }
 
@@ -580,28 +628,25 @@ enum ErrCode {
     ErrCode_LoginFailed                 = 5008;
     ErrCode_SessionExpired              = 5009;
     
-    ErrCode_ReqNotFound                 = 5010;
-    ErrCode_InvalidReq                  = 5020;
+    ErrCode_RequestNotFound             = 5010;
+    ErrCode_RequestClosed               = 5011;
+    ErrCode_BadRequest                  = 5020;
     ErrCode_InvalidURI                  = 5021;
     ErrCode_BadValue                    = 5022;
     ErrCode_InvalidTag                  = 5023;
     ErrCode_InvalidTagSpec              = 5024;
-
+    ErrCode_AttrNotFound                = 5029;
     ErrCode_NothingToCommit             = 5030;
     ErrCode_CommitFailed                = 5031;
     ErrCode_PlanetNotFound              = 5032;
     ErrCode_PlanetFailure               = 5033;
     ErrCode_AppNotFound                 = 5034;
-    ErrCode_DefNotFound                 = 5036;
     ErrCode_MalformedTx                 = 5040;
 
-    ErrCode_TypeNotFound                = 5050;
-    ErrCode_TypeNotRegistered           = 5051;
     ErrCode_BadSchema                   = 5052;
     ErrCode_DataFailure                 = 5053;
     ErrCode_ExportErr                   = 5054;
     ErrCode_PinFailed                   = 5055;
-    ErrCode_PinContextClosed            = 5056;
     ErrCode_CellNotFound                = 5058;
     ErrCode_ProviderErr                 = 5059;
     

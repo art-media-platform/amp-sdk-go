@@ -1,4 +1,4 @@
-package amp
+package media
 
 import (
 	"io"
@@ -14,20 +14,20 @@ type PublishOpts struct {
 	OnExpired func()        // Called when the asset expires
 }
 
-// AssetPublisher publishes a MediaAsset to a randomly generated URL until the idle expiration is reached.
+// Publishes a media.Asset to a randomly generated URL until the idle expiration is reached.
 // If idleExpiry == 0, the publisher will choose an expiration period.
-type AssetPublisher interface {
-	PublishAsset(asset MediaAsset, opts PublishOpts) (URL string, err error)
+type Publisher interface {
+	PublishAsset(asset Asset, opts PublishOpts) (URL string, err error)
 }
 
 // MediaAsset is a flexible wrapper for any data asset that can be streamed -- often audio or video.
-type MediaAsset interface {
+type Asset interface {
 
 	// Short name or description of this asset used for logging / debugging.
 	Label() string
 
 	// Returns the media (MIME) type of the asset.
-	MediaType() string
+	ContentType() string
 
 	// OnStart is called when this asset is live within the given context.
 	// This MediaAsset should call ctx.Close() if a fatal error occurs or its underlying asset becomes unavailable.

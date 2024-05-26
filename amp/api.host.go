@@ -3,6 +3,7 @@ package amp
 import (
 	"net/url"
 
+	"github.com/amp-3d/amp-sdk-go/stdlib/media"
 	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 	"github.com/amp-3d/amp-sdk-go/stdlib/task"
 )
@@ -62,7 +63,7 @@ type HostSession interface {
 	Registry     // How symbols and types registered and resolved
 
 	// Returns the running AssetPublisher instance for this session.
-	AssetPublisher() AssetPublisher
+	AssetPublisher() media.Publisher
 
 	// Returns info about this user and session
 	Auth() Login
@@ -72,25 +73,22 @@ type HostSession interface {
 	// On exit, the given msg should not be referenced further.
 	SendTx(tx *TxMsg) error
 
-	// NewPin resolves and pins a requested cell.
-	NewPinContext(req PinOp) (PinContext, error)
-
 	// Gets the currently running AppInstance for an AppID.
 	// If the requested app is not running and autoCreate is set, a new instance is created and started.
-	GetAppInstance(appTag tag.ID, autoCreate bool) (AppInstance, error)
+	GetAppInstance(appID tag.ID, autoCreate bool) (AppInstance, error)
 }
 
 // Registry is where apps and types are registered -- concurrency safe.
 type Registry interface {
 
-	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid TagSpec type expression).
-	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
-	// if registerAs == "", then the prototype.ElemTypeName() is used.
-	RegisterPrototype(context tag.Spec, prototype ElemVal) tag.Spec
-
 	// Imports all the types and apps from another registry.
 	// When a HostSession is created, its registry starts by importing the Host's registry.
 	Import(other Registry) error
+
+	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid tag.Spec type expression).
+	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
+	// if registerAs == "", reflect is used find the underlying element type name.
+	RegisterPrototype(context tag.Spec, prototype ElemVal, registerAs string) tag.Spec
 
 	// Registers an app by its UTag, URI, and schemas it supports.
 	RegisterApp(app *App) error
@@ -105,23 +103,25 @@ type Registry interface {
 	NewAttrElem(attrSpec tag.ID) (ElemVal, error)
 }
 
-// PinContext wraps a client request to receive a cell's state / updates.
-type PinContext interface {
-	task.Context // Started as a CHILD of the amp.Pin returned by AppInstance.NewPin()
+// Requester wraps a client request to receive a cell's state / updates.
+type Requester interface {
 
-	Op() PinOp // Originating request info
+	// Returns all Request parameters.
+	Request() *Request
 
-	// PushTx pushes the given tx to this PinContext
+	// Submits tx to this Requester for processing.
 	PushTx(tx *TxMsg) error
 
-	// App returns the resolved AppContext that is servicing this PinContext
-	App() AppContext
+	// Called by a Pin to notify its Requester that service is complete (successfully or not)
+	// No-op if the Requester is was already complete or was cancelled.
+	OnComplete(err error)
 }
 
-// PinOp is a client request to pin a cell.
-type PinOp interface {
-	ContextID() tag.ID
-	Requesting() PinRequest
-	URL() (*url.URL, error)
-	URLValue(key string, mustExist bool) (string, error)
+// Request is a client request to pin a cell or URL, offering many degrees of flexibility.
+type Request struct {
+	PinRequest            // Raw client request
+	ID         tag.ID     // Universally unique genesis ID for this request
+	CommitTx   *TxMsg     // if non-nil, this tx is committed to be merged
+	URL        *url.URL   // Initialized from PinRequest.PinTarget.URL (or nil if missing)
+	Values     url.Values // Initialized from PinRequest.PinTarget.URL (or nil if missing)
 }

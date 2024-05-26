@@ -1,6 +1,7 @@
 package amp
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
@@ -25,25 +26,23 @@ type registry struct {
 	attrDefs     map[tag.ID]AttrDef
 }
 
-func (reg *registry) RegisterPrototype(context tag.Spec, prototype ElemVal) tag.Spec {
-	attrSpec := tag.FormSpec(context, prototype.ElemTypeName())
-	err := reg.RegisterAttr(attrSpec, prototype)
-	if err != nil {
-		panic(err)
+func (reg *registry) RegisterPrototype(context tag.Spec, prototype ElemVal, subTags string) tag.Spec {
+	if subTags == "" {
+		typeOf := reflect.TypeOf(prototype)
+		if typeOf.Kind() == reflect.Ptr {
+			typeOf = typeOf.Elem()
+		}
+		subTags = typeOf.Name()
 	}
-	return attrSpec
-}
 
-func (reg *registry) RegisterAttr(attrSpec tag.Spec, prototype ElemVal) error {
-	attrID := attrSpec.ID
-
+	attrSpec := tag.FormSpec(context, subTags)
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
-	reg.attrDefs[attrID] = AttrDef{
+	reg.attrDefs[attrSpec.ID] = AttrDef{
 		Spec:      attrSpec,
 		Prototype: prototype,
 	}
-	return nil
+	return attrSpec
 }
 
 func (reg *registry) Import(other Registry) error {
@@ -133,7 +132,7 @@ func (reg *registry) NewAttrElem(attrSpec tag.ID) (ElemVal, error) {
 	if !exists {
 		def, exists = reg.attrDefs[attrSpec]
 		if !exists {
-			return nil, ErrCode_DefNotFound.Errorf("NewAttrElem: attr %s not found", attrSpec.String())
+			return nil, ErrCode_AttrNotFound.Errorf("NewAttrElem: attr %s not found", attrSpec.String())
 		}
 	}
 	return def.Prototype.New(), nil
@@ -159,7 +158,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 	schema := &AttrSchema{
 		CellDataModel: valTyp.Name(),
 		SchemaName:    "on-demand-reflect",
-		Attrs:         make([]*TagSpec, 0, numFields),
+		Attrs:         make([]*tag.Spec, 0, numFields),
 	}
 
 	for i := 0; i < numFields; i++ {
@@ -170,7 +169,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 			continue
 		}
 
-		attr := &TagSpec{
+		attr := &tag.Spec{
 			TypedName: field.Name,
 			TagSpecID:  int32(i + 1),
 		}

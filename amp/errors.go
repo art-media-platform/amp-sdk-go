@@ -8,7 +8,7 @@ var (
 	ErrMalformedTx   = ErrCode_MalformedTx.Error("bad varint")
 	ErrStreamClosed  = ErrCode_NotConnected.Error("stream closed")
 	ErrCellNotFound  = ErrCode_CellNotFound.Error("cell not found")
-	ErrPinCtxClosed  = ErrCode_PinContextClosed.Error("pin context closed")
+	ErrRequestClosed = ErrCode_RequestClosed .Error("client request closed")
 	ErrNotPinnable   = ErrCode_PinFailed.Error("not pinnable")
 	ErrUnimplemented = ErrCode_PinFailed.Error("not implemented")
 	ErrBadTarget     = ErrCode_MalformedTx.Error("missing target ID")

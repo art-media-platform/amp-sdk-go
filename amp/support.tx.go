@@ -57,13 +57,42 @@ var gTxMsgPool = sync.Pool{
 		return msg
 	}
 */
-func (tx *TxInfo) ContextID() tag.ID {
-	return tag.ID{uint64(tx.ContextID_0), tx.ContextID_1, tx.ContextID_2}
+
+func (tx *TxInfo) SetRequestID(ID tag.ID) {
+	tx.RequestID_0 = int64(ID[0])
+	tx.RequestID_1 = ID[1]
+	tx.RequestID_2 = ID[2]
+}
+
+func (tx *TxInfo) RequestID() tag.ID {
+	return tag.ID{uint64(tx.RequestID_0), tx.RequestID_1, tx.RequestID_2}
+}
+
+func (tx *TxInfo) SetGenesisID(ID tag.ID) {
+	tx.GenesisID_0 = int64(ID[0])
+	tx.GenesisID_1 = ID[1]
+	tx.GenesisID_2 = ID[2]
+}
+
+func (tx *TxInfo) SetRoot(ID tag.ID) {
+	tx.RootElementID_0 = int64(ID[0])
+	tx.RootElementID_1 = ID[1]
+	tx.RootElementID_2 = ID[2]
+}
+
+func (tx *TxInfo) RootID() tag.ID {
+	return tag.ID{uint64(tx.RootElementID_0), tx.RootElementID_1, tx.RootElementID_2}
 }
 
 func (tx *TxInfo) GenesisID() tag.ID {
 	return tag.ID{uint64(tx.GenesisID_0), tx.GenesisID_1, tx.GenesisID_2}
 }
+
+// // If this were Java, I'd call this a TxMsgBuilder
+// func (tx *TxMsg) AddRef() tag.ID {
+// func (tx *TxMsg) Witnessed() tag.ID {
+// 	atomic.AddInt32(&tx.refCount, 1)
+// }
 
 func (tx *TxMsg) AddRef() {
 	atomic.AddInt32(&tx.refCount, 1)
@@ -81,15 +110,12 @@ func (tx *TxMsg) ReleaseRef() {
 	gTxMsgPool.Put(tx)
 }
 
-func MarshalMetaAttr(attrSpec tag.Spec, attrVal ElemVal) (*TxMsg, error) {
-	if attrSpec.ID.IsNil() {
-		attrSpec = tag.FormSpec(attrSpec, attrVal.ElemTypeName())
-	}
+func MarshalMetaAttr(attrSpec tag.ID, attrVal ElemVal) (*TxMsg, error) {
 
 	tx := NewTxMsg(true)
 	metaOp := TxOp{
 		OpCode: TxOpCode_MetaAttr,
-		AttrID: attrSpec.ID,
+		AttrID: attrSpec,
 	}
 	if err := tx.MarshalOp(&metaOp, attrVal); err != nil {
 		return nil, err
@@ -107,22 +133,27 @@ func (tx *TxMsg) UnmarshalOpValue(idx int, out ElemVal) error {
 }
 
 // If reqID == 0, then this sends an attr to the client's session controller (vs a specific request)
-func SendMetaAttr(sess HostSession, context tag.ID, status ReqStatus, val ElemVal) error {
-	tx, err := MarshalMetaAttr(tag.Spec{}, val)
+func SendMetaAttr(sess HostSession, context tag.ID, status OpStatus, val ElemVal) error {
+	getAttr := tag.FormSpec(MetaAttrSpec, val.ElemTypeName())
+	tx, err := MarshalMetaAttr(getAttr.ID, val)
 	if err != nil {
 		return err
 	}
 
-	tx.ContextID_0, tx.ContextID_1, tx.ContextID_2 = context.ToInts()
+	tx.SetRequestID(context)
 	tx.Status = status
 	return sess.SendTx(tx)
 }
 
-func (tx *TxMsg) ExtractMetaAttr(reg Registry) (ElemVal, error) {
-	if len(tx.Ops) == 0 || tx.Ops[0].OpCode != TxOpCode_MetaAttr {
-		return nil, ErrCode_MalformedTx.Error("expected meta attr")
+// If nil, nil is returned, then this Tx is a valid TxMsg to be merged into the target Pin.
+func (tx *TxMsg) CheckMetaAttr(reg Registry) (ElemVal, error) {
+	genesisID := tx.GenesisID()
+	if genesisID.IsNil() {
+		return nil, ErrCode_MalformedTx.Error("missing tx.GenesisID")
 	}
-
+	if len(tx.Ops) == 0 || tx.Ops[0].OpCode != TxOpCode_MetaAttr {
+		return nil, nil
+	}
 	val, err := reg.NewAttrElem(tx.Ops[0].AttrID)
 	if err != nil {
 		return nil, err
@@ -300,7 +331,6 @@ func (tx *TxMsg) MarshalBody(dst []byte) []byte {
 	)
 
 	for _, op := range tx.Ops {
-
 		dst = binary.AppendUvarint(dst, 0) // skip bytes (future use)
 		dst = binary.AppendUvarint(dst, uint64(op.OpCode))
 		dst = binary.AppendUvarint(dst, op.Height)
@@ -309,9 +339,13 @@ func (tx *TxMsg) MarshalBody(dst []byte) []byte {
 
 		// detect body repeated fields and write only what changes (with corresponding flags)
 		{
-			op_cur[TxField_TargetIDx0] = op.TargetID[0]
-			op_cur[TxField_TargetIDx1] = op.TargetID[1]
-			op_cur[TxField_TargetIDx2] = op.TargetID[2]
+			op_cur[TxField_FromID_0] = op.FromID[0]
+			op_cur[TxField_FromID_1] = op.FromID[1]
+			op_cur[TxField_FromID_2] = op.FromID[2]
+
+			op_cur[TxField_TargetID_0] = op.TargetID[0]
+			op_cur[TxField_TargetID_1] = op.TargetID[1]
+			op_cur[TxField_TargetID_2] = op.TargetID[2]
 
 			op_cur[TxField_AttrID_0] = op.AttrID[0]
 			op_cur[TxField_AttrID_1] = op.AttrID[1]
@@ -421,9 +455,13 @@ func (tx *TxMsg) UnmarshalBody(src []byte) error {
 			}
 		}
 
-		op.TargetID[0] = op_cur[TxField_TargetIDx0]
-		op.TargetID[1] = op_cur[TxField_TargetIDx1]
-		op.TargetID[2] = op_cur[TxField_TargetIDx2]
+		op.FromID[0] = op_cur[TxField_FromID_0]
+		op.FromID[1] = op_cur[TxField_FromID_1]
+		op.FromID[2] = op_cur[TxField_FromID_2]
+
+		op.TargetID[0] = op_cur[TxField_TargetID_0]
+		op.TargetID[1] = op_cur[TxField_TargetID_1]
+		op.TargetID[2] = op_cur[TxField_TargetID_2]
 
 		op.AttrID[0] = op_cur[TxField_AttrID_0]
 		op.AttrID[1] = op_cur[TxField_AttrID_1]
@@ -446,57 +484,6 @@ func (op *TxOp) Validate() error {
 	if op.AttrID.IsNil() {
 		return ErrCode_MalformedTx.Error("missing TagSpecID")
 	}
-	return nil
-}
-
-const (
-	kCellOfs   = 0                // 24 byte cell index
-	kAttrOfs   = 24               // 24 byte attr index
-	kIndexOfs  = 24 + 24          // 24 byte series index
-	kHeightOfs = 24 + 24 + 24     // 8 byte height counter
-	kHashOfs   = 24 + 24 + 24 + 8 // 8 byte hash
-	AttrKeyLen = kHashOfs + 8     // total byte length of key
-)
-
-type TxOpKey [AttrKeyLen]byte
-
-func FormKey(dst []byte, tag tag.ID) {
-	binary.BigEndian.PutUint64(dst[0:], uint64(tag[0]))
-	binary.BigEndian.PutUint64(dst[8:], tag[1])
-	binary.BigEndian.PutUint64(dst[16:], tag[2])
-}
-
-
-func (op *TxOp) FormAttrKey() TxOpKey {
-	var key TxOpKey
-	FormKey(key[kCellOfs:], op.TargetID)
-	FormKey(key[kAttrOfs:], op.AttrID)
-	FormKey(key[kIndexOfs:], op.SI)
-
-	binary.BigEndian.PutUint64(key[kHeightOfs:], uint64(op.Height))
-	binary.BigEndian.PutUint64(key[kHashOfs:], uint64(op.Hash))
-	return key
-}
-
-func (op *TxOp) ApplyAttrKey(key []byte) error {
-	if len(key) < AttrKeyLen {
-		return ErrCode_InternalErr.Error("bad db attr key")
-	}
-
-	op.TargetID[0] = binary.BigEndian.Uint64(key[kCellOfs:])
-	op.TargetID[1] = binary.BigEndian.Uint64(key[kCellOfs+8:])
-	op.TargetID[2] = binary.BigEndian.Uint64(key[kCellOfs+16:])
-
-	op.AttrID[0] = binary.BigEndian.Uint64(key[kAttrOfs:])
-	op.AttrID[1] = binary.BigEndian.Uint64(key[kAttrOfs+8:])
-	op.AttrID[2] = binary.BigEndian.Uint64(key[kAttrOfs+16:])
-
-	op.SI[0] = binary.BigEndian.Uint64(key[kIndexOfs:])
-	op.SI[1] = binary.BigEndian.Uint64(key[kIndexOfs+8:])
-	op.SI[2] = binary.BigEndian.Uint64(key[kIndexOfs+16:])
-
-	op.Height = binary.BigEndian.Uint64(key[kHeightOfs:])
-	op.Hash = binary.BigEndian.Uint64(key[kHashOfs:])
 	return nil
 }
 

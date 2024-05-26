@@ -18,7 +18,98 @@ var (
 const (
 	CanonicWithRune = '.'
 	CanonicHideRune = '~'
+
+	// 8 glyph slots required!
+	Canonic_PosZero = ' '
+	Canonic_Pos340  = '.'
+	Canonic_Pos681  = ':'
+	Canonic_Pos999  = '*'
+
+	Canonic_NegZero = '-'
+	Canonic_Neg340  = 'o'
+	Canonic_Neg681  = 'O'
+	Canonic_Neg999  = '0'
 )
+
+// Canonical ASCII digit in a tag.ID visual encoding (3 bits aka base 8)
+type CanonicAsciiDigit byte
+
+type CanonicAsciiDigit_Base8 byte
+type CanonicBinaryDigit_Base8 byte
+
+type VisualEncoding [64]CanonicAsciiDigit
+
+var CanonicAlphabet = [8]CanonicAsciiDigit{
+	Canonic_PosZero,
+	Canonic_Pos340,
+	Canonic_Pos681,
+	Canonic_Pos999,
+
+	Canonic_NegZero,
+	Canonic_Neg340,
+	Canonic_Neg681,
+	Canonic_Neg999,
+}
+
+/* Loops through the bits of this tag.ID in LSB to MSB order and encodes them into a triangular visual encoding:
+1: 63 62 61 60 59 58 57
+   56 55 54 53 52 51 50
+   49 48 47 46 45 44 43
+   42 41 40 39 38 37 36
+   35 34 33 32 31 30 29
+   28 27 26 25 24 23 22
+   21 20 19 18 17 16 15
+
+8: 14 13 12 11 10 09
+   08 07 06 05 04
+   03 02 01 00
+
+*/
+
+func glyphsInRow(rowIndex int) int {
+	if rowIndex <= 7 {
+		return 7
+	} else {
+		return rowIndex - 7
+	}
+}
+
+func (id ID) BuildVisualEncoding() VisualEncoding {
+	enc := VisualEncoding{}
+	remain := id
+	digits := 0
+	for bitsRemain := 192; bitsRemain > 0; bitsRemain -= 3 {
+		enc[digits] = CanonicAlphabet[remain[0]&0x7]
+		remain[0] = (remain[1] << 61) | (remain[0] >> 3)
+		remain[1] = (remain[2] << 61) | (remain[1] >> 3)
+		digits++
+	}
+	return enc
+}
+
+func (id ID) AsciiVisualGlyph() string {
+	enc := id.BuildVisualEncoding()
+	b := strings.Builder{}
+	idx := 0
+	for rowNum := 0; true; rowNum++ {
+		rowLength := glyphsInRow(rowNum)
+		for ri := 0; ri < rowLength; ri++ {
+			b.WriteByte(byte(enc[idx]))
+			b.WriteByte(' ')
+			idx++
+		}
+		b.WriteRune('\n')
+	}
+	b.WriteRune('\n')
+
+	for i, digit := range enc {
+		if glyphsInRow(i) == 0 {
+			b.WriteRune('\n')
+		}
+		b.WriteByte(byte(digit))
+	}
+	return b.String()
+}
 
 type Literal struct {
 	ID

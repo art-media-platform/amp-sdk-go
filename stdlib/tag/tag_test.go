@@ -1,17 +1,18 @@
 package tag_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
 )
 
 func TestTag(t *testing.T) {
-	amp_tags := tag.FormSpec(tag.Spec{}, "..amp..app.")
+	amp_tags := tag.Spec{}.With("..amp+.app.")
 	if amp_tags.ID != tag.FromString(".amp...").WithToken("app") {
 		t.Fatalf("FormSpec.ID failed: %v", amp_tags.ID)
 	}
-	spec := tag.FormSpec(amp_tags, "some-tag.thing")
+	spec := amp_tags.With("some-tag+thing")
 	if spec.Canonic != "amp.app.some-tag.thing" {
 		t.Errorf("FormSpec failed")
 	}
@@ -44,6 +45,18 @@ func TestTag(t *testing.T) {
 	if tid.Base16Suffix() != "abcdef0" {
 		t.Errorf("tag.ID.Base16Suffix() failed")
 	}
+
+	//fmt.Print(tid.FormAsciiBadge())
+
+}
+
+func TestTagEncodings(t *testing.T) {
+
+	for i := 0; i < 100; i++ {
+		id := tag.Now()
+		fmt.Println(id.FormAsciiBadge())
+	}
+
 }
 
 func TestNewTag(t *testing.T) {
@@ -69,11 +82,11 @@ func TestNewTag(t *testing.T) {
 	epsilon := tag.ID{0, tag.EntropyMask}
 
 	for i := range prevIDs {
-		prevIDs[i] = tag.New()
+		prevIDs[i] = tag.Now()
 	}
 
 	for i := 0; i < 10000000; i++ {
-		now := tag.New()
+		now := tag.Now()
 		upperLimit := now.Add(epsilon)
 
 		for _, prev := range prevIDs {

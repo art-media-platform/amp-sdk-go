@@ -214,7 +214,7 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 		child.task = *task
 	}
 	if child.task.ID.IsNil() {
-		child.task.ID = tag.New()
+		child.task.ID = tag.Now()
 	}
 	if child.task.Label == "" {
 		child.task.Label = fmt.Sprintf("ctx_%d", child.id)

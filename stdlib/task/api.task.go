@@ -60,9 +60,6 @@ type Context interface {
 	// Returns Task.Ref passed into StartChild()
 	TaskRef() interface{}
 
-	// The context's public label
-	Label() string
-
 	// A guaranteed unique ID assigned after Start() is called.
 	ContextID() int64
 

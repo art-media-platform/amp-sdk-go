@@ -85,9 +85,7 @@ func (l *logger) Padding() string {
 // NewLogger creates and inits a new Logger with the given label.
 func NewLogger(label string) Logger {
 	l := &logger{}
-	if label != "" {
-		l.SetLogLabel(label)
-	}
+	l.SetLogLabel(label)
 	return l
 }
 

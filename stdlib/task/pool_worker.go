@@ -36,11 +36,11 @@ func StartNewPoolWorker(name string, concurrency int, scheduler PoolWorkerSchedu
 		concurrency: concurrency,
 		scheduler:   scheduler,
 	}
-	
+
 	w.pool = StartNewPool(name, concurrency, scheduler.CheckForRetriesInterval())
 	var err error
 	w.Context, err = Start(&Task{
-		Label: "tester",
+		Label:   "tester",
 		OnStart: w.OnContextStarted,
 	})
 	return w, err
@@ -48,7 +48,7 @@ func StartNewPoolWorker(name string, concurrency int, scheduler PoolWorkerSchedu
 
 func (w *poolWorker) OnContextStarted(ctx Context) error {
 	_, err := w.StartChild(&Task{
-		Label: "poolWorker",
+		Label:   "poolWorker",
 		OnStart: w.pool.OnContextStarted,
 	})
 	if err != nil {

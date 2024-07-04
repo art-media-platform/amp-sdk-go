@@ -36,7 +36,7 @@ type ctx struct {
 // Errors
 var (
 	ErrAlreadyStarted = errors.New("already started")
-	ErrUnstarted      = errors.New("unstarted")
+	ErrNotStarted     = errors.New("not started")
 	ErrClosed         = errors.New("closed")
 )
 
@@ -169,8 +169,9 @@ func (p *ctx) ContextID() int64 {
 	return p.id
 }
 
-func (p *ctx) Label() string {
-	return p.task.Label
+func (p *ctx) SetLogLabel(label string) {
+	p.task.Label = label
+	p.Logger.SetLogLabel(label)
 }
 
 func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []rune, lastChild bool) {
@@ -182,7 +183,7 @@ func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []run
 		}
 	}
 	prefix = append(prefix, icon, ' ')
-	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.ContextID(), string(prefix), ctx.Label()))
+	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.ContextID(), string(prefix), ctx.GetLogLabel()))
 	icon = '┃'
 	if lastChild {
 		icon = ' '
@@ -231,7 +232,7 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 			p.idle = false
 			p.subs = append(p.subs, child)
 		} else {
-			err = ErrUnstarted
+			err = ErrNotStarted
 		}
 		p.subsMu.Unlock()
 

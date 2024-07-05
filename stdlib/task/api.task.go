@@ -35,6 +35,7 @@ type Task struct {
 	ID             tag.ID                  // ID is a universally unique identifier -- auto assigned if nil
 	TaskRef        any                     // TaskRef is offered for open-ended use
 	Label          string                  // Label is used for logging and debugging
+	DebugMode      bool                    // Debug is set if the context should log more verbosely, do expensive diagnostics, etc.
 	OnStart        func(ctx Context) error // Blocking fn called in StartChild(). If err, ctx.Close() is called and Go() returns the err and OnRun is never called.
 	OnRun          func(ctx Context)       // Async work body. If non-nil, ctx.Close() will be automatically called after OnRun() completes
 	OnClosing      func()                  // Called immediately after Close() is first called while self & children are still closing
@@ -54,14 +55,17 @@ type Context interface {
 	// Includes functionality and behavior of a context.Context.
 	context.Context
 
-	// Returns the ID of this Context -- from task.Task.ID (or auto-assigned if nil)
+	// Returns Task.ID
 	ID() tag.ID
 
-	// Returns Task.Ref passed into StartChild()
+	// Returns Task.TaskRef
 	TaskRef() interface{}
 
-	// A guaranteed unique ID assigned after Start() is called.
-	ContextID() int64
+	// A unique ID assigned from an atomically incremented counter during Start()
+	InstanceID() int64
+
+	// Returns Task.DebugMode
+	DebugMode() bool
 
 	// Creates a new child Context with for given Task.
 	// If OnStart() returns an error error is encountered, then child.Close() is immediately called and the error is returned.

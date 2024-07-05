@@ -161,11 +161,15 @@ func (p *ctx) ID() tag.ID {
 	return p.task.ID
 }
 
+func (p *ctx) DebugMode() bool {
+	return p.task.DebugMode
+}
+
 func (p *ctx) TaskRef() interface{} {
 	return p.task.TaskRef
 }
 
-func (p *ctx) ContextID() int64 {
+func (p *ctx) InstanceID() int64 {
 	return p.id
 }
 
@@ -183,7 +187,7 @@ func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []run
 		}
 	}
 	prefix = append(prefix, icon, ' ')
-	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.ContextID(), string(prefix), ctx.GetLogLabel()))
+	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.InstanceID(), string(prefix), ctx.GetLogLabel()))
 	icon = '┃'
 	if lastChild {
 		icon = ' '

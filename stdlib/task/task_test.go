@@ -25,8 +25,10 @@ func spawnN(p task.Context, numGoroutines int, delay time.Duration) {
 func TestCore(t *testing.T) {
 	t.Run("basic idle close", func(t *testing.T) {
 		p, _ := task.Start(&task.Task{
-			Label:     "root",
-			IdleClose: time.Nanosecond,
+			Info: task.Info{
+				Label:     "root",
+				IdleClose: time.Nanosecond,
+			},
 		})
 
 		spawnN(p, 1, 1*time.Second)
@@ -42,13 +44,17 @@ func TestCore(t *testing.T) {
 func TestNestedIdleClose(t *testing.T) {
 	t.Run("nested idle close", func(t *testing.T) {
 		p, _ := task.Start(&task.Task{
-			Label:     "root",
-			IdleClose: time.Nanosecond,
+			Info: task.Info{
+				Label:     "root",
+				IdleClose: time.Nanosecond,
+			},
 		})
 
 		child, _ := p.StartChild(&task.Task{
-			Label:     "child",
-			IdleClose: time.Nanosecond,
+			Info: task.Info{
+				Label:     "child",
+				IdleClose: time.Nanosecond,
+			},
 		})
 		spawnN(child, 10, 1*time.Second)
 
@@ -63,8 +69,10 @@ func TestNestedIdleClose(t *testing.T) {
 func TestIdleCloseWithDelay(t *testing.T) {
 	t.Run("idle close with delay", func(t *testing.T) {
 		p, _ := task.Start(&task.Task{
-			Label:     "root with idle close delay",
-			IdleClose: 2 * time.Second,
+			Info: task.Info{
+				Label:     "root with idle close delay",
+				IdleClose: 2 * time.Second,
+			},
 		})
 
 		select {
@@ -89,11 +97,15 @@ func Test6(t *testing.T) {
 
 	t.Run("close cancels children", func(t *testing.T) {
 		p, _ := task.Start(&task.Task{
-			Label: "close tester",
+			Info: task.Info{
+				Label: "close tester",
+			},
 		})
 
 		child, _ := p.StartChild(&task.Task{
-			Label: "child",
+			Info: task.Info{
+				Label: "child",
+			},
 		})
 
 		canceled1 := testutils.NewAwaiter()

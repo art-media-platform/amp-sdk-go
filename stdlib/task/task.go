@@ -15,11 +15,8 @@ import (
 
 // ctx implements Context
 type ctx struct {
-	log.Logger
-
-	task Task
-
-	id             int64
+	log            log.Logger
+	task           Task
 	state          int32
 	idle           bool
 	idleCloseRetry atomic.Int64 // time.Duration
@@ -40,7 +37,7 @@ var (
 	ErrClosed         = errors.New("closed")
 )
 
-var gSpawnCounter = int64(0)
+var gInstanceCount = int64(0)
 
 func (p *ctx) Close() error {
 	first := atomic.CompareAndSwapInt32(&p.state, Running, Closing)
@@ -157,25 +154,12 @@ func (p *ctx) Value(key interface{}) interface{} {
 	return nil
 }
 
-func (p *ctx) ID() tag.ID {
-	return p.task.ID
+func (p *ctx) Info() Info {
+	return p.task.Info
 }
 
-func (p *ctx) DebugMode() bool {
-	return p.task.DebugMode
-}
-
-func (p *ctx) TaskRef() interface{} {
-	return p.task.TaskRef
-}
-
-func (p *ctx) InstanceID() int64 {
-	return p.id
-}
-
-func (p *ctx) SetLogLabel(label string) {
-	p.task.Label = label
-	p.Logger.SetLogLabel(label)
+func (p *ctx) Log() log.Logger {
+	return p.log
 }
 
 func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []rune, lastChild bool) {
@@ -186,8 +170,9 @@ func printContextTree(ctx Context, out *strings.Builder, depth int, prefix []run
 			icon = '┗'
 		}
 	}
+	taskInfo := ctx.Info()
 	prefix = append(prefix, icon, ' ')
-	out.WriteString(fmt.Sprintf("%04d%s%s\n", ctx.InstanceID(), string(prefix), ctx.GetLogLabel()))
+	out.WriteString(fmt.Sprintf("%04d%s%s\n", taskInfo.TID, string(prefix), ctx.Log().GetLogLabel()))
 	icon = '┃'
 	if lastChild {
 		icon = ' '
@@ -209,26 +194,24 @@ func (p *ctx) GetChildren(in []Context) []Context {
 
 // StartChild starts the given child Context as a "sub" task.
 func (p *ctx) StartChild(task *Task) (Context, error) {
+	info := task.Info
+	if info.ContextID.IsNil() {
+		info.ContextID = tag.Now()
+	}
+	task.Info.TID = atomic.AddInt64(&gInstanceCount, 1)
+	if info.Label == "" {
+		info.Label = fmt.Sprintf("ctx_%d", task.Info.TID)
+	}
 	child := &ctx{
+		log:       log.NewLogger(info.Label),
 		state:     Running,
-		id:        atomic.AddInt64(&gSpawnCounter, 1),
+		task:      *task,
 		chClosing: make(chan struct{}),
 		chClosed:  make(chan struct{}),
 	}
-	if task != nil {
-		child.task = *task
-	}
-	if child.task.ID.IsNil() {
-		child.task.ID = tag.Now()
-	}
-	if child.task.Label == "" {
-		child.task.Label = fmt.Sprintf("ctx_%d", child.id)
-	}
-	child.Logger = log.NewLogger(child.task.Label)
 
 	// If a parent is given, add the child to the parent's list of children.
 	if p != nil {
-
 		var err error
 		p.subsMu.Lock()
 		if p.state == Running {
@@ -292,7 +275,7 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 
 				// If removing the last child and in IdleClose mode, queue the parent to be closed
 				if N == 0 {
-					idleClose = p.task.IdleClose
+					idleClose = p.task.Info.IdleClose
 				}
 			}
 			p.subsMu.Unlock()
@@ -332,8 +315,8 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 			child.busy.Done()
 
 			// If idleclose is set, try to do so
-			if child.task.IdleClose > 0 {
-				child.CloseWhenIdle(child.task.IdleClose)
+			if child.task.Info.IdleClose > 0 {
+				child.CloseWhenIdle(child.task.Info.IdleClose)
 			}
 		}()
 	}
@@ -343,9 +326,11 @@ func (p *ctx) StartChild(task *Task) (Context, error) {
 
 func (p *ctx) Go(label string, fn func(ctx Context)) (Context, error) {
 	return p.StartChild(&Task{
-		Label:     label,
-		IdleClose: time.Nanosecond,
-		OnRun:     fn,
+		Info: Info{
+			Label:     label,
+			IdleClose: time.Nanosecond,
+		},
+		OnRun: fn,
 	})
 }
 
@@ -363,3 +348,7 @@ const (
 	Closing
 	Closed
 )
+
+func (t *Task) TaskInfo() *Info {
+	return &t.Info
+}

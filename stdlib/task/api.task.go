@@ -19,23 +19,30 @@ func Start(task *Task) (Context, error) {
 // If parent == null, then the new Context will have no parent.
 func Go(parent Context, label string, fn func(ctx Context)) (Context, error) {
 	return parent.StartChild(&Task{
-		Label: label,
+		Info: Info{
+			Label: label,
+		},
 		OnRun: fn,
 	})
 }
 
-// Task is a parameter block used to start a new Context and contains hooks for each stage of the Context's lifecycle.
-type Task struct {
+type Info struct {
+	TID       int64    // globally unique atomically incremented instance ID -- assigned OnStart()
+	ContextID tag.ID   // optional universally identifying process or context tag.ID
+	Headers   []string // cookies, auth, or task references
+	Label     string   // logging and debugging label
+	DebugMode bool     // when set, a context logs more verbosely and can perform (or log) expensive diagnostics
 
 	// If > 0, Context.CloseWhenIdle() will automatically called when the last remaining child is closed or when OnRun() completes, whichever occurs later.
 	//
 	// This will not enter into effect unless OnRun is given or a child is started.
 	IdleClose time.Duration
+}
 
-	ID             tag.ID                  // ID is a universally unique identifier -- auto assigned if nil
-	TaskRef        any                     // TaskRef is offered for open-ended use
-	Label          string                  // Label is used for logging and debugging
-	DebugMode      bool                    // Debug is set if the context should log more verbosely, do expensive diagnostics, etc.
+// Task is a parameter block used to start a new Context and contains hooks for each stage of the Context's lifecycle.
+type Task struct {
+	Info Info
+
 	OnStart        func(ctx Context) error // Blocking fn called in StartChild(). If err, ctx.Close() is called and Go() returns the err and OnRun is never called.
 	OnRun          func(ctx Context)       // Async work body. If non-nil, ctx.Close() will be automatically called after OnRun() completes
 	OnClosing      func()                  // Called immediately after Close() is first called while self & children are still closing
@@ -50,22 +57,13 @@ type Task struct {
 //   - the OnClosing() hook, allowing cleanup to occur  when a Context is closed but before its parent is closed.
 //   - PrintTreePeriodically() which visualizes a Context's child tree and is helpful for debugging in large projects.
 type Context interface {
-	log.Logger
+	Log() log.Logger
 
 	// Includes functionality and behavior of a context.Context.
 	context.Context
 
-	// Returns Task.ID
-	ID() tag.ID
-
-	// Returns Task.TaskRef
-	TaskRef() interface{}
-
-	// A unique ID assigned from an atomically incremented counter during Start()
-	InstanceID() int64
-
-	// Returns Task.DebugMode
-	DebugMode() bool
+	// Returns a snapshot of this Context's Info.
+	Info() Info
 
 	// Creates a new child Context with for given Task.
 	// If OnStart() returns an error error is encountered, then child.Close() is immediately called and the error is returned.

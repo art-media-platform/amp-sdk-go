@@ -29,9 +29,11 @@ func StartNewPool(name string, concurrency int, retryInterval time.Duration) *Po
 		retryInterval:  retryInterval,
 		poolItems:      make(map[PoolUniqueID]poolItem),
 	}
-	
+
 	p.Context, _ = Start(&Task{
-		Label: "pool",
+		Info: Info{
+			Label: "pool",
+		},
 		OnStart: p.OnContextStarted,
 	})
 	return p

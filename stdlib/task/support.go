@@ -44,7 +44,7 @@ func PrintTreePeriodically(ctx Context, period time.Duration, verboseLevel int32
 					pos += n
 				}
 				if changed {
-					ctx.Info(verboseLevel, string(text))
+					ctx.Log().Info(verboseLevel, string(text))
 				}
 				buf.Reset()
 			}
@@ -67,6 +67,6 @@ func PrintContextTree(ctx Context, out io.Writer, verboseLevel int32) {
 	if out != nil {
 		out.Write([]byte(outStr))
 	} else {
-		ctx.Info(verboseLevel, outStr)
+		ctx.Log().Info(verboseLevel, outStr)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -12,108 +13,46 @@ import (
 )
 
 var (
-	sTagSeparator = regexp.MustCompile(`[/\\\.:\s\~]+`) // Which delimiters?  'significant" delimiters.
+	sTagSeparator = regexp.MustCompile(`[/\\\.+:\s\~]+`) // Which delimiters?  'significant" delimiters.
 )
 
 const (
 	CanonicWithRune = '.'
 	CanonicHideRune = '~'
-
-	// 8 glyph slots required!
-	Canonic_PosZero = ' '
-	Canonic_Pos340  = '.'
-	Canonic_Pos681  = ':'
-	Canonic_Pos999  = '*'
-
-	Canonic_NegZero = '-'
-	Canonic_Neg340  = 'o'
-	Canonic_Neg681  = 'O'
-	Canonic_Neg999  = '0'
 )
 
-// Canonical ASCII digit in a tag.ID visual encoding (3 bits aka base 8)
-type CanonicAsciiDigit byte
-
-type CanonicAsciiDigit_Base8 byte
-type CanonicBinaryDigit_Base8 byte
-
-type VisualEncoding [64]CanonicAsciiDigit
-
-var CanonicAlphabet = [8]CanonicAsciiDigit{
-	Canonic_PosZero,
-	Canonic_Pos340,
-	Canonic_Pos681,
-	Canonic_Pos999,
-
-	Canonic_NegZero,
-	Canonic_Neg340,
-	Canonic_Neg681,
-	Canonic_Neg999,
-}
-
-/* Loops through the bits of this tag.ID in LSB to MSB order and encodes them into a triangular visual encoding:
-1: 63 62 61 60 59 58 57
-   56 55 54 53 52 51 50
-   49 48 47 46 45 44 43
-   42 41 40 39 38 37 36
-   35 34 33 32 31 30 29
-   28 27 26 25 24 23 22
-   21 20 19 18 17 16 15
-
-8: 14 13 12 11 10 09
-   08 07 06 05 04
-   03 02 01 00
-
-*/
-
-func glyphsInRow(rowIndex int) int {
-	if rowIndex <= 7 {
-		return 7
-	} else {
-		return rowIndex - 7
-	}
-}
-
-func (id ID) BuildVisualEncoding() VisualEncoding {
-	enc := VisualEncoding{}
-	remain := id
+func (id ID) AppendAsOctals(enc []OctalDigit) []OctalDigit {
+	remain := ID{id[0], id[1], id[2]}
 	digits := 0
+
 	for bitsRemain := 192; bitsRemain > 0; bitsRemain -= 3 {
-		enc[digits] = CanonicAlphabet[remain[0]&0x7]
-		remain[0] = (remain[1] << 61) | (remain[0] >> 3)
-		remain[1] = (remain[2] << 61) | (remain[1] >> 3)
+		digit := OctalDigit(remain[2] & 0x7)
+		enc = append(enc, digit)
+		enc[digits] = digit
+		remain[2] = (remain[2] >> 3) | (remain[1] << 61)
+		remain[1] = (remain[1] >> 3) | (remain[0] << 61)
+		remain[0] = (remain[0] >> 3)
 		digits++
 	}
 	return enc
 }
 
-func (id ID) AsciiVisualGlyph() string {
-	enc := id.BuildVisualEncoding()
-	b := strings.Builder{}
-	idx := 0
-	for rowNum := 0; true; rowNum++ {
-		rowLength := glyphsInRow(rowNum)
-		for ri := 0; ri < rowLength; ri++ {
-			b.WriteByte(byte(enc[idx]))
-			b.WriteByte(' ')
-			idx++
-		}
-		b.WriteRune('\n')
-	}
-	b.WriteRune('\n')
+func (id ID) FormAsciiBadge() string {
+	encBuf := make([]OctalDigit, 0, 64)
+	enc := id.AppendAsOctals(encBuf)
 
-	for i, digit := range enc {
-		if glyphsInRow(i) == 0 {
-			b.WriteRune('\n')
+	str := append([]byte{}, gBadge6424.Template...)
+	for i, di := range gBadge6424.Dots {
+		val := CanonicAsciiAlphabet[0]
+		if i < len(enc) {
+			val = CanonicAsciiAlphabet[enc[i]]
 		}
-		b.WriteByte(byte(digit))
-	}
-	return b.String()
-}
 
-type Literal struct {
-	ID
-	Token string // UTF8 human readable exact / canonical glyph or alias of ID -- 24 rune courtesy limit
+		// Set the dot value where it belongs in the cloned template
+		str[di.CharIndex] = byte(val)
+	}
+
+	return string(str)
 }
 
 // Composite tag expression syntax
@@ -164,6 +103,41 @@ func (spec Spec) LeafTags(n int) (string, string) {
 	return "", expr
 }
 
+// A tag.Spec produces a tag.ID such that each tag.ID is unique and is independent of its component tag literals.
+//
+//	e.g. "a.b.cc" == "b.a.cc" == "a.cc.b" != "a.cC.b"
+func (spec Spec) With(subTags string) Spec {
+	newSpec := Spec{
+		ID:   spec.ID,
+		Tags: make([]Literal, 0, 8),
+	}
+
+	canonic := make([]byte, 0, len(spec.Canonic)+len(subTags))
+	canonic = append(canonic, spec.Canonic...)
+	tags := sTagSeparator.Split(subTags, 37)
+	if len(tags) > 0 {
+
+		for _, ti := range tags {
+			if ti == "" { // empty tokens are no-ops
+				continue
+			}
+			if len(canonic) > 0 {
+				canonic = append(canonic, CanonicWithRune)
+			}
+			canonic = append(canonic, []byte(ti)...)
+			literal := Literal{
+				ID:    FromLiteral([]byte(ti)),
+				Token: ti,
+			}
+			newSpec.Tags = append(newSpec.Tags, literal)
+			newSpec.ID = newSpec.ID.With(literal.ID)
+		}
+		newSpec.Canonic = string(canonic)
+	}
+
+	return newSpec
+}
+
 // ID is a signed 24 byte UTC time index in big endian form, with 6 bytes of signed seconds and 10 bytes of fractional precision.
 // This means there are 47 bits dedicated for whole seconds => +/- 4.4 million years
 //
@@ -175,51 +149,7 @@ const (
 	EntropyMask = uint64(0x3FFFFFFFF) // entropy bit mask for ID[1] -- slightly smaller than 1 ns resolution
 )
 
-func FromInts(x0 int64, x1, x2 uint64) ID {
-	return ID{uint64(x0), x1, x2}
-}
-
-// Returns the current time as a ID.ID, statistically guaranteed to be unique even when called in rapid succession.
-func New() ID {
-	return FromTime(time.Now(), true)
-}
-
-func (id ID) IsNil() bool {
-	return id[0] == 0 && id[1] == 0 && id[2] == 0
-}
-
-func (id ID) IsSet() bool {
-	return id[0] != 0 || id[1] != 0 || id[2] != 0
-}
-
-// This operator is commutative and associative, and is used to generate a new ID from two existing ones.
-// Since this is commutative, it is reversible, and means tag literals are order independent.
-func (id ID) With(other ID) ID {
-	return ID{
-		id[0] + other[0],
-		id[1] + other[1], // overflow is normal
-		id[2] + other[2], // overflow is normal
-	}
-}
-
-// Entanges this ID with another, producing a new ID.
-func (id ID) Hide(other ID) ID {
-	return ID{
-		id[0] - other[0],
-		id[1] - other[1], // overflow is normal
-		id[2] - other[2], // overflow is normal
-	}
-}
-
-func (id ID) WithToken(tagToken string) ID {
-	return id.WithLiteral([]byte(tagToken))
-}
-
-func (id ID) WithLiteral(tagLiteral []byte) ID {
-	return id.With(LiteralID(tagLiteral))
-}
-
-func LiteralID(tagLiteral []byte) ID {
+func FromLiteral(tagLiteral []byte) ID {
 	var hashBuf [16]byte
 
 	hasher := md5.New()
@@ -235,10 +165,11 @@ func LiteralID(tagLiteral []byte) ID {
 
 func FromString(unclean string) ID {
 	tagLiteral := sTagSeparator.ReplaceAll([]byte(unclean), nil)
-	return LiteralID(tagLiteral)
+	return FromLiteral(tagLiteral)
 }
-func FromToken(tagToken string) ID {
-	return LiteralID([]byte(tagToken))
+
+func FromToken(literal string) ID {
+	return FromLiteral([]byte(literal))
 }
 
 func FromTime(t time.Time, addEntropy bool) ID {
@@ -248,22 +179,19 @@ func FromTime(t time.Time, addEntropy bool) ID {
 	t_00_06 := uint64(t.Unix()) << 16
 	t_06_08 := ns_f64 >> 48
 	t_08_15 := ns_f64 << 16
-	if addEntropy {
-		gTagSeed = ns_f64 ^ (gTagSeed * 5237732522753)
-		t_08_15 ^= gTagSeed & EntropyMask
-	}
-
 	tag := ID{
 		t_00_06 | uint64(t_06_08),
 		t_08_15,
-		0, // Tags generated this way don't need more entropy?
+		0,
 	}
-	return tag
-}
 
-func TimeToUTC16(t time.Time) int64 {
-	tag := FromTime(t, false)
-	return int64(tag[0])
+	if addEntropy {
+		gTagSeed = 377377733*ns_f64 ^ gTagSeed
+		tag[1] ^= gTagSeed & EntropyMask
+		tag[2] ^= gTagSeed * ns_f64
+	}
+
+	return tag
 }
 
 func Join(prefixTags, suffixTags string) string {
@@ -282,41 +210,63 @@ func Join(prefixTags, suffixTags string) string {
 	return prefixTags + suffixTags
 }
 
-func FormSpec(context Spec, subTags string) Spec {
-
-	spec := Spec{
-		ID:   context.ID,
-		Tags: make([]Literal, 0, 8),
+func (tag Literal) String() string {
+	b := strings.Builder{}
+	b.Grow(len(tag.Token) + 10)
+	if tag.Token != "" {
+		fmt.Fprintf(&b, "%q", tag.Token)
+	} else {
+		b.WriteString(tag.ID.Base32())
 	}
-
-	canonic := make([]byte, 0, len(context.Canonic)+len(subTags))
-	canonic = append(canonic, context.Canonic...)
-	tags := sTagSeparator.Split(subTags, 37)
-	if len(tags) > 0 {
-
-		for _, ti := range tags {
-			if ti == "" { // empty tokens are no-ops
-				continue
-			}
-			if len(canonic) > 0 {
-				canonic = append(canonic, CanonicWithRune)
-			}
-			canonic = append(canonic, []byte(ti)...)
-			literal := Literal{
-				ID:    LiteralID([]byte(ti)),
-				Token: ti,
-			}
-			spec.Tags = append(spec.Tags, literal)
-			spec.ID = spec.ID.With(literal.ID)
-		}
-		spec.Canonic = string(canonic)
-	}
-
-	return spec
+	return b.String()
 }
 
-func (id ID) String() string {
-	return id.Base32Suffix()
+// Returns the current time as a tag.ID, statistically guaranteed to be unique even when called in rapid succession.
+func Now() ID {
+	return FromTime(time.Now(), true)
+}
+
+func (id ID) IsNil() bool {
+	return id[0] == 0 && id[1] == 0 && id[2] == 0
+}
+
+func (id ID) IsSet() bool {
+	return id[0] != 0 || id[1] != 0 || id[2] != 0
+}
+
+func (id ID) IsWildcard() bool {
+	return id[0] == 0x1 && id[1] == 0x1 && id[2] == 0x1
+}
+
+// This operator is commutative and associative, and is used to generate a new ID from two existing ones.
+// Since this is commutative, it is reversible, and means tag literals are order independent.
+func (id ID) With(other ID) ID {
+	return ID{
+		id[0] + other[0],
+		id[1] + other[1], // overflow is normal
+		id[2] + other[2], // overflow is normal
+	}
+}
+
+// Entangles this ID with another, producing a new ID -- non-commutative.
+func (id ID) Then(other ID) ID {
+	return ID{
+		id[0] - other[0],
+		id[1] - other[1], // overflow is normal
+		id[2] - other[2], // overflow is normal
+	}
+}
+
+func (id ID) WithToken(tagToken string) ID {
+	return id.WithLiteral([]byte(tagToken))
+}
+
+func (id ID) WithLiteral(tagLiteral []byte) ID {
+	return id.With(FromLiteral(tagLiteral))
+}
+
+func (tag ID) String() string {
+	return tag.Base32()
 }
 
 func (tag ID) CompareTo(oth ID) int {
@@ -382,15 +332,6 @@ func (tag ID) Unix() int64 {
 	return int64(tag[0]) >> 16
 }
 
-func (tag *ID) SetFromInts(x0 int64, x1 uint64) {
-	tag[0] = uint64(x0)
-	tag[1] = x1
-}
-
-func (tag ID) ToInts() (int64, uint64, uint64) {
-	return int64(tag[0]), tag[1], tag[2]
-}
-
 // Returns this tag.ID in canonic Base32 form
 func (tag ID) Base32() string {
 	var buf [25]byte // (25 * 8) % 5 == 0
@@ -453,7 +394,7 @@ func IntsToID(x0 int64, x1, x2 uint64) ID {
 	}
 }
 
-type LSMKey [24]byte
+type Key [24]byte
 
 var gTagSeed = uint64(0x3773000000003773)
 
@@ -479,10 +420,10 @@ func (tag ID) AppendTo(dst []byte) []byte {
 	return dst
 }
 
-func (tag ID) ToLSM() LSMKey {
-	var lsm LSMKey
-	tag.Put24(lsm[:])
-	return lsm
+func (tag ID) ToLSM() Key {
+	var key Key
+	tag.Put24(key[:])
+	return key
 }
 
 func From24(lsm []byte) (id ID) {
@@ -732,7 +673,7 @@ func (tag *TxID) AppendAsBinary(io []byte) []byte {
 
 
 // ReadCell loads a cell with the given URI having the inferred schema (built from its fields using reflection).
-// The URI is scoped into the user's home planet and AppID.
+// The URI is scoped into the user's home space and AppID.
 func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) error {
 
 	dst := reflect.Indirect(reflect.ValueOf(dstStruct))
@@ -748,7 +689,7 @@ func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) 
 	cellKey := append(append(keyBuf[:0], []byte(ctx.StateScope())...), []byte(subKey)...)
 
 	msgs := make([]*Msg, 0, len(schema.Attrs))
-	err := ctx.User().HomePlanet().ReadCell(cellKey, schema, func(msg *Msg) {
+	err := ctx.LoginInfo().HomePlanet().ReadCell(cellKey, schema, func(msg *Msg) {
 		switch msg.Op {
 		case MsgOp_PushAttr:
 			msgs = append(msgs, msg)
@@ -819,7 +760,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 		msg = tx.AddMsg()
 		msg.Op = MsgOp_Commit
 
-		if err := ctx.User().HomePlanet().PushTx(tx); err != nil {
+		if err := ctx.LoginInfo().HomePlanet().PushTx(tx); err != nil {
 			return err
 		}
 	}

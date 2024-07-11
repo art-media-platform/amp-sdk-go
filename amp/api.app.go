@@ -16,12 +16,11 @@ type App struct {
 	//   - FamilyID:    encompassing namespace ID used to group related apps (no spaces or punctuation)
 	//   - AppNameID:   identifies this app within its parent family and domain (no spaces or punctuation)
 	//
-	AppSpec      tag.Spec // Universally unique and persistent ID for this module (and the module's "home" planet if present)
+	AppSpec      tag.Spec // Universally unique and persistent ID for this module (and the module's "home" space if present)
 	Desc         string   // Human-readable description of this app
 	Version      string   // "v{MajorVers}.{MinorID}.{RevID}"
 	Dependencies []tag.ID // Module Tags this app may access
 	Invocations  []string // Additional aliases that invoke this app
-	AttrDecl     []string // Attrs to be resolved and registered with a HostSession
 
 	// NewAppInstance is the entry point for an App.
 	// Called when an App is first invoked on an active User session and is not yet running.
@@ -31,21 +30,21 @@ type App struct {
 
 // AppContext is provided by the amp runtime to an AppInstance for support and context.
 type AppContext interface {
-	task.Context          // Allows select{} for graceful handling of app shutdown
-	media.Publisher       // Allows an app to publish assets for client consumption
-	Session() HostSession // Access to underlying Session
+	task.Context      // Allows select{} for graceful handling of app shutdown
+	media.Publisher   // Allows an app to publish assets for client consumption
+	Session() Session // Access to underlying Session
 
 	// Returns the absolute file system path of the app's local read-write directory.
-	// This directory is scoped by the app's Tag.
+	// This directory is scoped by App.AppSpec
 	LocalDataPath() string
 
-	// Gets the named attribute from the user's home planet -- used high-level app settings.
+	// Gets the named attribute from the user's home space -- used high-level app settings.
 	// The attr is scoped by both the app Tag so key collision with other users or apps is not possible.
 	// This is how an app can store and retrieve its settings for the current user.
-	GetAppAttr(attrSpec tag.ID, dst ElemVal) error
+	GetAppAttr(attrSpec tag.ID, dst tag.Value) error
 
 	// Write analog for GetAppAttr()
-	PutAppAttr(attrSpec tag.ID, src ElemVal) error
+	PutAppAttr(attrSpec tag.ID, src tag.Value) error
 }
 
 // Pinner is characterized by the ability to emit Pins.
@@ -102,69 +101,33 @@ type Pin interface {
 	// CommitTx(tx *TxMsg) error
 }
 
-// // Wraps the task an App issues in response to Pin.HandleRequest()
-// type RequestHandler interface {
-
-// 	// The owning Pin that spawned this RequestHandler.
-// 	ParentPin() Pin
-
-// 	// This RequestHandler's context -- a child context of the associated Pin.
-// 	// Used to know if a request is still being served and to close it if needed.
-// 	Context() task.Context
-
-// }
-
-// Serialization abstraction
-type PbValue interface {
-	Size() int
-	MarshalToSizedBuffer(dAtA []byte) (int, error)
-	Unmarshal(dAtA []byte) error
-}
-
-// ElemVal wraps cell attribute element name and serialization.
-type ElemVal interface {
-
-	// Returns the element type name (a scalar tag.Spec).
-	ElemTypeName() string // TODO: use generics for default name
-
-	// Marshals this ElemVal to a buffer, reallocating if needed.
-	MarshalToStore(in []byte) (out []byte, err error)
-
-	// Unmarshals and merges value state from a buffer.
-	Unmarshal(src []byte) error
-
-	// Creates a default instance of this same ElemVal type
-	New() ElemVal
-}
-
 // TxMsg is workhorse generic transport serialization sent between client and host.
 type TxMsg struct {
 	TxInfo
-	refCount  int32  // see AddRef() / ReleaseRef()
-	Ops       []TxOp // ordered operations to perform on the target
+	Ops       []TxOp // operations to perform on the target
+	OpsSorted bool   // describes order of []Ops
 	DataStore []byte // marshalled data store for Ops serialized data
+	refCount  int32  // see AddRef() / ReleaseRef()
 }
 
 // TxOp is an atomic operation on a target cell and is a unit of change (or message) for any target.
 // Values are typically LSM sorted, so use low order bytes before high order bytes.
 // Note that x0 is the most significant and x2 is least significant bytes.
 type TxOp struct {
-	OpCode   TxOpCode
-	FromID   tag.ID // Directed link -- FromID to TargetID
-	TargetID tag.ID // Target to operate on
-	AttrID   tag.ID // Attribute to operate on
-	SI       tag.ID // Index of the data being mutated
-	Height   uint64 // parent tx height -- see "height" in https://peerlinks.io/protocol.html
-	Hash     uint64 // parent tx hash (conflict resolution)
-	DataLen  uint64 // Length of data in TxMsg.DataStore
-	DataOfs  uint64 // Offset into TxMsg.DataStore
+
+	// op key components in order of significance
+	CellID tag.ID // target to operate on
+	AttrID tag.ID // attribute specification to operate on
+	SI     tag.ID // index of the data being mutated
+	EditID tag.ID // see comments for TxField_EditID
+
+	// Op values -- not part of TxOp comparison
+	OpCode  TxOpCode // operation to perform
+	DataLen uint64   // length of data in TxMsg.DataStore
+	DataOfs uint64   // offset into TxMsg.DataStore
 }
 
 type AttrDef struct {
 	tag.Spec
-	Prototype ElemVal
+	Prototype tag.Value
 }
-
-// TagSpecID is a tag for the canonic string representation of an tag.Spec
-// Leading bits are reserved to express pin detail level or layer.
-type TagSpecID tag.ID

@@ -29,7 +29,7 @@ func (err *Err) Error() string {
 		return codeStr
 	}
 
-	return err.Msg + " / " + codeStr
+	return err.Msg
 }
 
 // Error returns an *Err with the given error code

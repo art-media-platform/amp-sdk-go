@@ -26,7 +26,7 @@ type registry struct {
 	attrDefs     map[tag.ID]AttrDef
 }
 
-func (reg *registry) RegisterPrototype(context tag.Spec, prototype ElemVal, subTags string) tag.Spec {
+func (reg *registry) RegisterPrototype(context tag.Spec, prototype tag.Value, subTags string) tag.Spec {
 	if subTags == "" {
 		typeOf := reflect.TypeOf(prototype)
 		if typeOf.Kind() == reflect.Ptr {
@@ -35,7 +35,7 @@ func (reg *registry) RegisterPrototype(context tag.Spec, prototype ElemVal, subT
 		subTags = typeOf.Name()
 	}
 
-	attrSpec := tag.FormSpec(context, subTags)
+	attrSpec := context.With(subTags)
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 	reg.attrDefs[attrSpec.ID] = AttrDef{
@@ -124,7 +124,7 @@ func (reg *registry) GetAppForInvocation(invocation string) (*App, error) {
 	return app, nil
 }
 
-func (reg *registry) NewAttrElem(attrSpec tag.ID) (ElemVal, error) {
+func (reg *registry) MakeValue(attrSpec tag.ID) (tag.Value, error) {
 
 	// Often, an attrID will be a unnamed scalar attr (which means we can get the elemDef directly.
 	// This is also essential during bootstrapping when the client sends a RegisterDefs is not registered yet.
@@ -132,7 +132,7 @@ func (reg *registry) NewAttrElem(attrSpec tag.ID) (ElemVal, error) {
 	if !exists {
 		def, exists = reg.attrDefs[attrSpec]
 		if !exists {
-			return nil, ErrCode_AttrNotFound.Errorf("NewAttrElem: attr %s not found", attrSpec.String())
+			return nil, ErrCode_AttrNotFound.Errorf("MakeValue: attr %s not found", attrSpec.String())
 		}
 	}
 	return def.Prototype.New(), nil
@@ -199,7 +199,7 @@ func MakeSchemaForType(valTyp reflect.Type) (*AttrSchema, error) {
 }
 
 // ReadCell loads a cell with the given URI having the inferred schema (built from its fields using reflection).
-// The URI is scoped into the user's home planet and AppID.
+// The URI is scoped into the user's home space and AppID.
 func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) error {
 
 	dst := reflect.Indirect(reflect.ValueOf(dstStruct))
@@ -215,7 +215,7 @@ func ReadCell(ctx AppContext, subKey string, schema *AttrSchema, dstStruct any) 
 	cellKey := append(append(keyBuf[:0], []byte(ctx.StateScope())...), []byte(subKey)...)
 
 	msgs := make([]*Msg, 0, len(schema.Attrs))
-	err := ctx.User().HomePlanet().ReadCell(cellKey, schema, func(msg *Msg) {
+	err := ctx.LoginInfo().HomePlanet().ReadCell(cellKey, schema, func(msg *Msg) {
 		switch msg.Op {
 		case MsgOp_PushAttr:
 			msgs = append(msgs, msg)
@@ -286,7 +286,7 @@ func WriteCell(ctx AppContext, subKey string, schema *AttrSchema, srcStruct any)
 		msg = tx.AddMsg()
 		msg.Op = MsgOp_Commit
 
-		if err := ctx.User().HomePlanet().PushTx(tx); err != nil {
+		if err := ctx.LoginInfo().HomePlanet().PushTx(tx); err != nil {
 			return err
 		}
 	}

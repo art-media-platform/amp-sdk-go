@@ -17,8 +17,8 @@ type Host interface {
 	// The amp.Registry interface bakes security and efficiently and tries to serve as effective package manager.
 	HostRegistry() Registry
 
-	// StartNewSession creates a new HostSession and binds its Msg transport to a stream.
-	StartNewSession(parent HostService, via Transport) (HostSession, error)
+	// StartNewSession creates a new Session and binds its Msg transport to a stream.
+	StartNewSession(parent HostService, via Transport) (Session, error)
 }
 
 // Transport wraps a Msg transport abstraction, allowing a Host to connect over any data transport layer.
@@ -56,9 +56,9 @@ type HostService interface {
 	GracefulStop()
 }
 
-// HostSession in an open client session with a Host.
+// Session in an open client session with an amp.Host.
 // Closing is initiated via task.Context.Close().
-type HostSession interface {
+type Session interface {
 	task.Context // Underlying task context
 	Registry     // How symbols and types registered and resolved
 
@@ -66,7 +66,7 @@ type HostSession interface {
 	AssetPublisher() media.Publisher
 
 	// Returns info about this user and session
-	Auth() Login
+	LoginInfo() Login
 
 	// Sends a readied Msg to the client for handling.
 	// If msg.ReqID == 0, the attr is sent to the client's session controller (for sending session meta messages).
@@ -82,25 +82,25 @@ type HostSession interface {
 type Registry interface {
 
 	// Imports all the types and apps from another registry.
-	// When a HostSession is created, its registry starts by importing the Host's registry.
+	// When a Session is created, its registry starts by importing the Host's registry.
 	Import(other Registry) error
 
-	// Registers an element value type (ElemVal) as a prototype under its pure scalar element type name (also a valid tag.Spec type expression).
+	// Registers an element value type (tag.Value) as a prototype under its pure scalar element type name (also a valid tag.Spec type expression).
 	// If an entry already exists (common for a type used by multiple apps), then this is a no-op.
 	// if registerAs == "", reflect is used find the underlying element type name.
-	RegisterPrototype(context tag.Spec, prototype ElemVal, registerAs string) tag.Spec
+	RegisterPrototype(context tag.Spec, prototype tag.Value, registerAs string) tag.Spec
 
 	// Registers an app by its UTag, URI, and schemas it supports.
 	RegisterApp(app *App) error
 
-	// Looks-up an app by Tag -- READ ONLY ACCESS
+	// Looks-up an app by tag ID -- READ ONLY ACCESS
 	GetAppByTag(appTag tag.ID) (*App, error)
 
 	// Selects the app that best matches an invocation string.
 	GetAppForInvocation(invocation string) (*App, error)
 
-	// Instantiates an attr element value for a given attr spec -- typically followed by ElemVal.Unmarshal()
-	NewAttrElem(attrSpec tag.ID) (ElemVal, error)
+	// Instantiates an attr element value for a given attr spec -- typically followed by tag.Value.Unmarshal()
+	MakeValue(attrSpec tag.ID) (tag.Value, error)
 }
 
 // Requester wraps a client request to receive a cell's state / updates.

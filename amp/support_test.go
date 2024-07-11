@@ -15,38 +15,43 @@ func TestTxSerialize(t *testing.T) {
 
 	tx := NewTxMsg(true)
 	tx.Status = OpStatus_Syncing
-	tx.RequestID_0 = 888854513
-	tx.RequestID_1 = 7777435
-	tx.RequestID_2 = 77743773
+	tx.ContextID_0 = 888854513
+	tx.ContextID_1 = 7777435
+	tx.ContextID_2 = 77743773
 	{
 		op := TxOp{
-			OpCode:   TxOpCode_MetaAttr,
-			TargetID: tag.ID{4, 555, 666},
-			AttrID:   tag.ID{111312232, 22232334444},
-			SI:       tag.ID{7383, 76549, 3773},
-			Hash:     0xfeedbeef,
+			OpCode: TxOpCode_UpsertElement,
+			CellID: tag.ID{4, 555, 666},
+			AttrID: tag.ID{111312232, 22232334444},
+			SI:     tag.ID{7383, 76549, 3773},
+			EditID: tag.ID{123, 9999, 0},
 		}
 		tx.MarshalOp(&op, &Login{
-			UserUID:  "alan1",
+			UserLabel: "lil turkey",
+			UserUID: &Tag{
+				Text: "cmdr5",
+			},
 			HostAddr: "batwing ave",
 		})
 		tx.DataStore = append(tx.DataStore, []byte("bytes not used but stored -- not normal!")...)
 
 		op.SI[1] = 50454123
-		op.Height = 234
+		op.EditID[1] += 37733773
 		data := []byte("hello-world")
 		for i := 0; i < 7; i++ {
 			data = append(data, data...)
 		}
 		tx.MarshalOp(&op, &Login{
-			UserUID:  "cmdr6",
+			UserUID: &Tag{
+				Text: "anonymous",
+			},
 			HostAddr: string(data),
 		})
 
 		for i := 0; i < 5500; i++ {
 			op.SI[0] = uint64(i)
 			if i%5 == 0 {
-				op.Height += 1
+				op.EditID[1] += 37
 			}
 			tx.MarshalOp(&op, &LoginResponse{
 				HashResponse: append(data, fmt.Sprintf("-%d", i)...),
@@ -54,8 +59,8 @@ func TestTxSerialize(t *testing.T) {
 		}
 
 		op.SI[0] = 111111
-		op.Hash = 55445544
-		op.OpCode = TxOpCode_DeleteAttr
+		op.EditID[1] = 55445544
+		op.OpCode = TxOpCode_DeleteElement
 		tx.MarshalOpWithBuf(&op, nil)
 	}
 
@@ -81,7 +86,7 @@ func TestTxSerialize(t *testing.T) {
 	for i, op1 := range tx.Ops {
 		op2 := tx2.Ops[i]
 
-		if op1.OpCode != op2.OpCode || op1.TargetID != op2.TargetID || op1.AttrID != op2.AttrID || op1.SI != op2.SI || op1.DataOfs != op2.DataOfs || op1.DataLen != op2.DataLen {
+		if op1.OpCode != op2.OpCode || op1.CellID != op2.CellID || op1.AttrID != op2.AttrID || op1.SI != op2.SI || op1.DataOfs != op2.DataOfs || op1.DataLen != op2.DataLen {
 			t.Errorf("ReadTxMsg failed: Op mismatch")
 		}
 	}
@@ -103,27 +108,27 @@ func (r *bufReader) Read(p []byte) (n int, err error) {
 
 func TestRegistry(t *testing.T) {
 	reg := NewRegistry()
-	spec := reg.RegisterPrototype(tag.FormSpec(AttrSpec, "av"), &Tag{}, "")
+	spec := reg.RegisterPrototype(AttrSpec.With("av"), &Tag{}, "")
 	if spec.Canonic != AttrSpec.Canonic+".av.Tag" {
 		t.Fatal("RegisterPrototype failed")
 	}
-	if spec.ID != tag.FormSpec(tag.Spec{}, "amp.app.attr.av.Tag").ID {
+	if spec.ID != (tag.Spec{}.With("amp.tag.attr.Tag.av")).ID {
 		t.Fatalf("tag.FormSpec failed")
 	}
-	if spec.ID != tag.FormSpec(tag.FormSpec(AppSpec, "attr.av"), "Tag").ID {
+	if spec.ID != AttrSpec.With("av").With("Tag").ID {
 		t.Fatalf("tag.FormSpec failed")
 	}
-	if spec.ID.Base32Suffix() != "e39qymem" {
+	if spec.ID.Base32Suffix() != "00rvscub" {
 		t.Fatalf("unexpected spec.ID: %v", spec.ID)
 	}
-	if spec.ID.Base32() != "000000000000002hp5x0uxmq2m5h01vke39qymem" {
-		t.Errorf("tag.ID.Base32() failed")
+	if spec.ID.Base32() != "000000000000004w656q67gz3rm9s3vx00rvscub" {
+		t.Errorf("tag.ID.Base32() failed: %v", spec.ID.Base32())
 	}
-	elem, err := reg.NewAttrElem(spec.ID)
+	elem, err := reg.MakeValue(spec.ID)
 	if err != nil {
-		t.Fatalf("NewAttrElem failed: %v", err)
+		t.Fatalf("MakeValue failed: %v", err)
 	}
 	if reflect.TypeOf(elem) != reflect.TypeOf(&Tag{}) {
-		t.Fatalf("NewAttrElem returned wrong type: %v", reflect.TypeOf(elem))
+		t.Fatalf("MakeValue returned wrong type: %v", reflect.TypeOf(elem))
 	}
 }

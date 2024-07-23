@@ -119,7 +119,7 @@ func (pin *Pin[AppT]) ServeRequest(op amp.Requester) (amp.Pin, error) {
 func (pin *Pin[AppT]) pushState() error {
 	tx := amp.NewTxMsg(true)
 
-	if pin.Op.Request().StateSync != amp.StateSync_None {
+	if pin.Op.Request().StateSync > amp.StateSync_None {
 		pinnedID := pin.Cell.Root().ID
 
 		w := cellWriter{
@@ -164,7 +164,6 @@ func (w *cellWriter) PutText(propertyID tag.ID, val string) {
 		SI:     propertyID,
 	}
 	err := w.tx.MarshalOp(&txOp, &amp.Tag{
-		Use:  amp.TagUse_Text,
 		Text: val,
 	})
 	if err != nil {

@@ -247,26 +247,6 @@ enum UrlScheme {
 
 
 
-
-
-enum TagUse {
-    TagUse_Unspecified  = 0;
-    TagUse_Redirected   = 1; // typically a tag.ID that redirects to another tag.ID
-    
-    TagUse_AttachedAttr = 3; // TagID is an attr ID, referencing an attribute attached to the cell
-    TagUse_PinnableAttr = 4; // attr specification that can be loaded / instantiated
-    
-    TagUse_Text         = 5; // literal text stored in Tag.InlineText
-    TagUse_Glyph        = 7; // references a visual icon or glyph 
-    TagUse_Link         = 9; // references a public and independent / external link 
-    TagUse_Content      = 10; // denotes this Tag is a content link
-    TagUse_Stream       = 12; // consumable video, audio, and other stream asset types ~1-300 mb
-    //TagUse_Position     = 13; // references a position in space and/or time
-    // TagUse_TabUI        = 6; // references a UI tab asset 
-    // TagUse_ViewUI       = 7; // references a UI content view asset
-    // TagUse_SubCell      = 8; // specifies a sub cell (channel) ID and immutable ContentType e.g "amp/app.channel.Chat" 
-}
-
 // Tag is a multi-use workhorse. All fields are optional and whose meaning is contextual.
 //
 // Often used to reference an asset, a Link can reference any resource, a show, project, episode, or XR beacon. 
@@ -276,8 +256,6 @@ enum TagUse {
 //      By convention, tags are case sensitive by default, however there are many filter presets -- This is how people "type or speak search"
 //      "Two tag rule" -- if you can think of two or more other tags in an order ranking, then do that instead.
 message Tag {
-
-    TagUse  Use           = 1;
 
     // Identifies a specific target tag ID this link points to.
     int64   TagID_0       = 2;

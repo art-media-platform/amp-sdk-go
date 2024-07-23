@@ -45,22 +45,9 @@ const (
 // Common universal glyphs
 var (
 	GenericFolderGlyph = &amp.Tag{
-		Use: amp.TagUse_Glyph,
 		URL: GenericGlyphURL + "application/x-directory",
 	}
 )
-
-// Creates a new Tag that denotes the given attribute can be pinned.
-func FormPinnableTag(attrSpec tag.Spec) *amp.Tag { // FIX ME
-	//url := "amp:attr/" + attrSpec.Canonic
-	tag := &amp.Tag{ // FIX ME
-		Use:     amp.TagUse_PinnableAttr,
-		TagID_0: int64(attrSpec.ID[0]),
-		TagID_1: attrSpec.ID[1],
-		TagID_2: attrSpec.ID[2],
-	}
-	return tag
-}
 
 type PinnableAttr struct {
 	Spec tag.Spec

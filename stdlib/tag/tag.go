@@ -447,9 +447,6 @@ func (tag ID) Put24(dst []byte) {
 }
 
 func (tag ID) Put16(dst []byte) {
-	if tag[0] != 0 {
-		panic("tag[0] != 0")
-	}
 	binary.BigEndian.PutUint64(dst[0:], tag[1])
 	binary.BigEndian.PutUint64(dst[8:], tag[2])
 }

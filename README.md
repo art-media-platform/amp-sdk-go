@@ -4,7 +4,7 @@ _A turn-key solution for creating high-fidelity, multi-platform 3D experiences_
 
 ## What is AMP?
 
-This repo contains Go interfaces and basic tools for the _Arc Media Platform_ ("AMP"), a SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure. The AMP client is a [Unity](https://unreal.com) or [Unreal](https://unreal.com) "client" based app/os or device driven by an embedded [Go](https://golang.org) runtime.  This means AMP is a "turn-key" 3D-based user interface solution allowing you rapidly publish a native app on Windows, macOS, Linux, Android, iOS, and most XR headsets while also delivering the benefits of Go.
+This repo contains Go interfaces and basic tools for the _Arc Media Platform_ ("AMP"), a SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure. The AMP client is a [Unity](https://unreal.com) or [Unreal](https://unreal.com) "client" based app/os or device driven by an embedded [Go](https://golang.org) runtime.  This means AMP is a "turn-key" 3D-based user interface solution allowing you rapidly publish a native app on Windows, macOS, Linux, Android, iOS, and most XR headsets while also delivering the benefits of embedded and "headless" Go runtimes.
 
 This is interesting to:
   - **Storage and content providers** can deploy visually stunning user experiences using AMP, delivering an immersive media experience while attracting users.  This is otherwise only available in AAA games and profoudly more painful through a pure web-based solution -- e.g. [IPFS](https://www.ipfs.com/), Amazon's [S3](https://aws.amazon.com/s3/).  

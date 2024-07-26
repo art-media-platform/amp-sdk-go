@@ -1,6 +1,6 @@
 module github.com/amp-3d/amp-sdk-go
 
-go 1.18
+go 1.22
 
 require (
 	github.com/brynbellomy/klog v0.0.0-20200414031930-87fbf2e555ae

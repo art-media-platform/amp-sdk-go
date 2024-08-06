@@ -155,14 +155,14 @@ func (st *symbolTable) allocAndBindToID(buf []byte, bindID symbol.ID) kvEntry {
 	return kv
 }
 
-func (st *symbolTable) GetSymbolID(val []byte, autoIssue bool) symbol.ID {
+func (st *symbolTable) GetSymbolID(val []byte, autoIssue bool) (symbol.ID, bool) {
 	symID := st.getIDFromCache(val)
 	if symID != 0 {
-		return symID
+		return symID, false
 	}
 
 	symID = st.getsetValueIDPair(val, 0, autoIssue)
-	return symID
+	return symID, symID != 0
 }
 
 func (st *symbolTable) SetSymbolID(val []byte, symID symbol.ID) symbol.ID {

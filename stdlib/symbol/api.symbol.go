@@ -47,14 +47,11 @@ type Table interface {
 	// Note that retained references should make use of generics.RefCloser to ensure proper closure.
 	Issuer() Issuer
 
-	// Returns the symbol ID previously associated with the given string/buffer value.
+	// Returns the symbol ID associated with the given string/buffer value.
 	// The given value buffer is never retained.
 	//
-	// If not found and autoIssue == true, a new entry is created and the new ID returned.
-	// Newly issued IDs are always > 0 and use the lower bytes of the returned ID (see type ID comments).
-	//
-	// If not found and autoIssue == false, 0 is returned.
-	GetSymbolID(value []byte, autoIssue bool) ID
+	// If value not found and autoIssue == true, then a new ID is issued, bound to the given value, and true is returned.
+	GetSymbolID(value []byte, autoIssue bool) (symbol ID, wasAdded bool)
 
 	// Associates the given buffer value to the given symbol ID, allowing multiple values to be mapped to a single ID.
 	// If ID == 0, then this is the equivalent to GetSymbolID(value, true).

@@ -110,7 +110,7 @@ func (tt *tableTester) fillTable(table symbol.Table) {
 				var symBuf [128]byte
 				for j := 0; j < totalEntries; j++ {
 					idx := (startAt + j) % totalEntries
-					symID := table.GetSymbolID(vals[idx], true)
+					symID, _ := table.GetSymbolID(vals[idx], true)
 					if symID < symbol.DefaultIssuerMin {
 						atomic.AddInt32(hardwireCountPtr, 1)
 					}
@@ -140,7 +140,7 @@ func (tt *tableTester) fillTable(table symbol.Table) {
 	// Verify all the tokens are valid
 	IDs := tt.IDs
 	for i, k := range vals {
-		IDs[i] = table.GetSymbolID(k, false)
+		IDs[i], _ = table.GetSymbolID(k, false)
 		if IDs[i] == 0 {
 			tt.errs <- errors.New("GetSymbolID failed final verification")
 		}
@@ -153,7 +153,7 @@ func (tt *tableTester) fillTable(table symbol.Table) {
 	if table.GetSymbol(123456789, nil) != nil {
 		tt.errs <- errors.New("bad ID returns value")
 	}
-	if table.GetSymbolID([]byte{4, 5, 6, 7, 8, 9, 10, 11}, false) != 0 {
+	if ID, _ := table.GetSymbolID([]byte{4, 5, 6, 7, 8, 9, 10, 11}, false); ID != 0 {
 		tt.errs <- errors.New("bad value returns ID")
 	}
 }
@@ -176,7 +176,7 @@ func (tt *tableTester) checkTable(table symbol.Table) {
 					idx := (startAt + j) % totalEntries
 
 					if (j % numWorkers) == 0 {
-						symID := table.GetSymbolID(vals[idx], false)
+						symID, _ := table.GetSymbolID(vals[idx], false)
 						if symID != IDs[idx] {
 							tt.errs <- errors.New("GetSymbolID failed readback check")
 						}

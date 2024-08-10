@@ -78,8 +78,8 @@ func GetErrCode(err error) ErrCode {
 		return ErrCode_NoErr
 	}
 
-	if arcErr, ok := err.(*Err); ok {
-		return arcErr.Code
+	if artErr, ok := err.(*Err); ok {
+		return artErr.Code
 	}
 
 	return ErrCode_UnnamedErr

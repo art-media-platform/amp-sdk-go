@@ -42,7 +42,7 @@ message KVEntry {
 
 
 message AppVars {
-    // AppDomain is the domain name used for primary queries (e.g. "arcspace.systems") 
+    // AppDomain is the domain name used for primary queries (e.g. "artspace.systems") 
                 string              AppDomain                   = 2;
                 
     // AppDesc succinctly describes this org and is for humans.
@@ -61,7 +61,7 @@ message AppVars {
     // A key of "" denotes an unknown platform
                 map<string, string> AppDownloadURLs             = 16;
                 
-    // URLSchemes declare URL schemes for this app's custom URL scheme (e.g. "arcspace://")
+    // URLSchemes declare URL schemes for this app's custom URL scheme (e.g. "artspace://")
     // The first entry is the primary scheme and the rest are alternately recognized schemes.
     // URL schemas should always end with "://"
     repeated    string              URLSchemes                  = 18;

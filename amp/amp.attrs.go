@@ -52,12 +52,12 @@ func ErrorToValue(v error) tag.Value {
 	if v == nil {
 		return nil
 	}
-	arcErr, _ := v.(*Err)
-	if arcErr == nil {
+	artErr, _ := v.(*Err)
+	if artErr == nil {
 		wrapped := ErrCode_UnnamedErr.Wrap(v)
-		arcErr = wrapped.(*Err)
+		artErr = wrapped.(*Err)
 	}
-	return arcErr
+	return artErr
 }
 
 func (v *Tag) MarshalToStore(in []byte) (out []byte, err error) {

@@ -12,7 +12,7 @@ import (
 type App struct {
 
 	// tag.Spec identifies this app with form "amp.app.{PublisherID}.{FamilyID}.{AppNameID}" -- e.g. "amp.app.os.filesys.posix"
-	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "arcspace.systems"
+	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "artspace.systems"
 	//   - FamilyID:    encompassing namespace ID used to group related apps (no spaces or punctuation)
 	//   - AppNameID:   identifies this app within its parent family and domain (no spaces or punctuation)
 	//

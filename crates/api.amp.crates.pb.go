@@ -160,7 +160,7 @@ func (m *KVEntry) GetValue() string {
 }
 
 type AppVars struct {
-	// AppDomain is the domain name used for primary queries (e.g. "arcspace.systems")
+	// AppDomain is the domain name used for primary queries (e.g. "artspace.systems")
 	AppDomain string `protobuf:"bytes,2,opt,name=AppDomain,proto3" json:"AppDomain,omitempty"`
 	// AppDesc succinctly describes this org and is for humans.
 	AppDesc string `protobuf:"bytes,4,opt,name=AppDesc,proto3" json:"AppDesc,omitempty"`
@@ -173,7 +173,7 @@ type AppVars struct {
 	// AppDownloadURLs are a download URL for a given platform.
 	// A key of "" denotes an unknown platform
 	AppDownloadURLs map[string]string `protobuf:"bytes,16,rep,name=AppDownloadURLs,proto3" json:"AppDownloadURLs,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// URLSchemes declare URL schemes for this app's custom URL scheme (e.g. "arcspace://")
+	// URLSchemes declare URL schemes for this app's custom URL scheme (e.g. "artspace://")
 	// The first entry is the primary scheme and the rest are alternately recognized schemes.
 	// URL schemas should always end with "://"
 	URLSchemes []string `protobuf:"bytes,18,rep,name=URLSchemes,proto3" json:"URLSchemes,omitempty"`

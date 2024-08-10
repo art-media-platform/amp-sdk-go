@@ -59,23 +59,23 @@ var gTxMsgPool = sync.Pool{
 	}
 */
 
-func (tx *TxInfo) SetContextID(ID tag.ID) {
+func (tx *TxEnvelope) SetContextID(ID tag.ID) {
 	tx.ContextID_0 = int64(ID[0])
 	tx.ContextID_1 = ID[1]
 	tx.ContextID_2 = ID[2]
 }
 
-func (tx *TxInfo) ContextID() tag.ID {
+func (tx *TxEnvelope) ContextID() tag.ID {
 	return tag.ID{uint64(tx.ContextID_0), tx.ContextID_1, tx.ContextID_2}
 }
 
-func (tx *TxInfo) SetGenesisID(ID tag.ID) {
+func (tx *TxEnvelope) SetGenesisID(ID tag.ID) {
 	tx.GenesisID_0 = int64(ID[0])
 	tx.GenesisID_1 = ID[1]
 	tx.GenesisID_2 = ID[2]
 }
 
-func (tx *TxInfo) GenesisID() tag.ID {
+func (tx *TxEnvelope) GenesisID() tag.ID {
 	return tag.ID{uint64(tx.GenesisID_0), tx.GenesisID_1, tx.GenesisID_2}
 }
 
@@ -350,15 +350,15 @@ func (tx *TxMsg) MarshalHeaderAndOps(dst *[]byte) {
 
 func (tx *TxMsg) MarshalOps(dst []byte) []byte {
 
-	// TxInfo
+	// TxEnvelope
 	{
 		tx.OpCount = uint64(len(tx.Ops))
-		infoLen := tx.TxInfo.Size()
+		infoLen := tx.TxEnvelope.Size()
 		dst = binary.AppendUvarint(dst, uint64(infoLen))
 
 		p := len(dst)
 		dst = append(dst, make([]byte, infoLen)...)
-		tx.TxInfo.MarshalToSizedBuffer(dst[p : p+infoLen])
+		tx.TxEnvelope.MarshalToSizedBuffer(dst[p : p+infoLen])
 	}
 
 	var (
@@ -388,6 +388,7 @@ func (tx *TxMsg) MarshalOps(dst []byte) []byte {
 
 			op_cur[TxField_EditID_0] = op.EditID[0]
 			op_cur[TxField_EditID_1] = op.EditID[1]
+			op_cur[TxField_EditID_2] = op.EditID[2]
 
 			hasFields := uint64(0)
 			for i, fi := range op_cur {
@@ -413,7 +414,7 @@ func (tx *TxMsg) MarshalOps(dst []byte) []byte {
 func (tx *TxMsg) UnmarshalBody(src []byte) error {
 	p := 0
 
-	// TxInfo
+	// TxEnvelope
 	{
 		infoLen, n := binary.Uvarint(src[0:])
 		if n <= 0 {
@@ -421,8 +422,8 @@ func (tx *TxMsg) UnmarshalBody(src []byte) error {
 		}
 		p += n
 
-		tx.TxInfo = TxInfo{}
-		err := tx.TxInfo.Unmarshal(src[p : p+int(infoLen)])
+		tx.TxEnvelope = TxEnvelope{}
+		err := tx.TxEnvelope.Unmarshal(src[p : p+int(infoLen)])
 		if err != nil {
 			return ErrMalformedTx
 		}

@@ -103,7 +103,7 @@ type Pin interface {
 
 // TxMsg is workhorse generic transport serialization sent between client and host.
 type TxMsg struct {
-	TxInfo
+	TxEnvelope
 	Ops       []TxOp // operations to perform on the target
 	OpsSorted bool   // describes order of []Ops
 	DataStore []byte // marshalled data store for Ops serialized data
@@ -116,10 +116,11 @@ type TxMsg struct {
 type TxOp struct {
 
 	// op key components in order of significance
-	CellID tag.ID // target to operate on
-	AttrID tag.ID // attribute specification to operate on
-	SI     tag.ID // index of the data being mutated
-	EditID tag.ID // see comments for TxField_EditID
+	SpaceID tag.ID // target space
+	CellID  tag.ID // target cell
+	AttrID  tag.ID // attribute specification to operate on
+	SI      tag.ID // 24-byte client value of data being mutated
+	EditID  tag.ID // see TxField_EditID
 
 	// Op values -- not part of TxOp comparison
 	OpCode  TxOpCode // operation to perform

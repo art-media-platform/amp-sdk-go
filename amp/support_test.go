@@ -74,11 +74,11 @@ func TestTxSerialize(t *testing.T) {
 	if err != nil {
 		t.Errorf("ReadTxMsg failed: %v", err)
 	}
-	if tx2.TxInfo != tx.TxInfo {
-		t.Errorf("ReadTxMsg failed: TxInfo mismatch")
+	if tx2.TxEnvelope != tx.TxEnvelope {
+		t.Errorf("ReadTxMsg failed: TxEnvelope mismatch")
 	}
 	if len(tx2.Ops) != len(tx.Ops) {
-		t.Errorf("ReadTxMsg failed: TxInfo mismatch")
+		t.Errorf("ReadTxMsg failed: TxEnvelope mismatch")
 	}
 	if !bytes.Equal(tx.DataStore, tx2.DataStore) {
 		t.Errorf("ReadTxMsg failed: DataStore mismatch")

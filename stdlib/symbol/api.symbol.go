@@ -51,11 +51,11 @@ type Table interface {
 	// The given value buffer is never retained.
 	//
 	// If value not found and autoIssue == true, then a new ID is issued, bound to the given value, and true is returned.
-	GetSymbolID(value []byte, autoIssue bool) (symbol ID, wasAdded bool)
+	GetSymbolID(value []byte, autoIssue bool) (symbol ID, issued bool)
 
 	// Associates the given buffer value to the given symbol ID, allowing multiple values to be mapped to a single ID.
 	// If ID == 0, then this is the equivalent to GetSymbolID(value, true).
-	SetSymbolID(value []byte, ID ID) ID
+	SetSymbolID(value []byte, ID ID) (symbol ID, issued bool)
 
 	// Looks up and appends the byte string associated with the given symbol ID to the given buf.
 	// If ID is invalid or not found, nil is returned.

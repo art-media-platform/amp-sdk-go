@@ -161,11 +161,11 @@ func (st *symbolTable) GetSymbolID(val []byte, autoIssue bool) (symbol.ID, bool)
 		return symID, false
 	}
 
-	symID = st.getsetValueIDPair(val, 0, autoIssue)
+	symID, _ = st.getsetValueIDPair(val, 0, autoIssue)
 	return symID, symID != 0
 }
 
-func (st *symbolTable) SetSymbolID(val []byte, symID symbol.ID) symbol.ID {
+func (st *symbolTable) SetSymbolID(val []byte, symID symbol.ID) (symbol.ID, bool) {
 	// If symID == 0, then behave like GetSymbolID(val, true)
 	return st.getsetValueIDPair(val, symID, symID == 0)
 }
@@ -175,22 +175,24 @@ func (st *symbolTable) SetSymbolID(val []byte, symID symbol.ID) symbol.ID {
 //
 //	if symID == 0:
 //	  if the given value has an existing value-ID association:
-//	      the existing ID is cached and returned (mapID is ignored).
+//	      the existing ID is cached and returned (autoIssue is ignored).
 //	  if the given value does NOT have an existing value-ID association:
-//	      if mapID == false, the call has no effect and 0 is returned.
-//	      if mapID == true, a new ID is issued and new value-to-ID and ID-to-value assignments are written,
+//	      if autoIssue == false, the call has no effect and 0 is returned.
+//	      if autoIssue == true, a new ID is issued and new value-to-ID and ID-to-value assignments are written,
 //
 //	if symID != 0:
-//	    if mapID == false, a new value-to-ID assignment is (over)written and any existing ID-to-value assignment remains.
-//	    if mapID == true, both value-to-ID and ID-to-value assignments are (over)written.
-func (st *symbolTable) getsetValueIDPair(val []byte, symID symbol.ID, mapID bool) symbol.ID {
+//	    if autoIssue == false, a new value-to-ID assignment is (over)written and any existing ID-to-value assignment remains.
+//	    if autoIssue == true, both value-to-ID and ID-to-value assignments are (over)written.
+func (st *symbolTable) getsetValueIDPair(val []byte, symID symbol.ID, autoIssue bool) (symbol.ID, bool){
 
 	// The empty string is always mapped to ID 0
 	if len(val) == 0 {
-		return 0
+		return 0, false
 	}
 
-	if symID == 0 && mapID {
+	issued := false
+	if symID == 0 && autoIssue {
+		issued = true
 		symID, _ = st.opts.Issuer.IssueNextID()
 	}
 
@@ -198,7 +200,7 @@ func (st *symbolTable) getsetValueIDPair(val []byte, symID symbol.ID, mapID bool
 	if symID != 0 {
 		st.allocAndBindToID(val, symID)
 	}
-	return symID
+	return symID, issued
 }
 
 func (st *symbolTable) GetSymbol(symID symbol.ID, io []byte) []byte {

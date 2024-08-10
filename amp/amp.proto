@@ -2,6 +2,8 @@ syntax = "proto3";
 
 // package amp is an implementation-independent API for a pluggable client-server UI/UX system,
 // featuring support and integration for files, media, and communication.
+//
+// Welcome to Art Media Platform (c) 2023 / AMP: a runtime model and specification to securely share and experience artist's media under their own agreed terms and permissions.
 package amp;
 
 // Tells protoc that a .proto file importing amp.proto what package import to use within Go.
@@ -68,28 +70,29 @@ enum TxField {
     TxField_SI_2 = 9;
     
     /*
-    - When an attr value is replaced ("edited"), the new EditID is function of the predecessor's EditID and the revision's host TxID..
+    - When an attr value is replaced ("edited"), the new EditID is function of the predecessor's EditID and the revision's home TxID..
     - The purpose of an EditID is to safely determine its predecessor EditID, allowing a tree of revisions to be reconstructed.   
-    - In effect, a sorted list of CellID / AttrID / SI / EditID form a CRDT -- EditID maps to "height" described in https://peerlinks.io/protocol.html
-    - EditIDs are increasingly negative in time, causing the newest revisions to appear first in a sorted list of TxIDs
-    - Although EditIDs are naturally 24 bytes, the EditID is truncated to 16 bytes for storage efficiency since is sufficiently unique.
+    - In effect, a sorted list of CellID / AttrID / SI / EditID form a CRDT -- EditID effectively is "height" described in https://peerlinks.io/protocol.html
+    - EditIDs are increasingly negative in time, causing the newest revisions to appear first when LSM sorted.
+    - Although EditIDs are naturally 24 bytes, the EditID is truncated to 16 bytes for storage efficiency since that's sufficiently unique.
 
         EditID := tag.ID{
-            - newTxID[0],  
-            prevEditID[1] ^ (newTxID[0] - prevEditID[0]),
-            0,
+            0,                                 // reserved (truncated)
+            (newTxID[0] + prevEditID[0]) >> 1, // sort newest revisions first 
+            newTxID[1] ^ prevEditID[1],
         }
     */
-    TxField_EditID_0 = 10;
-    TxField_EditID_1 = 11;
+    TxField_EditID_0 = 10; // reserved / truncated
+    TxField_EditID_1 = 11; // -uint64((newTxTimeID[0] + prevEditID[0]) >> 1)
+    TxField_EditID_2 = 12; // -uint64(newTxTimeID[1] ^ prevEditID[1])
     
-    TxField_NumFields = 12;
+    TxField_NumFields = 13;
     TxField_MaxFields = 24;
 }
 
 
-// TxInfo contains information for a TxMsg
-message TxInfo {
+// TxEnvelope contains information for a TxMsg
+message TxEnvelope {
 
     // communicates request status / completion.
     OpStatus            Status = 2;
@@ -108,6 +111,12 @@ message TxInfo {
     int64               ContextID_0 = 10;
     fixed64             ContextID_1 = 11;
     fixed64             ContextID_2 = 12;
+    
+    Tag                 FromID    = 14; // any amp IO
+    Tag                 ToID      = 15; // any amp IO
+    Tag                 Tags      = 16; // any amp tag set
+    Tag                 ContextCA = 17; // context certificate authority
+
 
 }
 
@@ -150,7 +159,7 @@ message Login {
     string             DeviceLabel = 6;
         
     // HostAddr is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
-    // archost uses this to as the host name when serving URLs for the client to consume.
+    // arthost uses this to as the host name when serving URLs for the client to consume.
     string             HostAddr = 8;
         
         

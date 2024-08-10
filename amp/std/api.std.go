@@ -3,9 +3,9 @@
 package std
 
 import (
-	"github.com/amp-3d/amp-sdk-go/amp"
-	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
-	"github.com/amp-3d/amp-sdk-go/stdlib/task"
+	"github.com/art-media-platform/amp-sdk-go/amp"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
 )
 
 // App is a helper for implementing AppInstance.

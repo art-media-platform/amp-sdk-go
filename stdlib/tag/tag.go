@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/bufs"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/bufs"
 )
 
 var (

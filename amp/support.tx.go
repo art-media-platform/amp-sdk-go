@@ -7,7 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
 )
 
 // TxDataStore is a message packet sent to / from a client.

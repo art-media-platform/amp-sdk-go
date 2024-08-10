@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/utils"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/utils"
 )
 
 func TestMailbox(t *testing.T) {

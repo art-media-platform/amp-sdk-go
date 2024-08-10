@@ -4,7 +4,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/task"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
 )
 
 // Options when publishing an asset

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/bufs"
-	"github.com/amp-3d/amp-sdk-go/stdlib/symbol"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/bufs"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/symbol"
 )
 
 func createTable(opts TableOpts) (symbol.Table, error) {

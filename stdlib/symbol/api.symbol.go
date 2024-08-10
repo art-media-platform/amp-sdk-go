@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/generics"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/generics"
 )
 
 // ID is a persistent integer value associated with an immutable string or buffer value.

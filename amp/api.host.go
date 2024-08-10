@@ -3,9 +3,9 @@ package amp
 import (
 	"net/url"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/media"
-	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
-	"github.com/amp-3d/amp-sdk-go/stdlib/task"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/media"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
 )
 
 // Host allows app and transport services to be attached.

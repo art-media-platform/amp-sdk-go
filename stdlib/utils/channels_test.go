@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/utils"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/utils"
 )
 
 func TestWaitGroupChan(t *testing.T) {

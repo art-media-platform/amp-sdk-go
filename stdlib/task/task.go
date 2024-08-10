@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/amp-3d/amp-sdk-go/stdlib/log"
-	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/log"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
 )
 
 // ctx implements Context

@@ -1,9 +1,9 @@
 package amp
 
 import (
-	"github.com/amp-3d/amp-sdk-go/stdlib/media"
-	"github.com/amp-3d/amp-sdk-go/stdlib/tag"
-	"github.com/amp-3d/amp-sdk-go/stdlib/task"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/media"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
 )
 
 // App is how an app module is registered with an amp.Host so it can be invoked.~

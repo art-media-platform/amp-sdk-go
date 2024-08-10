@@ -1,7 +1,7 @@
 package task
 
 import (
-	"github.com/amp-3d/amp-sdk-go/stdlib/utils"
+	"github.com/art-media-platform/amp-sdk-go/stdlib/utils"
 )
 
 type PeriodicTask struct {

@@ -2,7 +2,7 @@ syntax = "proto3";
 package std;
 
 option csharp_namespace = "AMP.Std";
-option go_package = "github.com/amp-3d/amp-sdk-go/amp/std";
+option go_package = "github.com/art-media-platform/amp-sdk-go/amp/std";
 
 import "amp/amp.proto";
 

@@ -1,10 +1,11 @@
-# Art Media Platform (AMP)
+# amp
 
-_A turn-key solution for creating high-fidelity, multi-platform 3D experiences_
+_a turn-key solution for creating high-fidelity, multi-platform 3D experiences_
 
-## What is AMP?
+## art.media platform
 
-The _Art Media Platform_ ("AMP"), a SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control and secure environments. The AMP client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) app driven by an embedded [Go](https://golang.org) runtime library (output by this repo). This means AMP is a "turn-key" 3D-based user interface solution allowing you rapidly publish a native app on Windows, macOS, Linux, Android, iOS, and most XR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint in single digit megabytes while also running native "on metal".
+
+_Art Media Platform_ ("Amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control and secure environments. The Amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) app driven by an embedded [Golang](https://golang.org) dynamic runtime library (output by this repo). This means Amp is a "turn-key" 3D-based user interface solution allowing you rapidly publish a native app on Windows, Mac, Linux, Android, iOS, and most XR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint in single digit megabytes while also running native "on metal".
 
 This is interesting to:
 

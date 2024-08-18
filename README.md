@@ -1,4 +1,4 @@
-# art.media platform
+# art.media.platform
 
 _- a turn-key UXR solution for creating high-fidelity, multi-platform 3D experiences -_
 

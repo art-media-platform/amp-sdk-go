@@ -1,7 +1,7 @@
 package tag
 
 import (
-	"crypto/md5"
+	"crypto/sha1"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -59,7 +59,7 @@ func (id ID) FormAsciiBadge() string {
 //
 //	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
 //
-// Note how a tag spec with no delimeters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
+// Note how a tag spec with no delimiters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
 type Spec struct {
 	ID      ID
 	Canonic string
@@ -150,16 +150,16 @@ const (
 )
 
 func FromLiteral(tagLiteral []byte) ID {
-	var hashBuf [16]byte
+	var hashBuf [20]byte
 
-	hasher := md5.New()
+	hasher := sha1.New()
 	hasher.Write(tagLiteral)
 	hash := hasher.Sum(hashBuf[:0])
 
 	return ID{
-		0, // tag / token ops don't have to affect hash[0]
-		binary.LittleEndian.Uint64(hash[0:]),
-		binary.LittleEndian.Uint64(hash[8:]),
+		0,                                       // tag-set or token literals denoted by 0
+		binary.LittleEndian.Uint64(hash[4:12]),  // 4..11
+		binary.LittleEndian.Uint64(hash[12:20]), // 12..19
 	}
 }
 

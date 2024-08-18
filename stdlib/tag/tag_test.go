@@ -19,17 +19,17 @@ func TestTag(t *testing.T) {
 	if spec.ID != amp_tags.ID.WithToken("some-tag").WithToken("thing") {
 		t.Fatalf("FormSpec.ID failed: %v", spec.ID)
 	}
-	if base32 := spec.ID.Base32(); base32 != "000000000000001sr0tj6df0v7ut5jhk3t7cz919" {
+	if base32 := spec.ID.Base32(); base32 != "000000000000000d1q27g4xus3errv17c4r9ecqx" {
 		t.Fatalf("tag.ID.Base32() failed: %v", base32)
 	}
-	if base16 := spec.ID.Base16(); base16 != "000000000000000038b8331331c0d9f592c6121e4ebfa429" {
+	if base16 := spec.ID.Base16(); base16 != "00000000000000000c0d847793bac0db7bec27592e96aedd" {
 		t.Fatalf("tag.ID.Base16() failed: %v", base16)
 	}
 	if prefix, suffix := spec.LeafTags(2); prefix != "amp.app" || suffix != "some-tag.thing" {
 		t.Errorf("LeafTags failed")
 	}
 	genesisStr := "בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ"
-	if id := tag.FromToken(genesisStr); id[0] != 0 || id[1] != 0x4d968c110ad9022d && id[2] != 0x934702f5b5f8d4d7 {
+	if id := tag.FromToken(genesisStr); id[0] != 0 || id[1] != 0xe28f0f37f843664a && id[2] != 0x2c445b67f2be39a0 {
 		t.Fatalf("tag.FromString() failed: %v", id)
 	}
 	tid := tag.ID{0x3, 0x7777777777777777, 0x123456789abcdef0}

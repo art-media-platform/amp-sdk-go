@@ -1,5 +1,6 @@
 package tag
 
+// Literal Token ID / [3]int64 / tag.ID
 type Literal struct {
 	ID    ID     // deterministic hash of Token -- (token may or may not be included)
 	Token string // utf8 human readable exact / canonical glyph or alias of ID -- 64 byte courtesy limit

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/art-media-platform/amp-sdk-go/stdlib/log"
-	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
 )
 
 // ctx implements Context
@@ -192,12 +191,17 @@ func (p *ctx) GetChildren(in []Context) []Context {
 	return append(in, p.subs...)
 }
 
+func (p *ctx) ForEachChild(fn func(child Context)) {
+	p.subsMu.Lock()
+	defer p.subsMu.Unlock()
+	for _, child := range p.subs {
+		fn(child)
+	}
+}
+
 // StartChild starts the given child Context as a "sub" task.
 func (p *ctx) StartChild(task *Task) (Context, error) {
 	info := task.Info
-	if info.ContextID.IsNil() {
-		info.ContextID = tag.Now()
-	}
 	task.Info.TID = atomic.AddInt64(&gInstanceCount, 1)
 	if info.Label == "" {
 		info.Label = fmt.Sprintf("ctx_%d", task.Info.TID)

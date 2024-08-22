@@ -28,7 +28,8 @@ func Go(parent Context, label string, fn func(ctx Context)) (Context, error) {
 
 type Info struct {
 	TID       int64    // globally unique atomically incremented instance ID -- assigned OnStart()
-	ContextID tag.ID   // optional universally identifying process or context tag.ID
+	TagID     tag.ID   // optional user-defined tag.ID
+	Other     any      // optional user-defined value
 	Headers   []string // cookies, auth, or task references
 	Label     string   // logging and debugging label
 	DebugMode bool     // when set, a context logs more verbosely and can perform (or log) expensive diagnostics
@@ -77,12 +78,15 @@ type Context interface {
 	//      })
 	Go(label string, fn func(ctx Context)) (Context, error)
 
-	// Appends all currently open/active child Contexts to the given slice and returns the given slice.
-	// Naturally, the returned items are back-ward looking as any could close at any time.
-	// Context implementations wishing to remain lightweight may opt to not retain a list of children (and just return the given slice as-is).
+	// Atomically appends all child Contexts to the given slice and returns the new slice.
+	// The total blocking time is minimal as only a slice is populated.
 	GetChildren(in []Context) []Context
 
-	// Async call that initiates task shutdown and causes all children's Close() to be called.
+	// Atomically iterates over all child Contexts and calls the given function.
+	// The total blocking time is proportional to the number of children and running time of the given function.
+	ForEachChild(fn func(child Context))
+
+	// Initiates task shutdown and causes all children's Close() to be called -- non-blocking.
 	// Close can be called multiple times but calls after the first are in effect ignored.
 	// First, children get Close() in breath-first order.
 	// After all children are done closing, OnClosing(), then OnClosed() are executed.

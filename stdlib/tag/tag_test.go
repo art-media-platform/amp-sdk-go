@@ -19,10 +19,10 @@ func TestTag(t *testing.T) {
 	if spec.ID != amp_tags.ID.WithToken("some-tag").WithToken("thing") {
 		t.Fatalf("FormSpec.ID failed: %v", spec.ID)
 	}
-	if base32 := spec.ID.Base32(); base32 != "000000000000000d1q27g4xus3errv17c4r9ecqx" {
+	if base32 := spec.ID.Base32(); base32 != "d1q27g4xus3errv17c4r9ecqx" {
 		t.Fatalf("tag.ID.Base32() failed: %v", base32)
 	}
-	if base16 := spec.ID.Base16(); base16 != "00000000000000000c0d847793bac0db7bec27592e96aedd" {
+	if base16 := spec.ID.Base16(); base16 != "c0d847793bac0db7bec27592e96aedd" {
 		t.Fatalf("tag.ID.Base16() failed: %v", base16)
 	}
 	if prefix, suffix := spec.LeafTags(2); prefix != "amp.app" || suffix != "some-tag.thing" {
@@ -36,10 +36,10 @@ func TestTag(t *testing.T) {
 	if tid.Base32Suffix() != "g2ectrrh" {
 		t.Errorf("tag.ID.Base32Suffix() failed")
 	}
-	if tid.Base32() != "00000000000000vrfxvrfxvrfxvj4e2qg2ectrrh" {
-		t.Errorf("tag.ID.Base32() failed")
+	if tid.Base32() != "vrfxvrfxvrfxvj4e2qg2ectrrh" {
+		t.Errorf("tag.ID.Base32() failed: %v", tid.Base32())
 	}
-	if b16 := tid.Base16(); b16 != "00000000000000037777777777777777123456789abcdef0" {
+	if b16 := tid.Base16(); b16 != "37777777777777777123456789abcdef0" {
 		t.Errorf("tag.ID.Base16() failed: %v", b16)
 	}
 	if tid.Base16Suffix() != "abcdef0" {

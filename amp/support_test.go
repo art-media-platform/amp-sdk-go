@@ -108,21 +108,27 @@ func (r *bufReader) Read(p []byte) (n int, err error) {
 
 func TestRegistry(t *testing.T) {
 	reg := NewRegistry()
-	spec := reg.RegisterPrototype(AttrSpec.With("av"), &Tag{}, "")
-	if spec.Canonic != AttrSpec.Canonic+".av.Tag" {
+	spec := reg.RegisterPrototype(AttrSpec.With("av.Hello.World"), &Tag{}, "")
+	if spec.Canonic != AttrSpec.Canonic+".av.Hello.World.Tag" {
 		t.Fatal("RegisterPrototype failed")
 	}
-	if spec.ID != (tag.Spec{}.With("amp.tag.attr.Tag.av")).ID {
+	if spec.ID != (tag.Spec{}.With("amp.attr.World.Tag.Hello.av")).ID {
 		t.Fatalf("tag.FormSpec failed")
 	}
-	if spec.ID != AttrSpec.With("av").With("Tag").ID {
+	if spec.ID != AttrSpec.With("av").With("World.Hello.Tag").ID {
 		t.Fatalf("tag.FormSpec failed")
 	}
-	if spec.ID.Base32Suffix() != "00rvscub" {
+	if spec.ID.Base32Suffix() != "yg70m6cn" {
 		t.Fatalf("unexpected spec.ID: %v", spec.ID)
 	}
-	if spec.ID.Base32() != "000000000000004w656q67gz3rm9s3vx00rvscub" {
+	if (tag.ID{}).Base32() != "0" {
+		t.Fatalf("tag.Spec{}.Base32() failed")
+	}
+	if spec.ID.Base32() != "1ycu8rzmysqc2d93wsyg70m6cn" {
 		t.Errorf("tag.ID.Base32() failed: %v", spec.ID.Base32())
+	}
+	if spec.ID.Base16() != "3e5e917fcfd8b2c4c48f98f3ce099974" {
+		t.Errorf("tag.ID.Base16() failed: %v", spec.ID.Base16())
 	}
 	elem, err := reg.MakeValue(spec.ID)
 	if err != nil {

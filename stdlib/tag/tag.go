@@ -331,14 +331,22 @@ func (tag ID) Base32() string {
 	var buf [25]byte // (25 * 8) % 5 == 0
 	binary := tag.AppendTo(buf[:1])
 	str := bufs.Base32Encoding.EncodeToString(binary)
-	return str
+	str = strings.TrimLeft(str, "0")
+	if str != "" {
+		return str
+	}
+	return "0"
 }
 
 func (tag ID) Base16() string {
 	buf := make([]byte, 0, 48)
 	tagBytes := tag.AppendTo(buf)
 	str := hex.EncodeToString(tagBytes)
-	return str
+	str = strings.TrimLeft(str, "0")
+	if str != "" {
+		return str
+	}
+	return "0"
 }
 
 // Base32Suffix returns the last few digits of this TID in string form (for easy reading, logs, etc)
@@ -427,10 +435,18 @@ func From24(lsm []byte) (id ID) {
 	return
 }
 
-func From16(lsm []byte) (id ID) {
-	id[0] = 0
-	id[1] = binary.BigEndian.Uint64(lsm[0:])
-	id[2] = binary.BigEndian.Uint64(lsm[8:])
+func From16(lsm []byte, leastSignificant bool) (id ID) {
+	i0 := binary.BigEndian.Uint64(lsm[0:])
+	i1 := binary.BigEndian.Uint64(lsm[8:])
+	if leastSignificant {
+		id[0] = 0
+		id[1] = i0
+		id[2] = i1
+	} else {
+		id[0] = i0
+		id[1] = i1
+		id[2] = 0
+	}
 	return
 }
 
@@ -440,9 +456,13 @@ func (tag ID) Put24(dst []byte) {
 	binary.BigEndian.PutUint64(dst[16:], tag[2])
 }
 
-func (tag ID) Put16(dst []byte) {
-	binary.BigEndian.PutUint64(dst[0:], tag[1])
-	binary.BigEndian.PutUint64(dst[8:], tag[2])
+func (tag ID) Put16(dst []byte, leastSignificant bool) {
+	i0, i1 := 0, 1
+	if leastSignificant {
+		i0, i1 = 1, 2
+	}
+	binary.BigEndian.PutUint64(dst[0:], tag[i0])
+	binary.BigEndian.PutUint64(dst[8:], tag[i1])
 }
 
 // Encodes a int64 to a zig-zag uint64

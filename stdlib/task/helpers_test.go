@@ -2,9 +2,6 @@ package task_test
 
 import (
 	"context"
-	"sync"
-	"testing"
-	"time"
 
 	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
 	"github.com/art-media-platform/amp-sdk-go/stdlib/testutils"
@@ -41,19 +38,4 @@ func (i *workItem) Work(ctx context.Context) (retry bool) {
 	retry = i.retry
 	i.retry = false
 	return retry
-}
-
-func requireHappened(t *testing.T, item *workItem, times int, wg *sync.WaitGroup) {
-	t.Helper()
-	defer wg.Done()
-	for i := 0; i < times; i++ {
-		item.processed.AwaitOrFail(t, 5*time.Second, item.id)
-	}
-	item.processed.NeverHappenedOrFail(t, 5*time.Second, item.id)
-}
-
-func requireNeverHappened(t *testing.T, item *workItem, wg *sync.WaitGroup) {
-	t.Helper()
-	defer wg.Done()
-	item.processed.NeverHappenedOrFail(t, 5*time.Second, item.id)
 }

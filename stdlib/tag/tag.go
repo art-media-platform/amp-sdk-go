@@ -138,12 +138,6 @@ func (spec Spec) With(subTags string) Spec {
 	return newSpec
 }
 
-// ID is a signed 24 byte UTC time index in big endian form, with 6 bytes of signed seconds and 10 bytes of fractional precision.
-// This means there are 47 bits dedicated for whole seconds => +/- 4.4 million years
-//
-// This also means (ID[0] >> 16) yields a standard 64-bit Unix UTC time.
-type ID [3]uint64
-
 const (
 	NanosecStep = uint64(0x44B82FA1C) // 1<<64 div 1e9 -- reflects Go's single nanosecond resolution spread over a 64 bits
 	EntropyMask = uint64(0x3FFFFFFFF) // entropy bit mask for ID[1] -- slightly smaller than 1 ns resolution

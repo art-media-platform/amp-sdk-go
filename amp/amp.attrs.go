@@ -8,9 +8,9 @@ var (
 	// CellID hard-wired to denote the root c
 	MetaNodeID = tag.ID{0, 0, 2701}
 
-	TagGroup = tag.Spec{}.With("amp.tag")
-	AttrSpec = TagGroup.With("attr")
-	AppSpec  = TagGroup.With("app")
+	TagRoot  = tag.Spec{}.With("amp")
+	AttrSpec = TagRoot.With("attr")
+	AppSpec  = TagRoot.With("app")
 
 	CellProperties = AttrSpec.With("cell-properties")
 )

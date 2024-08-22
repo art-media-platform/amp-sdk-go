@@ -116,11 +116,10 @@ type TxMsg struct {
 type TxOp struct {
 
 	// op key components in order of significance
-	SpaceID tag.ID // target space
-	CellID  tag.ID // target cell
-	AttrID  tag.ID // attribute specification to operate on
-	SI      tag.ID // 24-byte client value of data being mutated
-	EditID  tag.ID // see TxField_EditID
+	CellID tag.ID // target cell
+	AttrID tag.ID // attribute specification to operate on
+	SI     tag.ID // 24-byte client value of data being mutated
+	EditID EditID // references the previous revision -- see tag.ForkEdit()
 
 	// Op values -- not part of TxOp comparison
 	OpCode  TxOpCode // operation to perform

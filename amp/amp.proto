@@ -49,7 +49,6 @@ enum TxOpCode {
     
     TxOpCode_UpsertElement = 2; // insert / update single attribute element
     TxOpCode_DeleteElement = 4; // delete single attribute element
-    TxOpCode_DeleteCell    = 5; // delete cell and all its attributes
 }
 
 
@@ -69,22 +68,8 @@ enum TxField {
     TxField_SI_1 = 8;
     TxField_SI_2 = 9;
     
-    /*
-    - When an attr value is replaced ("edited"), the new EditID is function of the predecessor's EditID and the revision's home TxID..
-    - The purpose of an EditID is to safely determine its predecessor EditID, allowing a tree of revisions to be reconstructed.   
-    - In effect, a sorted list of CellID / AttrID / SI / EditID form a CRDT -- EditID effectively is "height" described in https://peerlinks.io/protocol.html
-    - EditIDs are increasingly negative in time, causing the newest revisions to appear first when LSM sorted.
-    - Although EditIDs are naturally 24 bytes, the EditID is truncated to 16 bytes for storage efficiency since that's sufficiently unique.
-
-        EditID := tag.ID{
-            0,                                 // reserved (truncated)
-            (newTxID[0] + prevEditID[0]) >> 1, // sort newest revisions first 
-            newTxID[1] ^ prevEditID[1],
-        }
-    */
-    TxField_EditID_0 = 10; // reserved / truncated
-    TxField_EditID_1 = 11; // -uint64((newTxTimeID[0] + prevEditID[0]) >> 1)
-    TxField_EditID_2 = 12; // -uint64(newTxTimeID[1] ^ prevEditID[1])
+    TxField_EditID_0 = 10;
+    TxField_EditID_1 = 11;
     
     TxField_NumFields = 13;
     TxField_MaxFields = 24;

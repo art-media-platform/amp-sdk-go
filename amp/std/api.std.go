@@ -48,3 +48,7 @@ type CellWriter interface {
 	PutText(propertyID tag.ID, val string)
 	PutItem(propertyID tag.ID, val tag.Value)
 }
+
+const (
+	FactoryURL = "file://_resources_/"
+)

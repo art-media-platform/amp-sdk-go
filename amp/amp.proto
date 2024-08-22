@@ -147,8 +147,11 @@ message Login {
     // arthost uses this to as the host name when serving URLs for the client to consume.
     string             HostAddr = 8;
         
+    // Tags is an unordered list of string literals tokens with predefined meanings, separated by spaces, periods, or commas.
+    string             Tags = 9;
         
-    LoginCheckpoint    Checkpoint = 7;
+    // Checkpoint allows the client to resume an auth session.
+    LoginCheckpoint    Checkpoint = 12;
 
 }
 
@@ -162,11 +165,19 @@ message LoginResponse {
     bytes               HashResponse = 1;
 }
 
-// LoginCheckpoint  -- STEP 4: host -> client
+// LoginCheckpoint wraps oauth2 -- see oauth2.Token
 message LoginCheckpoint {
-    string              AuthToken   = 1;
-    int64               AuthExpires = 2;
+    string              TokenType    = 1;
+    string              AccessToken  = 2;
+    string              RefreshToken = 3;
+    int64               Expiry       = 4; // Unix UTC
+    
+    string              Tags         = 10;
+    string              UserUID      = 11;
+    string              URI          = 12;
 }
+
+
 
 enum StateSync {
 
@@ -237,7 +248,12 @@ enum UrlScheme {
 
 
 
-
+// TagID is a minimal wrapper for a tag.ID
+message TagID { 
+    int64   ID_0 = 2; // UTC << 16 -- see tag.ID
+    fixed64 ID_1 = 3;
+    fixed64 ID_2 = 4; 
+}
 
 
 
@@ -311,16 +327,8 @@ message CryptoKey {
 
 
 
-// AuthToken is an oauth token -- see oauth2.Token
-message AuthToken {
-    string              AccessToken  = 1;
-    string              TokenType    = 2;
-    string              RefreshToken = 3;
-    int64               Expiry       = 4; // Unix UTC
-}
 
-/*
-
+/* 
 message LabelAttr {
     string              Main            = 1;
     string              Subtext         = 2;
@@ -359,19 +367,20 @@ enum ErrCode {
     ErrCode_AuthFailed                  = 5007;
     ErrCode_LoginFailed                 = 5008;
     ErrCode_SessionExpired              = 5009;
+    ErrCode_NotReady                    = 5010;
     
-    ErrCode_RequestNotFound             = 5010;
-    ErrCode_RequestClosed               = 5011;
-    ErrCode_BadRequest                  = 5020;
-    ErrCode_InvalidURI                  = 5021;
-    ErrCode_BadValue                    = 5022;
-    ErrCode_InvalidTag                  = 5023;
-    ErrCode_InvalidTagSpec              = 5024;
+    ErrCode_RequestNotFound             = 5020;
+    ErrCode_RequestClosed               = 5021;
+    ErrCode_BadRequest                  = 5022;
+    ErrCode_InvalidURI                  = 5023;
+    ErrCode_BadValue                    = 5024;
+    ErrCode_InvalidTag                  = 5025;
+    ErrCode_InvalidTagSpec              = 5026;
     ErrCode_AttrNotFound                = 5029;
     ErrCode_NothingToCommit             = 5030;
     ErrCode_CommitFailed                = 5031;
-    ErrCode_PlanetNotFound              = 5032;
-    ErrCode_PlanetFailure               = 5033;
+    ErrCode_SpaceNotFound               = 5032;
+    ErrCode_StorageFailure              = 5033;
     ErrCode_AppNotFound                 = 5034;
     ErrCode_MalformedTx                 = 5040;
 

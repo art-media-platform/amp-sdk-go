@@ -1,6 +1,8 @@
 package amp
 
 import (
+	"time"
+
 	"github.com/art-media-platform/amp-sdk-go/stdlib/tag"
 )
 
@@ -58,6 +60,25 @@ func ErrorToValue(v error) tag.Value {
 		artErr = wrapped.(*Err)
 	}
 	return artErr
+}
+
+func (v *TagID) MarshalToStore(in []byte) (out []byte, err error) {
+	return MarshalPbToStore(v, in)
+}
+
+func (v *TagID) TagSpec() tag.Spec {
+	return AttrSpec.With("TagID")
+}
+
+func (v *TagID) New() tag.Value {
+	return &TagID{}
+}
+
+func (v *TagID) SetFromTime(t time.Time) {
+	tag := tag.FromTime(t, false)
+	v.ID_0 = int64(tag[0])
+	v.ID_1 = tag[1]
+	v.ID_2 = tag[2]
 }
 
 func (v *Tag) MarshalToStore(in []byte) (out []byte, err error) {
@@ -161,18 +182,6 @@ func (v *LoginCheckpoint) TagSpec() tag.Spec {
 
 func (v *LoginCheckpoint) New() tag.Value {
 	return &LoginCheckpoint{}
-}
-
-func (v *AuthToken) MarshalToStore(in []byte) (out []byte, err error) {
-	return MarshalPbToStore(v, in)
-}
-
-func (v *AuthToken) TagSpec() tag.Spec {
-	return AttrSpec.With("spec.type")
-}
-
-func (v *AuthToken) New() tag.Value {
-	return &AuthToken{}
 }
 
 func (v *PinRequest) MarshalToStore(in []byte) (out []byte, err error) {

@@ -7,6 +7,7 @@ option go_package = "github.com/art-media-platform/amp-sdk-go/amp/std";
 import "amp/amp.proto";
 
 
+
 // CordType describes how to interpret coordinates contained in a Position.
 enum CordType {
     CordType_Unspecified     = 0;
@@ -30,29 +31,6 @@ message Position {
 }
 
 
-
-
-
-message Revision { 
-    int64   TagID_0   = 2;
-    fixed64 TagID_1   = 3;
-    fixed64 TagID_2   = 4;
-    
-    string  GitHash   = 5; // utf8 text -- git commit hash (ascii hex)
-    string  SKU       = 6; // utf8 text -- version / revision / release ID
-
-    int64   Timestamp = 7; // UTC << 16
-}
-
-message TimeTag { 
-
-    int64   TagID_0  = 2; // UTC << 16
-    fixed64 TagID_1  = 3;
-    fixed64 TagID_2  = 4; 
-     
-}
-
-
 message FSInfo {
     string Mode        = 1;
     bool   IsDir       = 2;
@@ -66,30 +44,7 @@ message FSInfo {
     int64 ByteSize     = 9; // size in bytes
 }
 
-message Channel {
 
-    // Identifies a specific target tag ID this link points to.
-    int64   TagID_0  = 2;
-    fixed64 TagID_1  = 3;
-    fixed64 TagID_2  = 4;
-    
-    int64   SpecID_0 = 6;
-    fixed64 SpecID_1 = 7;
-    fixed64 SpecID_2 = 8;
-    
-    
-    repeated Channel Subs = 12;
-}
-
-
-
-message Playable {
-
-
-}
-message Avatar {
-
-}
 
 
 message Placement {
@@ -129,53 +84,6 @@ message Placement {
 
 
 
-/*
-The U.S.C Social Experiment
- - people "vote" on what they want
- - we're making a voting os app -- invoke blockchains
-
--- there were penned as  channels, but the actual pb declarations are update elements.
--- suffix ideas: Rev, Delta, Op, Tx, Item, Entry, Edit
-*/
-message Ballot {
-
-}
-
-
-message NotesEntry {
-
-}
-
-
-//  "amp.tag.spec.talk.spec.message"
-message ChatEntry {
-    
-}
-
-message SpreadsheetEntry {
-    // SI is QSR
-    // 
-}
-
-
-
-
-
-
-enum CellKind {
-    CellKind_Static      = 0; // static text, mono glyph, etc (via UIAsset)
-    
-    CellKind_EditField   = 16;
-    CellKind_Button      = 17;
-    CellKind_ItemPicker  = 18;
-    CellKind_Toggle      = 19;
-    CellKind_Slider      = 20;
-    CellKind_Progress    = 21;
-    CellKind_Spinner     = 22;
-}
-
-
-
 message BadgeDigit {
     // // values assumed to be in range [1-{AmplitudeModulus}])
     // Importantly, this shifts the domain to have +0 be separate from -0.
@@ -186,14 +94,6 @@ message BadgeDigit {
     int64 AmplitudeModulus = 2; // typically 8 (3-bit)
     // float64  Position = 3;
     // float64  Radius   = 4;
-}
-
-
-
-message TagBadge {
-
-    repeated BadgeDigit digits = 1;
-
 }
 
 
@@ -299,8 +199,8 @@ message ChannelRef {  // AttrLayer, AttrSheet, AttrBundle, AttrSet
 message PermissionsOp {
 
     // Conventional op codes (tag.IDs):
-    //      "amp.tag.epoch.entries.{clear|write}.{admin|commons|group}"
-    //      "amp.tag.epoch.entries.{clear|write}.{admin|commons|group}"
+    //      "amp.epoch.entries.{clear|write}.{admin|commons|group}"
+    //      "amp.epoch.entries.{clear|write}.{admin|commons|group}"
     Tag OpCode = 1;
     
     string Payload = 3; // TODO
@@ -320,6 +220,51 @@ message Epoch {
     repeated ChannelRef    RemoveChannels = 5;
 
 }
+
+
+message Ballot {
+
+}
+
+
+message NotesEntry {
+
+}
+
+
+message ChatEntry {
+    
+}
+
+
+message Channel {
+
+    // Identifies a specific target tag ID this link points to.
+    int64   TagID_0  = 2;
+    fixed64 TagID_1  = 3;
+    fixed64 TagID_2  = 4;
+    
+    int64   SpecID_0 = 6;
+    fixed64 SpecID_1 = 7;
+    fixed64 SpecID_2 = 8;
+    
+    
+    repeated Channel Subs = 12;
+}
+
+
+enum CellKind {
+    CellKind_Static      = 0; // static text, mono glyph, etc (via UIAsset)
+    
+    CellKind_EditField   = 16;
+    CellKind_Button      = 17;
+    CellKind_ItemPicker  = 18;
+    CellKind_Toggle      = 19;
+    CellKind_Slider      = 20;
+    CellKind_Progress    = 21;
+    CellKind_Spinner     = 22;
+}
+
 
 
 */

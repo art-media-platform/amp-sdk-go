@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
-	"github.com/art-media-platform/amp-sdk-go/stdlib/testutils"
 )
 
 func spawnN(p task.Context, numGoroutines int, delay time.Duration) {
@@ -108,8 +107,8 @@ func Test6(t *testing.T) {
 			},
 		})
 
-		canceled1 := testutils.NewAwaiter()
-		canceled2 := testutils.NewAwaiter()
+		canceled1 := NewAwaiter()
+		canceled2 := NewAwaiter()
 
 		foo1, _ := p.Go("foo1", func(ctx task.Context) {
 			select {
@@ -159,5 +158,53 @@ func isDone(t *testing.T, chDone <-chan struct{}) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+type Awaiter chan struct{}
+
+func NewAwaiter() Awaiter { return make(Awaiter, 10) }
+
+func (a Awaiter) ItHappened() { a <- struct{}{} }
+
+func (a Awaiter) AwaitOrFail(t testing.TB, params ...interface{}) {
+	t.Helper()
+
+	duration := 10 * time.Second
+	msg := ""
+	for _, p := range params {
+		switch p := p.(type) {
+		case time.Duration:
+			duration = p
+		case string:
+			msg = p
+		}
+	}
+
+	select {
+	case <-a:
+	case <-time.After(duration):
+		t.Fatalf("Timed out waiting for Awaiter to get ItHappened: %v", msg)
+	}
+}
+
+func (a Awaiter) NeverHappenedOrFail(t testing.TB, params ...interface{}) {
+	t.Helper()
+
+	duration := 10 * time.Second
+	msg := ""
+	for _, p := range params {
+		switch p := p.(type) {
+		case time.Duration:
+			duration = p
+		case string:
+			msg = p
+		}
+	}
+
+	select {
+	case <-a:
+		t.Fatalf("should not happen: %v", msg)
+	case <-time.After(duration):
 	}
 }

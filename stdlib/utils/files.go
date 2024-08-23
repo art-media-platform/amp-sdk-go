@@ -188,8 +188,8 @@ func ExpandAndCheckPath(
 ) (string, error) {
 
 	var err error
-	if err != nil {
-		err = errors.Errorf("error expanding '%s'", pathname)
+	if pathname == "" {
+		err = errors.Errorf("empty path")
 	} else {
 		_, err = os.Stat(pathname)
 		if err != nil && os.IsNotExist(err) {
@@ -204,7 +204,6 @@ func ExpandAndCheckPath(
 	if err != nil {
 		return "", err
 	}
-
 	return pathname, nil
 }
 

@@ -73,7 +73,7 @@ func DeviceIDFromX509Pubkey(pubkey interface{}) string {
 	}
 }
 
-func pemBlockForKey(priv interface{}) *pem.Block {
+func PemBlockForKey(priv interface{}) *pem.Block {
 	switch k := priv.(type) {
 	case *rsa.PrivateKey:
 		return &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(k)}

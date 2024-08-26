@@ -157,13 +157,12 @@ func (w *cellWriter) PutText(propertyID tag.ID, val string) {
 	if w.err != nil {
 		return
 	}
-	txOp := amp.TxOp{
-		OpCode: amp.TxOpCode_UpsertElement,
-		CellID: w.cellID,
-		AttrID: CellProperties.ID,
-		SI:     propertyID,
-	}
-	err := w.tx.MarshalOp(&txOp, &amp.Tag{
+	op := amp.TxOp{}
+	op.OpCode = amp.TxOpCode_UpsertElement
+	op.CellID = w.cellID
+	op.AttrID = CellProperties.ID
+	op.ItemID = propertyID
+	err := w.tx.MarshalOp(&op, &amp.Tag{
 		Text: val,
 	})
 	if err != nil {
@@ -175,13 +174,12 @@ func (w *cellWriter) PutItem(propertyID tag.ID, val tag.Value) {
 	if w.err != nil {
 		return
 	}
-	txOp := amp.TxOp{
-		OpCode: amp.TxOpCode_UpsertElement,
-		CellID: w.cellID,
-		AttrID: CellProperties.ID,
-		SI:     propertyID,
-	}
-	if err := w.tx.MarshalOp(&txOp, val); err != nil {
+	op := amp.TxOp{}
+	op.OpCode = amp.TxOpCode_UpsertElement
+	op.CellID = w.cellID
+	op.AttrID = CellProperties.ID
+	op.ItemID = propertyID
+	if err := w.tx.MarshalOp(&op, val); err != nil {
 		w.err = err
 	}
 }
@@ -242,7 +240,7 @@ func (tx *TxMsg) Upsert(literal any, keys ...tag.ID) {
 		break
 	// case *tag.ID:
 	// 	tag = &amp.Tag{}
-	// 	tag.SetTagID(v)
+	// 	tag.SetTagUID(v)
 	default:
 		panic("unsupported type")
 		return

@@ -62,19 +62,19 @@ func ErrorToValue(v error) tag.Value {
 	return artErr
 }
 
-func (v *TagID) MarshalToStore(in []byte) (out []byte, err error) {
+func (v *TagUID) MarshalToStore(in []byte) (out []byte, err error) {
 	return MarshalPbToStore(v, in)
 }
 
-func (v *TagID) TagSpec() tag.Spec {
-	return AttrSpec.With("TagID")
+func (v *TagUID) TagSpec() tag.Spec {
+	return AttrSpec.With("TagUID")
 }
 
-func (v *TagID) New() tag.Value {
-	return &TagID{}
+func (v *TagUID) New() tag.Value {
+	return &TagUID{}
 }
 
-func (v *TagID) SetFromTime(t time.Time) {
+func (v *TagUID) SetFromTime(t time.Time) {
 	tag := tag.FromTime(t, false)
 	v.ID_0 = int64(tag[0])
 	v.ID_1 = tag[1]
@@ -106,11 +106,6 @@ func (v *Tag) SetTagID(tagID tag.ID) {
 	v.TagID_1 = tagID[1]
 	v.TagID_2 = tagID[2]
 }
-
-// func (v *Tag) SetTimesatamp(t time.Time) {
-// 	tag := tag.FromTime(t, false)
-// 	v.Timestamp = int64(tag[0])
-// }
 
 func (v *Err) MarshalToStore(in []byte) (out []byte, err error) {
 	return MarshalPbToStore(v, in)

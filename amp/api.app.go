@@ -103,25 +103,29 @@ type Pin interface {
 
 // TxMsg is workhorse generic transport serialization sent between client and host.
 type TxMsg struct {
-	TxEnvelope
-	Ops       []TxOp // operations to perform on the target
-	OpsSorted bool   // describes order of []Ops
-	DataStore []byte // marshalled data store for Ops serialized data
-	refCount  int32  // see AddRef() / ReleaseRef()
+	TxEnvelope        // public fields and routing tags
+	Ops        []TxOp // operations to perform on the target
+	OpsSorted  bool   // describes order of []Ops
+	DataStore  []byte // marshalled data store for Ops serialized data
+	refCount   int32  // see AddRef() / ReleaseRef()
+}
+
+// ElementID is a multi-part LSM key: CellID / AttrID / SI
+type ElementID [3]tag.ID
+
+// TxOpID is TxOp atomic edit entry ID, functioning as a multi-part LSM key: CellID / AttrID / SI / EditID.
+type TxOpID struct {
+	CellID tag.ID // target cell ID
+	AttrID tag.ID // attribute specification ID that expresses or implies operation
+	ItemID tag.ID // user-defined value / index / tag ID
+	EditID tag.ID // references the previous revision -- see tag.ForkEdit()
 }
 
 // TxOp is an atomic operation on a target cell and is a unit of change (or message) for any target.
 // Values are typically LSM sorted, so use low order bytes before high order bytes.
 // Note that x0 is the most significant and x2 is least significant bytes.
 type TxOp struct {
-
-	// op key components in order of significance
-	CellID tag.ID // target cell
-	AttrID tag.ID // attribute specification to operate on
-	SI     tag.ID // 24-byte client value of data being mutated
-	EditID EditID // references the previous revision -- see tag.ForkEdit()
-
-	// Op values -- not part of TxOp comparison
+	TxOpID           // applicable cell, attribute, element, and edit IDs
 	OpCode  TxOpCode // operation to perform
 	DataLen uint64   // length of data in TxMsg.DataStore
 	DataOfs uint64   // offset into TxMsg.DataStore

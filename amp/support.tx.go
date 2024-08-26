@@ -45,20 +45,6 @@ var gTxMsgPool = sync.Pool{
 	},
 }
 
-/*
-	func CopyMsg(src *TxMsg) *TxMsg {
-		msg := NewMsg()
-
-		if src != nil {
-			valBuf := append(msg.ValBuf[:0], src.ValBuf...)
-			*msg = *src
-			msg.ValBuf = valBuf
-
-		}
-		return msg
-	}
-*/
-
 func (tx *TxEnvelope) SetContextID(ID tag.ID) {
 	tx.ContextID_0 = int64(ID[0])
 	tx.ContextID_1 = ID[1]
@@ -109,12 +95,12 @@ func MarshalAttr(cellID, attrID tag.ID, attrVal tag.Value) (*TxMsg, error) {
 			return nil, ErrCode_InternalErr.Error("MarshalAttr: missing builtin tag.Spec")
 		}
 	}
-	op := TxOp{
-		CellID: cellID,
-		AttrID: attrID,
-		EditID: tx.GenesisID(),
-		OpCode: TxOpCode_UpsertElement,
-	}
+	op := TxOp{}
+	op.CellID = cellID
+	op.AttrID = attrID
+	op.EditID = tag.Genesis(tx.GenesisID())
+	op.OpCode = TxOpCode_UpsertElement
+
 	if err := tx.MarshalOp(&op, attrVal); err != nil {
 		return nil, err
 	}
@@ -133,23 +119,23 @@ func (tx *TxMsg) UnmarshalOpValue(idx int, out tag.Value) error {
 
 func (tx *TxMsg) LoadFirst(attrID tag.ID, dst tag.Value) error {
 	for i, op := range tx.Ops {
-		if op.AttrID == attrID {
+		if op.CellID == attrID {
 			return tx.UnmarshalOpValue(i, dst)
 		}
 	}
 	return ErrAttrNotFound
 }
 
-func (tx *TxMsg) Load(cellID, attrID, SI tag.ID, dst tag.Value) error {
+func (tx *TxMsg) Load(cellID, attrID, itemID tag.ID, dst tag.Value) error {
 	tx.sortOps()
 
-	target := &TxOp{
+	find := &TxOpID{
 		CellID: cellID,
 		AttrID: attrID,
-		SI:     SI,
+		ItemID: itemID,
 	}
 	idx, found := sort.Find(len(tx.Ops), func(i int) int {
-		return tx.Ops[i].CompareTo(target)
+		return tx.Ops[i].CompareTo(find)
 	})
 	if !found {
 		return ErrPropertyNotFound
@@ -167,7 +153,7 @@ func (tx *TxMsg) sortOps() {
 	if !tx.OpsSorted {
 		tx.OpsSorted = true
 		sort.Slice(tx.Ops, func(i, j int) bool {
-			return tx.Ops[i].CompareTo(&tx.Ops[j]) < 0
+			return tx.Ops[i].TxOpID.CompareTo(&tx.Ops[j].TxOpID) < 0
 		})
 	}
 }
@@ -202,15 +188,15 @@ func (tx *TxMsg) CheckMetaAttr(reg Registry) (tag.Value, error) {
 	return val, nil
 }
 
-func (tx *TxMsg) Upsert(cellID, attrID, SI tag.ID, val tag.Value) error {
-	txOp := TxOp{
-		OpCode: TxOpCode_UpsertElement,
-		CellID: cellID,
-		AttrID: attrID,
-		EditID: tx.GenesisID(),
-		SI:     SI,
-	}
-	return tx.MarshalOp(&txOp, val)
+func (tx *TxMsg) Upsert(cellID, attrID, itemID tag.ID, val tag.Value) error {
+	op := TxOp{}
+	op.OpCode = TxOpCode_UpsertElement
+	op.CellID = cellID
+	op.AttrID = attrID
+	op.ItemID = itemID
+	op.EditID = tag.Genesis(tx.GenesisID())
+
+	return tx.MarshalOp(&op, val)
 }
 
 // Marshals a TxOp and optional value to the given Tx's to and data store.
@@ -382,9 +368,9 @@ func (tx *TxMsg) MarshalOps(dst []byte) []byte {
 			op_cur[TxField_AttrID_1] = op.AttrID[1]
 			op_cur[TxField_AttrID_2] = op.AttrID[2]
 
-			op_cur[TxField_SI_0] = op.SI[0]
-			op_cur[TxField_SI_1] = op.SI[1]
-			op_cur[TxField_SI_2] = op.SI[2]
+			op_cur[TxField_ItemID_0] = op.ItemID[0]
+			op_cur[TxField_ItemID_1] = op.ItemID[1]
+			op_cur[TxField_ItemID_2] = op.ItemID[2]
 
 			op_cur[TxField_EditID_0] = op.EditID[0]
 			op_cur[TxField_EditID_1] = op.EditID[1]
@@ -490,13 +476,13 @@ func (tx *TxMsg) UnmarshalBody(src []byte) error {
 		op.AttrID[1] = op_cur[TxField_AttrID_1]
 		op.AttrID[2] = op_cur[TxField_AttrID_2]
 
-		op.SI[0] = op_cur[TxField_SI_0]
-		op.SI[1] = op_cur[TxField_SI_1]
-		op.SI[2] = op_cur[TxField_SI_2]
+		op.ItemID[0] = op_cur[TxField_ItemID_0]
+		op.ItemID[1] = op_cur[TxField_ItemID_1]
+		op.ItemID[2] = op_cur[TxField_ItemID_2]
 
 		op.EditID[0] = op_cur[TxField_EditID_0]
 		op.EditID[1] = op_cur[TxField_EditID_1]
-		op.EditID[2] = 0
+		op.EditID[2] = op_cur[TxField_EditID_2]
 
 		tx.Ops = append(tx.Ops, op)
 	}
@@ -504,25 +490,18 @@ func (tx *TxMsg) UnmarshalBody(src []byte) error {
 	return nil
 }
 
-func (op *TxOp) CompareTo(oth *TxOp) int {
+func (op *TxOpID) CompareTo(oth *TxOpID) int {
 	if diff := op.CellID.CompareTo(oth.CellID); diff != 0 {
 		return int(diff)
 	}
 	if diff := op.AttrID.CompareTo(oth.AttrID); diff != 0 {
 		return int(diff)
 	}
-	if diff := op.SI.CompareTo(oth.SI); diff != 0 {
+	if diff := op.ItemID.CompareTo(oth.ItemID); diff != 0 {
 		return int(diff)
 	}
 	if diff := op.EditID.CompareTo(oth.EditID); diff != 0 {
 		return int(diff)
 	}
 	return 0
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

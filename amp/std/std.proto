@@ -240,9 +240,9 @@ message ChatEntry {
 message Channel {
 
     // Identifies a specific target tag ID this link points to.
-    int64   TagID_0  = 2;
-    fixed64 TagID_1  = 3;
-    fixed64 TagID_2  = 4;
+    int64   TagUID_0  = 2;
+    fixed64 TagUID_1  = 3;
+    fixed64 TagUID_2  = 4;
     
     int64   SpecID_0 = 6;
     fixed64 SpecID_1 = 7;

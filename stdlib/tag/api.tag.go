@@ -6,12 +6,6 @@ package tag
 // This also means (ID[0] >> 16) yields a standard 64-bit Unix UTC timestamp.
 type ID [3]uint64
 
-// Literal Token ID / [3]int64 / tag.ID
-type Literal struct {
-	ID    ID     // deterministic hash of Token -- (token may or may not be included)
-	Token string // utf8 human readable exact / canonical glyph or alias of ID -- 64 byte courtesy limit
-}
-
 // tag.Value wraps attribute data elements, exposing its "natural" type name and serialization methods.
 type Value interface {
 	ValuePb

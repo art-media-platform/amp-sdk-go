@@ -21,11 +21,14 @@ func TestTxSerialize(t *testing.T) {
 	{
 		op := TxOp{
 			OpCode: TxOpCode_UpsertElement,
-			CellID: tag.ID{4, 555, 666},
-			AttrID: tag.ID{111312232, 22232334444},
-			SI:     tag.ID{7383, 76549, 3773},
-			EditID: tag.ID{123, 9999, 0},
+			TxOpID: TxOpID{
+				tag.ID{3, 37, 73},
+				tag.ID{111312232, 22232334444, 4321},
+				tag.ID{7383, 76549, 3773},
+				tag.ID{7337, 3773, 7337},
+			},
 		}
+		
 		tx.MarshalOp(&op, &Login{
 			UserLabel: "lil turkey",
 			UserUID: &Tag{
@@ -35,8 +38,9 @@ func TestTxSerialize(t *testing.T) {
 		})
 		tx.DataStore = append(tx.DataStore, []byte("bytes not used but stored -- not normal!")...)
 
-		op.SI[1] = 50454123
-		op.EditID[1] += 37733773
+		op.CellID[0] += 37733773
+		op.AttrID[1] -= 50454123
+		op.ItemID[2] += 323
 		data := []byte("hello-world")
 		for i := 0; i < 7; i++ {
 			data = append(data, data...)
@@ -49,7 +53,7 @@ func TestTxSerialize(t *testing.T) {
 		})
 
 		for i := 0; i < 5500; i++ {
-			op.SI[0] = uint64(i)
+			op.ItemID[0] = uint64(i)
 			if i%5 == 0 {
 				op.EditID[1] += 37
 			}
@@ -58,7 +62,7 @@ func TestTxSerialize(t *testing.T) {
 			})
 		}
 
-		op.SI[0] = 111111
+		op.ItemID[0] = 111111
 		op.EditID[1] = 55445544
 		op.OpCode = TxOpCode_DeleteElement
 		tx.MarshalOpWithBuf(&op, nil)
@@ -86,7 +90,7 @@ func TestTxSerialize(t *testing.T) {
 	for i, op1 := range tx.Ops {
 		op2 := tx2.Ops[i]
 
-		if op1.OpCode != op2.OpCode || op1.CellID != op2.CellID || op1.AttrID != op2.AttrID || op1.SI != op2.SI || op1.DataOfs != op2.DataOfs || op1.DataLen != op2.DataLen {
+		if op1.OpCode != op2.OpCode || op1 != op2 || op1.DataOfs != op2.DataOfs || op1.DataLen != op2.DataLen {
 			t.Errorf("ReadTxMsg failed: Op mismatch")
 		}
 	}
@@ -124,10 +128,10 @@ func TestRegistry(t *testing.T) {
 	if (tag.ID{}).Base32() != "0" {
 		t.Fatalf("tag.Spec{}.Base32() failed")
 	}
-	if spec.ID.Base32() != "1ycu8rzmysqc2d93wsyg70m6cn" {
+	if spec.ID.Base32() != "3t1sm7v1ycu8rzmysqc2d93wsyg70m6cn" {
 		t.Errorf("tag.ID.Base32() failed: %v", spec.ID.Base32())
 	}
-	if spec.ID.Base16() != "3e5e917fcfd8b2c4c48f98f3ce099974" {
+	if spec.ID.Base16() != "3c87133ec3e5e917fcfd8b2c4c48f98f3ce099974" {
 		t.Errorf("tag.ID.Base16() failed: %v", spec.ID.Base16())
 	}
 	elem, err := reg.MakeValue(spec.ID)

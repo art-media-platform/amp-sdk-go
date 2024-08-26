@@ -1,9 +1,8 @@
 # art.media.platform
+_A turn-key UX and media deployment solution for offering secure, high-fidelity, 3D experiential apps._
 
-_- a turn-key UXR solution for creating high-fidelity, multi-platform 3D experiences -_
 
-
-_art.media.platform_ ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control and secure environments. The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) app driven by an embedded [Golang](https://golang.org) dynamic runtime library (output by this repo). 
+**_art.media.platform_** ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control and secure environments. The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) app driven by an embedded [Golang](https://golang.org) dynamic runtime library (output by this repo). 
 
 This means amp is a "turn-key" 3D-based user interface solution allowing you rapidly publish a native app on Windows, Mac, Linux, Android, iOS, and most XR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint in single digit megabytes while also running native on SoC metal has been very encouraging.
 
@@ -32,7 +31,7 @@ In suggested order of review for newcomers:
 
 |                                                                                                   |                                                                                                                                                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [api.tag.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/tag/api.tag.go) | TODO                                                                 |
+| [api.tag.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/tag/api.tag.go)    | Small and versatile hash and tag system where different systems can easily interoperate.                                                                                        |
 | [api.task.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/task/api.task.go) | A wrapper for goroutines inspired by a conventional parent-child process model and is used throughout this SDK.                                                                 |
 | [api.app.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go)           | Interfaces for developers looking to implement an `amp.App`, defining how state is requested, pushed, and merged.                                                               |
 | [api.host.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go)         | Defines `amp.Host` and its related types, what [`amp-host-go`](https://github.com/art-media-platform/amp-host-go) implements, and the abstraction that an `amp.App` plugs into. |

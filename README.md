@@ -1,5 +1,5 @@
 # art.media.platform
-_A turn-key UX and media deployment solution for offering secure, high-fidelity, 3D experiential apps._
+_a turn-key UX and media deployment solution for 3D experiential apps_
 
 
 **_art.media.platform_** ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control and secure environments. The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) app driven by an embedded [Golang](https://golang.org) dynamic runtime library (output by this repo). 
@@ -21,9 +21,7 @@ This repo is lightweight and dependency-free so that it can be added to your pro
 5. At runtime, your app or resources within it are "pinned" via `amp://{yourAppNameID}/{yourSchema...}` while the amp UX runtime manages the user's perceptual experience of all actively pinned URIs.
 
 
-## Acknowledgements & Props
 
-- 
 
 ## Points of Interest
 
@@ -31,13 +29,20 @@ In suggested order of review for newcomers:
 
 |                                                                                                   |                                                                                                                                                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [api.tag.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/tag/api.tag.go)    | Small and versatile hash and tag system where different systems can easily interoperate.                                                                                        |
-| [api.task.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/task/api.task.go) | A wrapper for goroutines inspired by a conventional parent-child process model and is used throughout this SDK.                                                                 |
-| [api.app.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go)           | Interfaces for developers looking to implement an `amp.App`, defining how state is requested, pushed, and merged.                                                               |
-| [api.host.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go)         | Defines `amp.Host` and its related types, what [`amp-host-go`](https://github.com/art-media-platform/amp-host-go) implements, and the abstraction that an `amp.App` plugs into. |
+| [api.tag.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/tag/api.tag.go)    | small versatile hash tag scheme offering easy interoperability                                                                                                                  |
+| [api.task.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/task/api.task.go) | wrapper for goroutines inspired by a conventional parent-child process model                                                                                                    |
+| [api.app.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go)           | `amp.App` types and interfaces defining how state is requested, pushed, and merged                                                                                              |
+| [api.host.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go)         | `amp.Host` types and interfaces that [`amp-host-go`](https://github.com/art-media-platform/amp-host-go) implements                                                              |
 
 ## What is `amp.App`?
 
 [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) is the plugin interface for amp.
 
 Like a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state. The stock amp runtime offers essential apps, such as file system access, and user account services. The less obvious power of amp is its extensibility. This is done by implementing the `amp.App` interface and registering it with the Go (or other transpile) based amp runtime. The amp runtime then manages the user's perceptual experience of all actively pinned cells on an amp compatible client.
+
+
+## Acknowledgements
+- [AVPro Video](https://renderheads.com/products/avpro-video/) by RenderHeads
+- [Webview](https://developer.vuplex.com/webview/overview) by Vuplex
+- [Online Maps](https://infinity-code.com/doxygen/online-maps/) by Infinity Code
+- [FMOD](https://www.fmod.com/) by Firelight Technologies

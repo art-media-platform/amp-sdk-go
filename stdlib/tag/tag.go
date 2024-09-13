@@ -11,11 +11,9 @@ import (
 	"github.com/art-media-platform/amp-sdk-go/stdlib/bufs"
 )
 
-// Composite tag expression syntax
+// Tag string expression syntax:
 //
 //	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
-//
-// Note how a tag spec with no delimiters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
 type Spec struct {
 	ID      ID
 	Canonic string

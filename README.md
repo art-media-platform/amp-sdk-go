@@ -2,15 +2,22 @@
 _a turn-key UX and media deployment solution for 3D experiential apps_
 
 
-**_art.media.platform_** ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control and secure environments. The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) app driven by an embedded [Golang](https://golang.org) dynamic runtime library (output by this repo). 
+**_art.media.platform_** ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control secure environments and "digital-twin" spatial and geographic linking.
 
-This means amp is a "turn-key" 3D-based user interface solution allowing you rapidly publish a native app on Windows, Mac, Linux, Android, iOS, and most XR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint in single digit megabytes while also running native on SoC metal has been very encouraging.
+The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) multiplatform app powered by an embedded [Golang](https://golang.org) dynamic runtime library built by this repo.
 
-This is interesting to:
+This means amp is a "turn-key", 3D-based user interface solution allowing you rapidly publish a native app on Windows, Mac, Linux, Android, iOS, and most AR / VR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint in single digit megabytes and rather respectable benchmarks.
 
-- **Storage and content providers** can deploy visually stunning user experiences using amp, delivering an immersive media experience while attracting users. This is otherwise only available in AAA games and profoudly more painful through a pure web-based solution -- e.g. [IPFS](https://www.ipfs.com/), Amazon's [S3](https://aws.amazon.com/s3/).
-- **Library and app developers** regard amp as a flexible UI framework that allows them to focus on their core value proposition. Easily add your own 2D or 3D custom UI components while you get multi-platform build support out of the box. E.g. data visualization, geographical and spatial linking.
-- **Geo/Spatial workspaces** are common in geo/spatial centric applications, such as GIS, CAD, and BIM, where integrated 3D visualization is a core part of the user experience.  amp's Unity client natively integrates [Online Maps XR](https://infinity-code.com/assets/online-maps) mapping, allowing you to unify location-based datasets, spatially precise environments, high-fidelity 3D rendering, and extensible linking.
+## What does this framework solve?
+
+Amp is 3D client-to-infrastructure bridge and is interesting to app developers looking to deploy engaging and memorable visuals while maintaining human engagement securely. This is somewhat available in AAA games but is notoriously difficult to deliver using limited web-based solutions such as [three.js](https://threejs.org/).
+
+The amp stack serves as a bridge that allows app developers to focus on their core value proposition. Easily add your own 2D or 3D custom UI components while you get multi-platform build support out of the box. E.g. data visualization, geographical and spatial linking.
+
+Geographic-centric applications, such as GIS, CAD, and BIM, typically require integrated 3D as part of the user experience.  Amp's 3D client natively integrates [maps and locations](https://infinity-code.com/assets/online-maps), allowing you to unify location-based datasets, spatially precise environments, high-fidelity 3D rendering, and extensible linking.
+
+
+## Workflow
 
 This repo is lightweight and dependency-free so that it can be added to your project without consequence. At a high level, the development workflow is:
 

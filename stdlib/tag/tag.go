@@ -11,15 +11,30 @@ import (
 	"github.com/art-media-platform/amp-sdk-go/stdlib/bufs"
 )
 
+// Composite tag expression syntax
+//
+//	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
+//
+// Note how a tag spec with no delimiters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
+type Spec struct {
+	ID      ID
+	Canonic string
+}
+
+var (
+	// sTagSeparator expresses the delimiters that separate tag literals in a tag.Spec string -- period, comma, colon, slash, backslash, plus, and whitespace
+	//
+	// By convention, the suggested separator is a period since it helps visually identify a tag, is compatible with a domain name, and is a common scoping character.
+	sTagSeparator = regexp.MustCompile(`[/\\\.+:\s\~]+`)
+)
+
 // Genesis returns a tag.ID that denotes an edit lineage root based on a given seed.
 //
-// oh Lord, bless this art, for it is Yours, it is Yours, it is Yours.
-//
-// בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ
+//	בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ
 func Genesis(seed ID) ID {
 	return [3]uint64{
 		seed[0],
-		seed[1] >> 32, // 00 00 00 00 helps identify a root "genesis" seed
+		seed[1] >> 32, // 00 00 00 00 helps identify a tag.ID as a genesis seed
 		seed[2],
 	}
 }
@@ -38,11 +53,6 @@ func (predecessor ID) FormEditID(seed ID) ID {
 		}
 	}
 }
-
-var (
-	// sTagSeparator expresses the delimiters that separate tag literals in a tag spec -- period, comma, colon, slash, backslash, plus, and whitespace
-	sTagSeparator = regexp.MustCompile(`[/\\\.+:\s\~]+`)
-)
 
 const (
 	CanonicWithRune = '.'
@@ -81,16 +91,6 @@ func (id ID) FormAsciiBadge() string {
 	}
 
 	return string(str)
-}
-
-// Composite tag expression syntax
-//
-//	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
-//
-// Note how a tag spec with no delimiters is a pure element type descriptor (and AttrSpecID == ElemSpecID)
-type Spec struct {
-	ID      ID
-	Canonic string
 }
 
 /*

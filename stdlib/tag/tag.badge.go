@@ -1,29 +1,28 @@
 package tag
 
-import math "math"
+import "math"
 
+// WORK IN PROGRESS proof-of-concept tag.ID visualizer, somewhat like how a QR code encodes a URL.
 //
-//  TODO: draw each dot as a ring of radius 1.3 (sacred geo) in additive grey scale then colorize!
-//  USe shaders:  the "badge" is a list of ring centers, radius, and amplitude -- use Linefy or a custom shader to draw the rings
+// The visualization can be exported as a svg or json and appears as hexagonal lattice of dot "glyphs".
+// Each dot glyph encodes 3 bits (8 possible values), requiring 64 glyphs to encode the 24 bytes of a tag.ID.
+//
+// Spatial error correction is achieved by mirroring the glyphs along the Y axis while the hexagonal lattice packs the glyphs efficiently.
+//
 //
 
-// Canonical ASCII digit in a tag.ID visual encoding (3 bits aka base 8)
-//type CanonicAsciiDigit byte
+// Canonical ASCII representation of a dot glyph in a tag.ID visual encoding (3 bits)
+var CanonicAsciiAlphabet = [8]AsciiDigit{
+	'_', '.', ':', '*',
+	'~', 'o', 'O', '0',
+}
 
 type AsciiDigit byte // base 8: ascii rune
 type OctalDigit byte // base 8: 3 bits
 
-var CanonicAsciiAlphabet = [8]AsciiDigit{
-	'_', '.', ':', '*',
-	'~', 'o', 'O', '0',
-	
-	// '.', 'o', '8', '@',
-    // '~', 'x', 'X', '*',
-}
-
 type OctalEncoding [64]OctalDigit
 
-const AsciiTemplate_old = "" +
+const AsciiTemplate_v1 = "" +
 	"     : * : . N N N N N N    \n" +
 	"    ~ : : . N N N N N N N   \n" +
 	"   O O   . N N N N N N N N  \n" +
@@ -38,7 +37,7 @@ const AsciiTemplate_old = "" +
 	"            N N N           \n" +
 	"                            \n"
 
-const AsciiTemplate = "" + // TODO: mirror along Y
+const AsciiTemplate_v2 = "" + // TODO: mirror along Y
 	"        * N N N\n" +
 	"       * N N N \n" +
 	"      : N N N N\n" +
@@ -152,5 +151,5 @@ func (badge *Badge) RegenFromTemplate(template string) {
 var gBadge6424 Badge
 
 func init() {
-	gBadge6424.RegenFromTemplate(AsciiTemplate)
+	gBadge6424.RegenFromTemplate(AsciiTemplate_v2)
 }

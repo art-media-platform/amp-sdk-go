@@ -1,5 +1,5 @@
 # art.media.platform
-_a turn-key UX and media deployment solution for 3D experiential apps_
+_a turn-key UX and fully secured and locked-down media deployment and client player solution for 3D experiential and security apps and feeds that we all can agree on_
 
 
 **_art.media.platform_** ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control secure environments and "digital-twin" spatial and geographic linking.

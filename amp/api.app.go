@@ -11,7 +11,7 @@ import (
 // An App is invoked by a client or other app via the app's Tag or URI.
 type App struct {
 
-	// tag.Spec identifies this app with form "amp.app.{PublisherID}.{FamilyID}.{AppNameID}" -- e.g. "amp.app.os.filesys.posix"
+	// tag.Spec identifies this app with form "amp.app.{PublisherID}.{FamilyID}.{AppNameID}" -- e.g. "amp.app.filesys.posix"
 	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "artspace.systems"
 	//   - FamilyID:    encompassing namespace ID used to group related apps (no spaces or punctuation)
 	//   - AppNameID:   identifies this app within its parent family and domain (no spaces or punctuation)
@@ -77,28 +77,6 @@ type Pin interface {
 	// This means an AppContext contains all its Pins and thus Close() will close all Pins (and child requests).
 	// This is used to know if a request is still being served and to close it if needed.
 	Context() task.Context
-
-	// Pushes state until all requested attrs are synced.
-	//
-	// Exits when:
-	//   - to.Closing() is signaled, or
-	//   - state has been pushed to the client and no more updates are possible, or
-	//   - state has been pushed initially but PinFlags_CloseOnSync is set, or
-	//   - an error occurs
-	//ServeRequest(to Requester) error
-
-	// // Asks this Pin to handle a client request.
-	// //
-	// // Usually a Pin starts a child context to perform blocking work able to serve the given request,
-	// // and returns it wrapped in a RequestHandler.
-	// //
-	// // If (nil, nil) is returned, the app handled the request immediately.
-	// HandleRequest(op Request) (RequestHandler, error)
-
-	// Processes, queues, or otherwise handles a changeset sent to this Pin.
-	// Concurrent friendly -- each client request having a tx to submit calls this method from its own goroutine.
-	// tx is READ ONLY.
-	// CommitTx(tx *TxMsg) error
 }
 
 // TxMsg is workhorse generic transport serialization sent between client and host.
@@ -106,7 +84,7 @@ type TxMsg struct {
 	TxEnvelope        // public fields and routing tags
 	Ops        []TxOp // operations to perform on the target
 	OpsSorted  bool   // describes order of []Ops
-	DataStore  []byte // marshalled data store for Ops serialized data
+	DataStore  []byte // stores serialized TxOp data
 	refCount   int32  // see AddRef() / ReleaseRef()
 }
 
@@ -121,9 +99,7 @@ type TxOpID struct {
 	EditID tag.ID // references the previous revision -- see tag.ForkEdit()
 }
 
-// TxOp is an atomic operation on a target cell and is a unit of change (or message) for any target.
-// Values are typically LSM sorted, so use low order bytes before high order bytes.
-// Note that x0 is the most significant and x2 is least significant bytes.
+// TxOp is an atomic operation and is a unit of change (or message).
 type TxOp struct {
 	TxOpID           // applicable cell, attribute, element, and edit IDs
 	OpCode  TxOpCode // operation to perform

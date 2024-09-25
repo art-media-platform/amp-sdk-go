@@ -62,14 +62,13 @@ type Session interface {
 	task.Context // Underlying task context
 	Registry     // How symbols and types registered and resolved
 
-	// Returns the running AssetPublisher instance for this session.
+	// Returns the active media.Publisher instance for this session.
 	AssetPublisher() media.Publisher
 
 	// Returns info about this user and session
 	LoginInfo() Login
 
 	// Sends a readied Msg to the client for handling.
-	// If msg.ReqID == 0, the attr is sent to the client's session controller (for sending session meta messages).
 	// On exit, the given msg should not be referenced further.
 	SendTx(tx *TxMsg) error
 

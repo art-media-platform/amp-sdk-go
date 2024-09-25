@@ -46,7 +46,7 @@ This repo is lightweight and dependency-free so that it can be added to your pro
 
 ## What is `amp.App`?
 
-[`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) is the plugin interface for amp.
+[`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) is the primary plugin interface for system runtime support as well as for third parties.  On startup, [`amp.Host`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go) registers its `amp.App` plugins and instantiates amp.App instances as needed to service client requests.
 
 Like a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state. The stock amp runtime offers essential apps, such as file system access, serving media, and user account services.
 

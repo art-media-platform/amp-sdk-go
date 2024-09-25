@@ -20,16 +20,16 @@ Geographic-centric applications, such as GIS, CAD, and BIM, typically require in
 
 ## What about web?
 
-Web is alive and well in this stack.  Software such as [Webview](https://developer.vuplex.com/webview/overview) is embedded in the 3D client, which is essentially the Chromium browser, allowing your app to have an embedded web browser out of the box.  _Further, an in-app integrated web browser makes sense when you think about spatial linking, where URLs or assets are anchored to map locations or 3D spatial locations._
+Web is alive and well in this stack.  Software such as [Webview](https://developer.vuplex.com/webview/overview) is embedded in the 3D client, which is essentially the Chromium browser, allowing your app to have an embedded web browser out of the box.  _An in-app integrated web browser is optimal when you think about spatial linking, where URLs or assets are anchored to map or 3D / spatial locations._
 
 
 
 ## Integration Workflow
 
-This repo is lightweight and dependency-free so that it can be added to your project without consequence.
+This repo is lightweight and dependency-free so that it can be added to your project without consequence. At a high level:
 
 1. Add [amp-sdk-go](https://github.com/art-media-platform/amp-sdk-go) to your Go project and expose your functionally by implementing [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) however you like.
-2. Clone [amp-host-go](https://github.com/art-media-platform/amp-host-go) (currently private) and consume your `amp.App`, similar to adding a library to a C++ project and importing it statically or dynamically.
+2. Clone / Fork [amp-host-go](https://github.com/art-media-platform/amp-host-go) (currently private) and consume your `amp.App`, similar to adding a library to a C++ project and importing it statically or dynamically.
 3. `make build libarthost` (with your packages embedded within it)
     - Or, `make build arthost` which builds the host as "headless" server or peer node
 4. In your rapidly (or meticulously) designed native Unity or Unreal app, link `libarthost`
@@ -46,9 +46,9 @@ This repo is lightweight and dependency-free so that it can be added to your pro
 
 ## What is `amp.App`?
 
-[`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) is the primary plugin interface for system runtime support as well as for third parties.  On startup, [`amp.Host`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go) registers its `amp.App` plugins and instantiates amp.App instances as needed to service client requests.
+[`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) is the primary plugin interface for system runtime support as well as for third parties.  On startup, [`amp.Host`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go) and instantiates registered `amp.App` instances as needed.
 
-Like a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state. The stock amp runtime offers essential apps, such as file system access, serving media, and user account services.
+Similar to a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state. The stock amp runtime offers essential apps, such as file system access, media service, and user account services.
 
 The less obvious power of amp is its _extensibility_. The [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) interface is flexible and unrestricted, allowing you to wrap anything that Go can link against.  This means any Go, C, C++, or any native static or dynamic executable can be wrapped and push a 3D-native UX (with stock or custom assets).
 

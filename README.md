@@ -1,19 +1,19 @@
 # art.media.platform
-_a fully secure turn-key solution for media deployment, 3D experiences and UX infrastructure that we all can agree on_
+_a fully secure and provisioned solution for media deployment, 3D experiences and UX infrastructure that we all can agree on_
 
 
 **_art.media.platform_** ("amp") is an SDK for building multi-platform 3D and media-centric apps with pluggable infrastructure where artists and creators control secure environments and "digital-twin" spatial and geographic linking.
 
-The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) cross-platform app powered by an embedded [Golang](https://golang.org) dynamic runtime library built by this and the [amp-host-go](https://github.com/art-media-platform/amp-host-go) repo.
+The amp client exists as a [Unity](https://unreal.com) and [Unreal](https://unreal.com) any-platform app, powered by an embedded [Golang](https://golang.org) dynamic runtime library specified by this repo.
 
-This means amp is a "turn-key", 3D-based user interface solution allowing you rapidly publish a native app on Windows, Mac, Linux, Android, iOS, and most AR / VR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint in single digit megabytes and rather respectable benchmarks.
+This means amp is a "turn-key" 3D-based user experience solution allowing you to publish a native app on Windows, Mac, Linux, Android, iOS, and most AR / VR headsets while also delivering the benefits of embedded and "headless" Go runtime instances with a footprint measured in single digit megabytes and respectable benchmarks.
 
 
 ## What does this framework solve?
 
-Amp is 3D client-to-infrastructure bridge and is interesting to app developers looking to deploy engaging and memorable visuals while maintaining human engagement securely. This is somewhat available in AAA games but is notoriously difficult to deliver using limited web-based solutions such as [three.js](https://threejs.org/).  Seeing performance benchmarks when running "on the metal" are compelling.
+Amp is 3D client-to-infrastructure bridge and is interesting to app developers looking to deploy engaging and memorable experiences while maintaining human engagement securely. This is somewhat available in AAA games but is notoriously difficult to deliver using limited web-based solutions such as [three.js](https://threejs.org/).  For example, 3D experiences on the web are problematic once assets are more than several _megabytes_.  Meanwhile, most 3D titles ship with deployments in _double-digit gigabytes._    Worse, the web browser sandbox can pose major UX blocks that a publisher has no ability to control.
 
-The amp stack serves as a bridge that allows app developers to focus on their core value proposition. Easily add your own 2D or 3D custom UI components while you get multi-platform build support out of the box. -- e.g. data visualization, geographical and spatial linking.
+This stack serves as a bridge that allows app developers to focus on their core value proposition. Easily add your own 2D or 3D custom UI components while you get multi-platform build support and content deployment out of the box.
 
 Geographic-centric applications, such as GIS, CAD, and BIM, typically require integrated 3D as part of the user experience.  Amp's 3D client natively integrates [maps and locations](https://infinity-code.com/assets/online-maps), allowing you to unify location-based datasets, spatially precise environments, high-fidelity 3D rendering, and extensible linking -- pulling datasets from device, LAN, WAN, or MAN.
 
@@ -24,16 +24,16 @@ Web is alive and well under this model.  Software such as [Webview](https://deve
 
 
 
-## Project Workflow
+## Integration Workflow
 
-This repo is lightweight and dependency-free so that it can be added to your project without consequence. At a high level, the development workflow is:
+This repo is lightweight and dependency-free so that it can be added to your project without consequence. At a high level:
 
-1. Import [amp-sdk-go](https://github.com/art-media-platform/amp-sdk-go) in your Go project and expose your functionally by implementing  [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) however you like.
-2. Clone [amp-host-go](https://github.com/art-media-platform/amp-host-go) (currently private) and add your Go packages to it (like adding a module to C++ project and registering it either statically or dynamically).
-3. `make build libarthost` with your packages embedded within it
-    - `make build arthost` builds the host as "headless" server or peer node.
-4. In your rapidly (or meticulously) native Unity or Unreal app, embed `libarthost` within it.
-5. At runtime, your package services URL requests that are "pinned" via the [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) interface.  Meanwhile, the amp UX runtime manages the user's perceptual experience of all actively pinned URIs in addition to providing a toolbox of extensions and examples.
+1. Add [amp-sdk-go](https://github.com/art-media-platform/amp-sdk-go) to your Go project and expose your functionally by implementing [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) however you like.
+2. Clone [amp-host-go](https://github.com/art-media-platform/amp-host-go) (currently private) and consume your `amp.App` (like adding a module to C++ project and registering it either statically or dynamically).
+3. `make build libarthost` (with your packages embedded within it)
+    - Or, `make build arthost` builds the host as "headless" server or peer node
+4. In your rapidly (or meticulously) native Unity or Unreal app, link `libarthost`
+5. At runtime, your `amp.App` services URL requests that are "pinned" via the [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) interface.  Meanwhile, the amp UX runtime manages the user's perceptual experience of all actively pinned URLs in addition to providing a toolbox of extensions and examples.
 
 ## Points of Interest
 
@@ -50,7 +50,9 @@ In suggested order of review for newcomers:
 
 [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) is the plugin interface for amp.
 
-Like a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state. The stock amp runtime offers essential apps, such as file system access, and user account services. The less obvious power of amp is its extensibility. This is done by implementing the `amp.App` interface and registering it with the Go (or other transpile) based amp runtime. The amp runtime then manages the user's perceptual experience of all actively pinned cells on an amp compatible client.
+Like a traditional OS service, an `amp.App` responds to queries it recognizes and operates on user data and system state. The stock amp runtime offers essential apps, such as file system access, serving media, and user account services.
+
+The less obvious power of amp is its _extensibility_. The [`amp.App`](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go) interface is flexible and unrestricted, allowing you to wrap anything that Go can link against.  This means any Go, C, C++, or any native static or dynamic executable can be wrapped and easily push a 3D-native UX.
 
 
 ## Acknowledgements

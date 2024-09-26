@@ -117,9 +117,9 @@ func (tx *TxMsg) UnmarshalOpValue(idx int, out tag.Value) error {
 	return out.Unmarshal(span)
 }
 
-func (tx *TxMsg) LoadFirst(attrID tag.ID, dst tag.Value) error {
+func (tx *TxMsg) LoadItem(attrID, itemID tag.ID, dst tag.Value) error {
 	for i, op := range tx.Ops {
-		if op.CellID == attrID {
+		if op.AttrID == attrID && op.ItemID == itemID {
 			return tx.UnmarshalOpValue(i, dst)
 		}
 	}

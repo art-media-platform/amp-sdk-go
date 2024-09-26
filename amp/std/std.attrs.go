@@ -17,17 +17,22 @@ var (
 	CellProperties = amp.AttrSpec.With("cell-properties")
 	LaunchURL      = amp.AttrSpec.With("LaunchURL").ID
 
-	CellProperty      = tag.Spec{}.With("cell-property")
-	CellLabel         = CellProperty.With("text.Tag.label").ID
-	CellCaption       = CellProperty.With("text.Tag.caption").ID
-	CellSynopsis      = CellProperty.With("text.Tag.synopsis").ID
-	CellCollection    = CellProperty.With("text.Tag.collection").ID
-	CellGlyphs        = CellProperty.With("Tag.glyphs").ID
-	CellContentLink   = CellProperty.With("content-link").ID
-	CellAuthor        = CellProperty.With("author").ID
-	CellExternalLinks = CellProperty.With("external-link").ID
-	CellFileInfo      = CellProperty.With("FileInfo").ID
-	CellPortrait      = CellProperty.With("portrait").ID
+	CellProperty   = tag.Spec{}.With("cell-property")
+	TextTag        = CellProperty.With("text.Tag")
+	CellLabel      = TextTag.With("label").ID
+	CellCaption    = TextTag.With("caption").ID
+	CellSynopsis   = TextTag.With("synopsis").ID
+	CellCollection = TextTag.With("collection").ID
+	CellAuthor     = TextTag.With("author").ID
+
+	CellTag           = CellProperty.With("Tag")
+	CellExternalLinks = CellTag.With("links").ID
+	CellGlyphs        = CellTag.With("glyphs").ID
+	CellMedia         = CellTag.With("content.media").ID
+	CellCover         = CellTag.With("content.cover").ID
+	CellVis           = CellTag.With("content.vis").ID
+
+	CellFileInfo = CellProperty.With("FileInfo").ID
 )
 
 const (

@@ -6,6 +6,14 @@ package tag
 // This also means (ID[0] >> 16) yields a standard 64-bit Unix UTC timestamp.
 type ID [3]uint64
 
+// Specifies a set of tag literals and its corresponding tag.ID.
+//
+//	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
+type Spec struct {
+	ID      ID
+	Canonic string
+}
+
 // tag.Value wraps attribute data elements, exposing its "natural" type name and serialization methods.
 type Value interface {
 	ValuePb

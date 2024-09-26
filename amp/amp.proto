@@ -19,23 +19,23 @@ enum Const {
 
     // DefaultServicePort  is the default TCP port used to expose amp.Host service.
     Const_DefaultServicePort = 5192;
-    
+
 	// Byte size and version of a TxMsg encoding -- sizes are little endian
 	// A TxHeader has the following layout:
-    //   Bytes  00:03 -- TxHeader marker ('amp') 
+    //   Bytes  00:03 -- TxHeader marker ('amp')
 	//          03:04 -- Const_TxHeader_Version
     //          04:08 -- TxMsg body size: header + serialized TxOp(s)
     //          08:12 -- TxMsg.DataStore size
-    //          12:16 -- Reserved 
+    //          12:16 -- Reserved
 	Const_TxHeader_Size = 16;
-	
+
 	// Version of the TxHeader -- first byte
     Const_TxHeader_Version = 0x33;
-	
+
 	// The first byte of the TxHeader is the header size and version and
-	// the following 3 bytes of a serialized TxMsg ("amp") 
-    Const_TxHeader_Marker = 0x616D70; 
-    
+	// the following 3 bytes of a serialized TxMsg ("amp")
+    Const_TxHeader_Marker = 0x616D70;
+
     // בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ
     // Oh Lord, please bless this project, those who fight for it, and those who lay their life on Your altar.
     Const_Invocation = 3773;
@@ -46,7 +46,7 @@ enum Const {
 // TxOpCode specifies a particular cell transaction operation.
 enum TxOpCode {
     TxOpCode_Nil = 0;
-    
+
     TxOpCode_UpsertElement = 2; // insert / update single attribute element
     TxOpCode_DeleteElement = 4; // delete single attribute element
 }
@@ -55,23 +55,23 @@ enum TxOpCode {
 // TxBody contains a max number of uint64 fields usable for any purpose.
 enum TxField {
     TxField_Nil = 0;
-    
+
     TxField_CellID_0 = 1;
     TxField_CellID_1 = 2;
     TxField_CellID_2 = 3;
-    
+
     TxField_AttrID_0 = 4;
     TxField_AttrID_1 = 5;
     TxField_AttrID_2 = 6;
-    
+
     TxField_ItemID_0 = 7;
     TxField_ItemID_1 = 8;
     TxField_ItemID_2 = 9;
-    
+
     TxField_EditID_0 = 10;
     TxField_EditID_1 = 11;
     TxField_EditID_2 = 12;
-    
+
     TxField_NumFields = 13;
     TxField_MaxFields = 24;
 }
@@ -82,7 +82,7 @@ message TxEnvelope {
 
     // communicates request status / completion.
     OpStatus            Status = 2;
-    
+
     // The number of TxOps in this TxMsg.
     uint64              OpCount = 4;
 
@@ -91,13 +91,13 @@ message TxEnvelope {
     int64               GenesisID_0 = 5;
     fixed64             GenesisID_1 = 6;
     fixed64             GenesisID_2 = 7;
-    
+
     // If set, this references a previously witnessed tx -- typically used for a response to a request.
     // If nil, this is a context-free tx and GenesisID becomes the implied context ID.
     int64               ContextID_0 = 10;
     fixed64             ContextID_1 = 11;
     fixed64             ContextID_2 = 12;
-    
+
     Tag                 FromID    = 14; // any amp IO
     Tag                 ToID      = 15; // any amp IO
     Tag                 Tags      = 16; // any amp tag set
@@ -117,17 +117,17 @@ enum OpStatus {
 
     // op or request has not yet initiated
     OpStatus_NotStarted = 0;
-    
+
     // op or request is in progress
     OpStatus_Syncing    = 1;
-    
+
     // updating, processing, or suspended -- signifies opaque working state
     OpStatus_Busy       = 2;
-    
+
     // Sent by the host to signal that the op up to date and the client state is stable / synchronized.
     // This typically drives UI updates or other dependencies requiring a stable state.
     OpStatus_Synced     = 3;
-    
+
     // From the client to host, this signals to close / cancel the op associated with ReqID.
     // From the host to client, this signals that the given request ID has been closed / discarded.
     OpStatus_Closed     = 37;
@@ -139,18 +139,18 @@ message Login {
     // Identifies who is logging in -- typically a persistent username across multiple devices.
     string             UserLabel = 1; // describes user identity
     Tag                UserUID   = 2; // persistent user ID
-    
-    // Which device is logging in 
+
+    // Which device is logging in
     string             DeviceUID   = 5;
     string             DeviceLabel = 6;
-        
+
     // HostAddr is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
     // arthost uses this to as the host name when serving URLs for the client to consume.
     string             HostAddr = 8;
-        
+
     // Tags is an unordered list of string literals tokens with predefined meanings, separated by spaces, periods, or commas.
     string             Tags = 9;
-        
+
     // Checkpoint allows the client to resume an auth session.
     LoginCheckpoint    Checkpoint = 12;
 
@@ -172,7 +172,7 @@ message LoginCheckpoint {
     string              AccessToken  = 2;
     string              RefreshToken = 3;
     int64               Expiry       = 4; // Unix UTC
-    
+
     string              Tags         = 10;
     string              UserUID      = 11;
     string              URI          = 12;
@@ -185,11 +185,11 @@ enum StateSync {
     // If set, a pin request will not send any state responses to the client.
     // This is useful when only writing to a cell and no state updates are needed.
     StateSync_None = 0;
-    
+
 	// If set, a pin request will be automatically closed once state is pushed / synchronized.
     // This is useful when only a snapshot of the cell is needed.
     StateSync_CloseOnSync = 1;
-    
+
     // If set, a pin request will remain open even after state is synced.
     // In this mode, he client will receive any state updates until the request is explicitly closed.
     StateSync_Maintain = 2;
@@ -197,25 +197,25 @@ enum StateSync {
 
 
 
-// PinRequest is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.  
+// PinRequest is a client request to "pin" a cell, meaning selected attrs and child cells will be pushed to the client.
 message PinRequest {
 
     // Specifies a target URL or tag / cell ID to be pinned with the above available mint templates available.
     Tag          PinTarget = 2;
-    
+
     // Attributes to be pinned (synced) -- if nil, all attrs are pinned
     repeated Tag PinAttrs  = 4;
-    
+
     // Options for this request.
     StateSync    StateSync   = 6;
-    
+
     // // If set, PinTarget.URL is an external URL redirected for internal handling -- e.g. oauth request (host to client) or an oauth response (client to host).
     // bool         ExternalURL = 10;
 
     // Delimited list of "semi-ordered" tags used to filter results
     // ((:/\.\|)*{(-_\|\w)+})+
     //string              TagQueryExpr = 16;
-    
+
 }
 
 // LaunchURL is used as a meta attribute handle a URL, such as an oauth request (host to client) or an oauth response (client to host).
@@ -240,7 +240,7 @@ enum UrlScheme {
     UrlScheme_Data            = 3;  // "[data:]{mime-type}[[;base64],{data-encoding}]"
     UrlScheme_File            = 4;  // "[file://]{hfs-pathname}"
     UrlScheme_Amp             = 7;  // "[amp:[//app-alias/]]{cmd}[/{uri}]?{query}"
-    
+
     UrlScheme_Ipfs            = 17; // "[ipfs://]{hash}"
     UrlScheme_Ipns            = 18; // "[ipns://]{hash}"
     UrlScheme_Magnet          = 19; // "[magnet:]{query}"
@@ -250,43 +250,45 @@ enum UrlScheme {
 
 
 // TagUID is a minimal wrapper for a tag.ID
-message TagUID { 
+message TagUID {
     int64   ID_0 = 2; // UTC << 16 -- see tag.ID
     fixed64 ID_1 = 3;
-    fixed64 ID_2 = 4; 
+    fixed64 ID_2 = 4;
+
+    string  UID  = 6; // optional tag.Spec or other UID
 }
 
 
 
 // Tag is a multi-use workhorse. All fields are optional and whose meaning is contextual.
 //
-// Often used to reference an asset, a Link can reference any resource, a show, project, episode, or XR beacon. 
-// The tagging naming convention describes a semi-ordered list of UTF tags.  
+// Often used to reference an asset, a Link can reference any resource, a show, project, episode, or XR beacon.
+// The tagging naming convention describes a semi-ordered list of UTF tags.
 //      As tags first appear when going from left to right in the list, they are considered "more significant" or "higher priority" than tags that appear later.
 //      It is up to amp-search-dev-tag-specification to order search results based on tag filters (case sensitive, time ranges, or any UTF8 enum identifier)
 //      By convention, tags are case sensitive by default, however there are many filter presets -- This is how people "type or speak search"
 //      "Two tag rule" -- if you can think of two or more other tags in an order ranking, then do that instead.
 message Tag {
 
-    // Identifies a specific target tag ID this link points to.
-    int64   TagID_0       = 2;
+    int64   TagID_0       = 2; // optional tag ID or key or coordinate lookup
     fixed64 TagID_1       = 3;
     fixed64 TagID_2       = 4;
-    
-    string  Text          = 7; // utf8-text -- title / name / label
-    float   Ordering      = 9; // list ordering
+    string  UID           = 6; // optional tag.Spec or other UID
 
-    string  URL          = 13; // e.g. "http://...", "https://...", "amp://...", "ipfs://...", "file://...", "data:..."
-    string  ContentType  = 14; // e.g. "text/html", "image/png", "image/*", 
+    string  Text          = 7; // optional utf8 content / title / description
+    double  Ordering      = 9; // optional ordering
 
-    uint32  LanguageCode = 18; // ISO 639 (big endian)  -- e.g. 'en', 'fr', 'de'
-    uint32  RegionCode   = 19; // ISO 3166 (big endian) -- e.g. 'us', 'ca', 'gb'
-    
+    string  URL          = 13; // "http://amp-systems.com", "https://...", "amp://...", "ipfs://...", "file://...", "data:..."
+    string  ContentType  = 14; // "text/html", "image/png", "image/*", "amp.vis/content.*"
+
+    // uint32  LanguageCode = 18; // ISO 639 (big endian)  -- e.g. 'en', 'fr', 'de'
+    // uint32  RegionCode   = 19; // ISO 3166 (big endian) -- e.g. 'us', 'ca', 'gb'
+
     Metric  Metric       = 26; // specifies the metric system used for the size metric values
     uint64  SizeX        = 27;
     uint64  SizeY        = 28;
     uint64  SizeZ        = 29;
-    
+
     repeated Tag Tags    = 32;
 }
 
@@ -329,7 +331,7 @@ message CryptoKey {
 
 
 
-/* 
+/*
 message LabelAttr {
     string              Main            = 1;
     string              Subtext         = 2;
@@ -339,14 +341,14 @@ message SwitchAttr {
     string              About           = 2;
     bool                Enabled         = 2;
 }
-    
+
 message EditableTextAttr {
     string              Label           = 1;
     string              About           = 2;
     string              Content         = 3;
     int                 Flags           = 4;
 }
-    
+
     */
 
 
@@ -369,7 +371,7 @@ enum ErrCode {
     ErrCode_LoginFailed                 = 5008;
     ErrCode_SessionExpired              = 5009;
     ErrCode_NotReady                    = 5010;
-    
+
     ErrCode_RequestNotFound             = 5020;
     ErrCode_RequestClosed               = 5021;
     ErrCode_BadRequest                  = 5022;
@@ -391,7 +393,7 @@ enum ErrCode {
     ErrCode_PinFailed                   = 5055;
     ErrCode_CellNotFound                = 5058;
     ErrCode_ProviderErr                 = 5059;
-    
+
     ErrCode_ViolatesAppendOnly          = 5100;
     ErrCode_InsufficientPermissions     = 5101;
 }
@@ -408,10 +410,10 @@ message Err {
 
     // Identifies the type of error.
     ErrCode             Code  = 1;
-    
+
     // Severity level
     LogLevel            Level = 2;
-    
+
     // human-readable info
     string              Msg   = 4;
 }

@@ -153,7 +153,7 @@ type cellWriter struct {
 	err    error
 }
 
-func (w *cellWriter) PutText(propertyID tag.ID, val string) {
+func (w *cellWriter) PutText(propertyID tag.ID, value string) {
 	if w.err != nil {
 		return
 	}
@@ -163,14 +163,14 @@ func (w *cellWriter) PutText(propertyID tag.ID, val string) {
 	op.AttrID = CellProperties.ID
 	op.ItemID = propertyID
 	err := w.tx.MarshalOp(&op, &amp.Tag{
-		Text: val,
+		Text: value,
 	})
 	if err != nil {
 		w.err = err
 	}
 }
 
-func (w *cellWriter) PutItem(propertyID tag.ID, val tag.Value) {
+func (w *cellWriter) PutItem(propertyID tag.ID, value tag.Value) {
 	if w.err != nil {
 		return
 	}
@@ -179,7 +179,7 @@ func (w *cellWriter) PutItem(propertyID tag.ID, val tag.Value) {
 	op.CellID = w.cellID
 	op.AttrID = CellProperties.ID
 	op.ItemID = propertyID
-	if err := w.tx.MarshalOp(&op, val); err != nil {
+	if err := w.tx.MarshalOp(&op, value); err != nil {
 		w.err = err
 	}
 }

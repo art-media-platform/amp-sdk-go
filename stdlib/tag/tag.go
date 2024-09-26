@@ -11,14 +11,6 @@ import (
 	"github.com/art-media-platform/amp-sdk-go/stdlib/bufs"
 )
 
-// Tag string expression syntax:
-//
-//	tag.Spec := "[{utf8_tag_literal}[.:/\\w]*]*"
-type Spec struct {
-	ID      ID
-	Canonic string
-}
-
 var (
 	// sTagSeparator expresses the delimiters that separate tag literals in a tag.Spec string -- period, comma, colon, slash, backslash, plus, and whitespace
 	//

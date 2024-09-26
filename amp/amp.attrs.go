@@ -13,8 +13,6 @@ var (
 	TagRoot  = tag.Spec{}.With("amp")
 	AttrSpec = TagRoot.With("attr")
 	AppSpec  = TagRoot.With("app")
-
-	CellProperties = AttrSpec.With("cell-properties")
 )
 
 func RegisterBuiltinTypes(reg Registry) error {

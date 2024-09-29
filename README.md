@@ -8,7 +8,7 @@ a network of users to collaborate seamlessly in real time on dynamic 3D environm
 
 **AMP** ("**_art.media.platform_**") is an SDK for building community oriented 3D asset management solutions. The SDK is multi-platform, and media-centric. It can have infrastructure both plug in their own assets and embeds, as well share it with other artists and networks using the SDK. 
 
-The amp has been integrated with clients in [Unity](https://unreal.com) and [Unreal](https://unreal.com), this is done by embedding the powered by the embedded [Golang](https://golang.org) dynamic runtime library created by this SDK (specified by this repo).
+The AMP SDK has been integrated with clients in [Unity](https://unreal.com) and [Unreal](https://unreal.com), this is done by embedding the powered by the embedded [Golang](https://golang.org) dynamic runtime library created by this SDK (specified by this repo).
 
 Having the embed be written in **Go** allows developers to you to publish a native app on Windows, Mac, Linux, Android, iOS, and most AR / VR headsets. 
 
@@ -72,7 +72,7 @@ This repo is lightweight and dependency-free so that it can be added to your pro
 | [api.tag.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/tag/api.tag.go)    | small versatile hash tag scheme offering easy interoperability                                                                                                                  |
 | [api.task.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/stdlib/task/api.task.go) | wrapper for goroutines inspired by a conventional parent-child process model                                                                                                    |
 | [api.app.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.app.go)           | `amp.App` types and interfaces defining how state is requested, pushed, and merged                                                                                              |
-| [api.host.go](https://github.com/art-media-platform/a>mp-sdk-go/blob/main/amp/api.host.go)         | `amp.Host` types and interfaces that [`amp-host-go`](https://github.com/art-media-platform/amp-host-go) implements                                                              |
+| [api.host.go](https://github.com/art-media-platform/amp-sdk-go/blob/main/amp/api.host.go)         | `amp.Host` types and interfaces that [`amp-host-go`](https://github.com/art-media-platform/amp-host-go) implements                                                              |
 
 ## What is `amp.App`?
 

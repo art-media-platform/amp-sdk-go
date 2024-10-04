@@ -1,3 +1,4 @@
+// Package amp provides core types and interfaces for art.media.platform.
 package amp
 
 import (
@@ -6,25 +7,19 @@ import (
 	"github.com/art-media-platform/amp-sdk-go/stdlib/task"
 )
 
-// App is how an app module is registered with an amp.Host so it can be invoked.~
+// App is how an app module registers with amp.Host and is used for internal components as well as for third parties. During runtime, amp.Host instantiates an amp.App when a client request invokes one of the app's registered tags.
 //
-// An App is invoked by a client or other app via the app's Tag or URI.
+// Similar to a traditional OS service, an amp.App responds to queries it recognizes and operates on client requests. The stock amp runtime offers essential apps, such as file system access and user account services.
 type App struct {
-
-	// tag.Spec identifies this app with form "amp.app.{PublisherID}.{FamilyID}.{AppNameID}" -- e.g. "amp.app.filesys.posix"
-	//   - PublisherID: typically the domain name of the publisher of this app -- e.g. "artspace.systems"
-	//   - FamilyID:    encompassing namespace ID used to group related apps (no spaces or punctuation)
-	//   - AppNameID:   identifies this app within its parent family and domain (no spaces or punctuation)
-	//
-	AppSpec      tag.Spec // Universally unique and persistent ID for this module (and the module's "home" space if present)
-	Desc         string   // Human-readable description of this app
+	AppSpec      tag.Spec // unique and persistent ID for this module
+	Desc         string   // human-readable description of this app
 	Version      string   // "v{MajorVers}.{MinorID}.{RevID}"
-	Dependencies []tag.ID // Module Tags this app may access
-	Invocations  []string // Additional aliases that invoke this app
+	Dependencies []tag.ID // module Tags this app may access
+	Invocations  []string // additional aliases that invoke this app
 
-	// NewAppInstance is the entry point for an App.
-	// Called when an App is first invoked on an active User session and is not yet running.
-	// Blocks minimally and returns quickly.
+	// NewAppInstance is the instantiation entry point for an App called when an App is first invoked on a User session and is not yet running.
+	//
+	// Implementations should not block and return quickly.
 	NewAppInstance func(ctx AppContext) (AppInstance, error)
 }
 
@@ -50,7 +45,7 @@ type AppContext interface {
 // Pinner is characterized by the ability to emit Pins.
 type Pinner interface {
 
-	// Creates or finds Pin for the given request.
+	// Creates and serves the given request, providing a wrapper for the request.
 	ServeRequest(req Requester) (Pin, error)
 }
 
@@ -60,7 +55,7 @@ type AppInstance interface {
 	Pinner
 
 	// Validates a request and performs any needed setup.
-	// This åis a chance for an app to perform operations such refreshing an auth token.
+	// This is a chance for an app to perform operations such refreshing an auth token.
 	// Following this call, ServeRequest() is called.
 	MakeReady(req Requester) error
 
@@ -73,9 +68,10 @@ type AppInstance interface {
 type Pin interface {
 	Pinner
 
+	// Context returns the task.Context associated with this Pin.
 	// Apps start a Pin as a child Context of amp.AppContext.Context or as a child of another Pin.
-	// This means an AppContext contains all its Pins and thus Close() will close all Pins (and child requests).
-	// This is used to know if a request is still being served and to close it if needed.
+	// This means an AppContext contains all its Pins, and Close() will close all Pins (and children).
+	// This can be used to determine if a request is still being served and to close it if needed.
 	Context() task.Context
 }
 
@@ -88,7 +84,7 @@ type TxMsg struct {
 	refCount   int32  // see AddRef() / ReleaseRef()
 }
 
-// ElementID is a multi-part LSM key: CellID / AttrID / SI
+// ElementID is a multi-part LSM key consisting of CellID / AttrID / ItemID
 type ElementID [3]tag.ID
 
 // TxOpID is TxOp atomic edit entry ID, functioning as a multi-part LSM key: CellID / AttrID / SI / EditID.

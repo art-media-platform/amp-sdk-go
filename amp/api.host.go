@@ -66,7 +66,7 @@ type Session interface {
 	AssetPublisher() media.Publisher
 
 	// Returns info about this user and session
-	LoginInfo() Login
+	Login() Login
 
 	// Sends a readied Msg to the client for handling.
 	// On exit, the given msg should not be referenced further.

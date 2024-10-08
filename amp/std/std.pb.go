@@ -718,354 +718,6 @@ func (x TRS_VisualScaleMode) String() string {
 	}
 	return strconv.Itoa(int(x))
 }
-func (this *Position) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Position)
-	if !ok {
-		that2, ok := that.(Position)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.CordType != that1.CordType {
-		return false
-	}
-	if this.Q != that1.Q {
-		return false
-	}
-	if this.R != that1.R {
-		return false
-	}
-	if this.S != that1.S {
-		return false
-	}
-	if this.ROU != that1.ROU {
-		return false
-	}
-	return true
-}
-func (this *FSInfo) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*FSInfo)
-	if !ok {
-		that2, ok := that.(FSInfo)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Mode != that1.Mode {
-		return false
-	}
-	if this.IsDir != that1.IsDir {
-		return false
-	}
-	if this.Name != that1.Name {
-		return false
-	}
-	if this.NameLen != that1.NameLen {
-		return false
-	}
-	if this.ContentType != that1.ContentType {
-		return false
-	}
-	if this.CreatedAt != that1.CreatedAt {
-		return false
-	}
-	if this.ModifiedAt != that1.ModifiedAt {
-		return false
-	}
-	if this.ByteSize != that1.ByteSize {
-		return false
-	}
-	return true
-}
-func (this *Placement) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*Placement)
-	if !ok {
-		that2, ok := that.(Placement)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Pos0 != that1.Pos0 {
-		return false
-	}
-	if this.Pos1 != that1.Pos1 {
-		return false
-	}
-	if this.Pos2 != that1.Pos2 {
-		return false
-	}
-	if this.Scale0 != that1.Scale0 {
-		return false
-	}
-	if this.Scale1 != that1.Scale1 {
-		return false
-	}
-	if this.Scale2 != that1.Scale2 {
-		return false
-	}
-	if this.EulerX != that1.EulerX {
-		return false
-	}
-	if this.EulerY != that1.EulerY {
-		return false
-	}
-	if this.EulerZ != that1.EulerZ {
-		return false
-	}
-	if this.Metric != that1.Metric {
-		return false
-	}
-	return true
-}
-func (this *BadgeDigit) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*BadgeDigit)
-	if !ok {
-		that2, ok := that.(BadgeDigit)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Amplitude != that1.Amplitude {
-		return false
-	}
-	if this.AmplitudeModulus != that1.AmplitudeModulus {
-		return false
-	}
-	return true
-}
-func (this *TRS) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*TRS)
-	if !ok {
-		that2, ok := that.(TRS)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.X1 != that1.X1 {
-		return false
-	}
-	if this.X2 != that1.X2 {
-		return false
-	}
-	if this.X3 != that1.X3 {
-		return false
-	}
-	if this.ScaleMode != that1.ScaleMode {
-		return false
-	}
-	if this.Scale1 != that1.Scale1 {
-		return false
-	}
-	if this.Scale2 != that1.Scale2 {
-		return false
-	}
-	if this.Scale3 != that1.Scale3 {
-		return false
-	}
-	if this.Rotate1 != that1.Rotate1 {
-		return false
-	}
-	if this.Rotate2 != that1.Rotate2 {
-		return false
-	}
-	if this.Rotate3 != that1.Rotate3 {
-		return false
-	}
-	return true
-}
-func (this *DataSegment) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*DataSegment)
-	if !ok {
-		that2, ok := that.(DataSegment)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.ByteOfs != that1.ByteOfs {
-		return false
-	}
-	if this.ByteSz != that1.ByteSz {
-		return false
-	}
-	if !bytes.Equal(this.InlineData, that1.InlineData) {
-		return false
-	}
-	if this.StreamURI != that1.StreamURI {
-		return false
-	}
-	if this.BlobID != that1.BlobID {
-		return false
-	}
-	return true
-}
-func (this *Position) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 9)
-	s = append(s, "&std.Position{")
-	s = append(s, "CordType: "+fmt.Sprintf("%#v", this.CordType)+",\n")
-	s = append(s, "Q: "+fmt.Sprintf("%#v", this.Q)+",\n")
-	s = append(s, "R: "+fmt.Sprintf("%#v", this.R)+",\n")
-	s = append(s, "S: "+fmt.Sprintf("%#v", this.S)+",\n")
-	s = append(s, "ROU: "+fmt.Sprintf("%#v", this.ROU)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *FSInfo) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 12)
-	s = append(s, "&std.FSInfo{")
-	s = append(s, "Mode: "+fmt.Sprintf("%#v", this.Mode)+",\n")
-	s = append(s, "IsDir: "+fmt.Sprintf("%#v", this.IsDir)+",\n")
-	s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
-	s = append(s, "NameLen: "+fmt.Sprintf("%#v", this.NameLen)+",\n")
-	s = append(s, "ContentType: "+fmt.Sprintf("%#v", this.ContentType)+",\n")
-	s = append(s, "CreatedAt: "+fmt.Sprintf("%#v", this.CreatedAt)+",\n")
-	s = append(s, "ModifiedAt: "+fmt.Sprintf("%#v", this.ModifiedAt)+",\n")
-	s = append(s, "ByteSize: "+fmt.Sprintf("%#v", this.ByteSize)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *Placement) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 14)
-	s = append(s, "&std.Placement{")
-	s = append(s, "Pos0: "+fmt.Sprintf("%#v", this.Pos0)+",\n")
-	s = append(s, "Pos1: "+fmt.Sprintf("%#v", this.Pos1)+",\n")
-	s = append(s, "Pos2: "+fmt.Sprintf("%#v", this.Pos2)+",\n")
-	s = append(s, "Scale0: "+fmt.Sprintf("%#v", this.Scale0)+",\n")
-	s = append(s, "Scale1: "+fmt.Sprintf("%#v", this.Scale1)+",\n")
-	s = append(s, "Scale2: "+fmt.Sprintf("%#v", this.Scale2)+",\n")
-	s = append(s, "EulerX: "+fmt.Sprintf("%#v", this.EulerX)+",\n")
-	s = append(s, "EulerY: "+fmt.Sprintf("%#v", this.EulerY)+",\n")
-	s = append(s, "EulerZ: "+fmt.Sprintf("%#v", this.EulerZ)+",\n")
-	s = append(s, "Metric: "+fmt.Sprintf("%#v", this.Metric)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *BadgeDigit) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 6)
-	s = append(s, "&std.BadgeDigit{")
-	s = append(s, "Amplitude: "+fmt.Sprintf("%#v", this.Amplitude)+",\n")
-	s = append(s, "AmplitudeModulus: "+fmt.Sprintf("%#v", this.AmplitudeModulus)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *TRS) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 14)
-	s = append(s, "&std.TRS{")
-	s = append(s, "X1: "+fmt.Sprintf("%#v", this.X1)+",\n")
-	s = append(s, "X2: "+fmt.Sprintf("%#v", this.X2)+",\n")
-	s = append(s, "X3: "+fmt.Sprintf("%#v", this.X3)+",\n")
-	s = append(s, "ScaleMode: "+fmt.Sprintf("%#v", this.ScaleMode)+",\n")
-	s = append(s, "Scale1: "+fmt.Sprintf("%#v", this.Scale1)+",\n")
-	s = append(s, "Scale2: "+fmt.Sprintf("%#v", this.Scale2)+",\n")
-	s = append(s, "Scale3: "+fmt.Sprintf("%#v", this.Scale3)+",\n")
-	s = append(s, "Rotate1: "+fmt.Sprintf("%#v", this.Rotate1)+",\n")
-	s = append(s, "Rotate2: "+fmt.Sprintf("%#v", this.Rotate2)+",\n")
-	s = append(s, "Rotate3: "+fmt.Sprintf("%#v", this.Rotate3)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *DataSegment) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 9)
-	s = append(s, "&std.DataSegment{")
-	s = append(s, "ByteOfs: "+fmt.Sprintf("%#v", this.ByteOfs)+",\n")
-	s = append(s, "ByteSz: "+fmt.Sprintf("%#v", this.ByteSz)+",\n")
-	s = append(s, "InlineData: "+fmt.Sprintf("%#v", this.InlineData)+",\n")
-	s = append(s, "StreamURI: "+fmt.Sprintf("%#v", this.StreamURI)+",\n")
-	s = append(s, "BlobID: "+fmt.Sprintf("%#v", this.BlobID)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func valueToGoStringStd(v interface{}, typ string) string {
-	rv := reflect.ValueOf(v)
-	if rv.IsNil() {
-		return "nil"
-	}
-	pv := reflect.Indirect(rv).Interface()
-	return fmt.Sprintf("func(v %v) *%v { return &v } ( %#v )", typ, typ, pv)
-}
 func (m *Position) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1471,6 +1123,354 @@ func encodeVarintStd(dAtA []byte, offset int, v uint64) int {
 	}
 	dAtA[offset] = uint8(v)
 	return base
+}
+func (this *Position) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*Position)
+	if !ok {
+		that2, ok := that.(Position)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.CordType != that1.CordType {
+		return false
+	}
+	if this.Q != that1.Q {
+		return false
+	}
+	if this.R != that1.R {
+		return false
+	}
+	if this.S != that1.S {
+		return false
+	}
+	if this.ROU != that1.ROU {
+		return false
+	}
+	return true
+}
+func (this *FSInfo) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*FSInfo)
+	if !ok {
+		that2, ok := that.(FSInfo)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Mode != that1.Mode {
+		return false
+	}
+	if this.IsDir != that1.IsDir {
+		return false
+	}
+	if this.Name != that1.Name {
+		return false
+	}
+	if this.NameLen != that1.NameLen {
+		return false
+	}
+	if this.ContentType != that1.ContentType {
+		return false
+	}
+	if this.CreatedAt != that1.CreatedAt {
+		return false
+	}
+	if this.ModifiedAt != that1.ModifiedAt {
+		return false
+	}
+	if this.ByteSize != that1.ByteSize {
+		return false
+	}
+	return true
+}
+func (this *Placement) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*Placement)
+	if !ok {
+		that2, ok := that.(Placement)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Pos0 != that1.Pos0 {
+		return false
+	}
+	if this.Pos1 != that1.Pos1 {
+		return false
+	}
+	if this.Pos2 != that1.Pos2 {
+		return false
+	}
+	if this.Scale0 != that1.Scale0 {
+		return false
+	}
+	if this.Scale1 != that1.Scale1 {
+		return false
+	}
+	if this.Scale2 != that1.Scale2 {
+		return false
+	}
+	if this.EulerX != that1.EulerX {
+		return false
+	}
+	if this.EulerY != that1.EulerY {
+		return false
+	}
+	if this.EulerZ != that1.EulerZ {
+		return false
+	}
+	if this.Metric != that1.Metric {
+		return false
+	}
+	return true
+}
+func (this *BadgeDigit) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*BadgeDigit)
+	if !ok {
+		that2, ok := that.(BadgeDigit)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Amplitude != that1.Amplitude {
+		return false
+	}
+	if this.AmplitudeModulus != that1.AmplitudeModulus {
+		return false
+	}
+	return true
+}
+func (this *TRS) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*TRS)
+	if !ok {
+		that2, ok := that.(TRS)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.X1 != that1.X1 {
+		return false
+	}
+	if this.X2 != that1.X2 {
+		return false
+	}
+	if this.X3 != that1.X3 {
+		return false
+	}
+	if this.ScaleMode != that1.ScaleMode {
+		return false
+	}
+	if this.Scale1 != that1.Scale1 {
+		return false
+	}
+	if this.Scale2 != that1.Scale2 {
+		return false
+	}
+	if this.Scale3 != that1.Scale3 {
+		return false
+	}
+	if this.Rotate1 != that1.Rotate1 {
+		return false
+	}
+	if this.Rotate2 != that1.Rotate2 {
+		return false
+	}
+	if this.Rotate3 != that1.Rotate3 {
+		return false
+	}
+	return true
+}
+func (this *DataSegment) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*DataSegment)
+	if !ok {
+		that2, ok := that.(DataSegment)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.ByteOfs != that1.ByteOfs {
+		return false
+	}
+	if this.ByteSz != that1.ByteSz {
+		return false
+	}
+	if !bytes.Equal(this.InlineData, that1.InlineData) {
+		return false
+	}
+	if this.StreamURI != that1.StreamURI {
+		return false
+	}
+	if this.BlobID != that1.BlobID {
+		return false
+	}
+	return true
+}
+func (this *Position) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 9)
+	s = append(s, "&std.Position{")
+	s = append(s, "CordType: "+fmt.Sprintf("%#v", this.CordType)+",\n")
+	s = append(s, "Q: "+fmt.Sprintf("%#v", this.Q)+",\n")
+	s = append(s, "R: "+fmt.Sprintf("%#v", this.R)+",\n")
+	s = append(s, "S: "+fmt.Sprintf("%#v", this.S)+",\n")
+	s = append(s, "ROU: "+fmt.Sprintf("%#v", this.ROU)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *FSInfo) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 12)
+	s = append(s, "&std.FSInfo{")
+	s = append(s, "Mode: "+fmt.Sprintf("%#v", this.Mode)+",\n")
+	s = append(s, "IsDir: "+fmt.Sprintf("%#v", this.IsDir)+",\n")
+	s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
+	s = append(s, "NameLen: "+fmt.Sprintf("%#v", this.NameLen)+",\n")
+	s = append(s, "ContentType: "+fmt.Sprintf("%#v", this.ContentType)+",\n")
+	s = append(s, "CreatedAt: "+fmt.Sprintf("%#v", this.CreatedAt)+",\n")
+	s = append(s, "ModifiedAt: "+fmt.Sprintf("%#v", this.ModifiedAt)+",\n")
+	s = append(s, "ByteSize: "+fmt.Sprintf("%#v", this.ByteSize)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *Placement) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 14)
+	s = append(s, "&std.Placement{")
+	s = append(s, "Pos0: "+fmt.Sprintf("%#v", this.Pos0)+",\n")
+	s = append(s, "Pos1: "+fmt.Sprintf("%#v", this.Pos1)+",\n")
+	s = append(s, "Pos2: "+fmt.Sprintf("%#v", this.Pos2)+",\n")
+	s = append(s, "Scale0: "+fmt.Sprintf("%#v", this.Scale0)+",\n")
+	s = append(s, "Scale1: "+fmt.Sprintf("%#v", this.Scale1)+",\n")
+	s = append(s, "Scale2: "+fmt.Sprintf("%#v", this.Scale2)+",\n")
+	s = append(s, "EulerX: "+fmt.Sprintf("%#v", this.EulerX)+",\n")
+	s = append(s, "EulerY: "+fmt.Sprintf("%#v", this.EulerY)+",\n")
+	s = append(s, "EulerZ: "+fmt.Sprintf("%#v", this.EulerZ)+",\n")
+	s = append(s, "Metric: "+fmt.Sprintf("%#v", this.Metric)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *BadgeDigit) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&std.BadgeDigit{")
+	s = append(s, "Amplitude: "+fmt.Sprintf("%#v", this.Amplitude)+",\n")
+	s = append(s, "AmplitudeModulus: "+fmt.Sprintf("%#v", this.AmplitudeModulus)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *TRS) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 14)
+	s = append(s, "&std.TRS{")
+	s = append(s, "X1: "+fmt.Sprintf("%#v", this.X1)+",\n")
+	s = append(s, "X2: "+fmt.Sprintf("%#v", this.X2)+",\n")
+	s = append(s, "X3: "+fmt.Sprintf("%#v", this.X3)+",\n")
+	s = append(s, "ScaleMode: "+fmt.Sprintf("%#v", this.ScaleMode)+",\n")
+	s = append(s, "Scale1: "+fmt.Sprintf("%#v", this.Scale1)+",\n")
+	s = append(s, "Scale2: "+fmt.Sprintf("%#v", this.Scale2)+",\n")
+	s = append(s, "Scale3: "+fmt.Sprintf("%#v", this.Scale3)+",\n")
+	s = append(s, "Rotate1: "+fmt.Sprintf("%#v", this.Rotate1)+",\n")
+	s = append(s, "Rotate2: "+fmt.Sprintf("%#v", this.Rotate2)+",\n")
+	s = append(s, "Rotate3: "+fmt.Sprintf("%#v", this.Rotate3)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *DataSegment) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 9)
+	s = append(s, "&std.DataSegment{")
+	s = append(s, "ByteOfs: "+fmt.Sprintf("%#v", this.ByteOfs)+",\n")
+	s = append(s, "ByteSz: "+fmt.Sprintf("%#v", this.ByteSz)+",\n")
+	s = append(s, "InlineData: "+fmt.Sprintf("%#v", this.InlineData)+",\n")
+	s = append(s, "StreamURI: "+fmt.Sprintf("%#v", this.StreamURI)+",\n")
+	s = append(s, "BlobID: "+fmt.Sprintf("%#v", this.BlobID)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func valueToGoStringStd(v interface{}, typ string) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("func(v %v) *%v { return &v } ( %#v )", typ, typ, pv)
 }
 func (m *Position) Size() (n int) {
 	if m == nil {

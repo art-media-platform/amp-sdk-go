@@ -89,10 +89,10 @@ type ElementID [3]tag.ID
 
 // TxOpID is TxOp atomic edit entry ID, functioning as a multi-part LSM key: CellID / AttrID / SI / EditID.
 type TxOpID struct {
-	CellID tag.ID // target cell ID
-	AttrID tag.ID // attribute specification ID that expresses or implies operation
-	ItemID tag.ID // user-defined value / index / tag ID
-	EditID tag.ID // references the previous revision -- see tag.ForkEdit()
+	CellID tag.ID // target cell or space ID
+	AttrID tag.ID // references an attribute or protocol specification
+	ItemID tag.ID // user-defined UID, SKU, inline value, or element ID
+	EditID tag.ID // references previous revision(s); see tag.ForkEdit()
 }
 
 // TxOp is an atomic operation and is a unit of change (or message).

@@ -28,13 +28,12 @@ func TestTxSerialize(t *testing.T) {
 				tag.ID{7337, 3773, 7337},
 			},
 		}
-		
+
 		tx.MarshalOp(&op, &Login{
-			UserLabel: "lil turkey",
-			UserUID: &Tag{
-				Text: "cmdr5",
+			UserID: &Tag{
+				UID: "cmdr5",
 			},
-			HostAddr: "batwing ave",
+			HostAddress: "batwing ave",
 		})
 		tx.DataStore = append(tx.DataStore, []byte("bytes not used but stored -- not normal!")...)
 
@@ -46,10 +45,10 @@ func TestTxSerialize(t *testing.T) {
 			data = append(data, data...)
 		}
 		tx.MarshalOp(&op, &Login{
-			UserUID: &Tag{
-				Text: "anonymous",
+			UserID: &Tag{
+				UID: "anonymous",
 			},
-			HostAddr: string(data),
+			HostAddress: "http://localhost:8080",
 		})
 
 		for i := 0; i < 5500; i++ {

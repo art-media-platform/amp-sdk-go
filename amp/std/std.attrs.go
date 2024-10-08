@@ -25,12 +25,20 @@ var (
 	CellCollection = TextTag.With("collection").ID
 	CellAuthor     = TextTag.With("author").ID
 
-	CellTag           = CellProperty.With("Tag")
-	CellExternalLinks = CellTag.With("links").ID
-	CellGlyphs        = CellTag.With("glyphs").ID
-	CellMedia         = CellTag.With("content.media").ID
-	CellCover         = CellTag.With("content.cover").ID
-	CellVis           = CellTag.With("content.vis").ID
+	CellPropertyTagID = CellProperty.With("TagID")
+	OrderByPlayID     = CellPropertyTagID.With("order-by.play").ID
+	OrderByTimeID     = CellPropertyTagID.With("order-by.time").ID
+	OrderByGeoID      = CellPropertyTagID.With("order-by.geo").ID
+	OrderByAreaID     = CellPropertyTagID.With("order-by.area").ID
+
+	CellTags   = CellProperty.With("Tags")
+	CellLinks  = CellTags.With("links").ID
+	CellGlyphs = CellTags.With("glyphs").ID
+
+	CellTag   = CellProperty.With("Tag")
+	CellMedia = CellTag.With("content.media").ID
+	CellCover = CellTag.With("content.cover").ID
+	CellVis   = CellTag.With("content.vis").ID
 
 	CellFileInfo = CellProperty.With("FileInfo").ID
 )

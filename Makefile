@@ -18,14 +18,18 @@ help:
 	@echo
 	@awk '/^##.*$$/,/[a-zA-Z_-]+:/' $(MAKEFILE_LIST) | awk '!(NR%2){print $$0p}{p=$$0}' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-32s\033[0m %s\n", $$1, $$2}' | sort
 
-	
+
 .PHONY: tools generate
 
 
 ## install protobufs tools needed to turn a .proto file into Go and C# files
 tools-proto:
 	go install github.com/gogo/protobuf/protoc-gen-gogoslick
-	go get -d  github.com/gogo/protobuf/proto
+	go install github.com/gogo/protobuf/proto
+	go get     github.com/gogo/protobuf/jsonpb
+	go get     github.com/gogo/protobuf/protoc-gen-gogo
+	go get     github.com/gogo/protobuf/gogoproto
+
 
 
 ## generate .cs and .go from .proto files
@@ -36,13 +40,13 @@ generate:
 	    --csharp_out "${AMP_UNITY_PATH}/amp.runtime/" \
 	    --proto_path=. \
 		amp/amp.proto
-		
+
 	protoc \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.std/" \
 	    --proto_path=. \
 		amp/std/std.proto
-		
+
 	protoc \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.runtime.crates/" \

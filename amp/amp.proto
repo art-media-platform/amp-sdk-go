@@ -3,7 +3,8 @@ syntax = "proto3";
 // package amp is an implementation-independent API for a pluggable client-server UI/UX system,
 // featuring support and integration for files, media, and communication.
 //
-// Welcome to Art Media Platform (c) 2023 / AMP: a runtime model and specification to securely share and experience artist's media under their own agreed terms and permissions.
+// Welcome to art.media.platform (c) 2023 ("amp"): a runtime model and specification to securely share and experience digital media under their own agreed terms and permissions,
+//   something we can all agree on.
 package amp;
 
 // Tells protoc that a .proto file importing amp.proto what package import to use within Go.
@@ -83,7 +84,7 @@ message TxEnvelope {
     // communicates request status / completion.
     OpStatus            Status = 2;
 
-    // The number of TxOps in this TxMsg.
+    // The number of TxOps in this TxEnvelope
     uint64              OpCount = 4;
 
     // A universally unique tag assigned when this Tx was created.
@@ -98,11 +99,17 @@ message TxEnvelope {
     fixed64             ContextID_1 = 11;
     fixed64             ContextID_2 = 12;
 
-    Tag                 FromID    = 14; // any amp IO
-    Tag                 ToID      = 15; // any amp IO
-    Tag                 Tags      = 16; // any amp tag set
-    Tag                 ContextCA = 17; // context certificate authority
+    // sender of this TxEnvelope
+    Tag                 From = 14;
 
+    // recipient of this TxEnvelope
+    Tag                 To = 15;
+
+    // authority / trust snapshot
+    Tag                 Epoch = 16;
+
+    // headers / metadata / context
+    Tags                Tags = 17;
 
 }
 
@@ -130,23 +137,18 @@ enum OpStatus {
 
     // From the client to host, this signals to close / cancel the op associated with ReqID.
     // From the host to client, this signals that the given request ID has been closed / discarded.
-    OpStatus_Closed     = 37;
+    OpStatus_Closed     = 7;
 }
 
 // Login -- STEP 1: client -> host
 message Login {
 
-    // Identifies who is logging in -- typically a persistent username across multiple devices.
-    string             UserLabel = 1; // describes user identity
-    Tag                UserUID   = 2; // persistent user ID
+    Tag                UserID   = 1;
+    Tag                DeviceID = 5;
 
-    // Which device is logging in
-    string             DeviceUID   = 5;
-    string             DeviceLabel = 6;
-
-    // HostAddr is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
-    // arthost uses this to as the host name when serving URLs for the client to consume.
-    string             HostAddr = 8;
+    // HostAddress is network address of the server known to the client (e.g. IP address, localhost, domain name, etc)
+    // amp.Host uses this to as the host name when serving URLs for the client to consume.
+    string             HostAddress = 8;
 
     // Tags is an unordered list of string literals tokens with predefined meanings, separated by spaces, periods, or commas.
     string             Tags = 9;
@@ -173,9 +175,8 @@ message LoginCheckpoint {
     string              RefreshToken = 3;
     int64               Expiry       = 4; // Unix UTC
 
-    string              Tags         = 10;
-    string              UserUID      = 11;
-    string              URI          = 12;
+    string              UserID      = 11;
+    string              URI         = 12;
 }
 
 
@@ -201,20 +202,16 @@ enum StateSync {
 message PinRequest {
 
     // Specifies a target URL or tag / cell ID to be pinned with the above available mint templates available.
-    Tag          PinTarget = 2;
+    Tag            PinTarget = 2;
 
-    // Attributes to be pinned (synced) -- if nil, all attrs are pinned
-    repeated Tag PinAttrs  = 4;
+    // Attributes to be synchronized -- if nil, all attrs are pinned
+    repeated Tag   PinAttrs  = 4;
 
     // Options for this request.
-    StateSync    StateSync   = 6;
+    StateSync      StateSync = 6;
 
-    // // If set, PinTarget.URL is an external URL redirected for internal handling -- e.g. oauth request (host to client) or an oauth response (client to host).
-    // bool         ExternalURL = 10;
-
-    // Delimited list of "semi-ordered" tags used to filter results
-    // ((:/\.\|)*{(-_\|\w)+})+
-    //string              TagQueryExpr = 16;
+    // future proofing
+    Tag            Tags = 17;
 
 }
 
@@ -241,55 +238,40 @@ enum UrlScheme {
     UrlScheme_File            = 4;  // "[file://]{hfs-pathname}"
     UrlScheme_Amp             = 7;  // "[amp:[//app-alias/]]{cmd}[/{uri}]?{query}"
 
-    UrlScheme_Ipfs            = 17; // "[ipfs://]{hash}"
-    UrlScheme_Ipns            = 18; // "[ipns://]{hash}"
-    UrlScheme_Magnet          = 19; // "[magnet:]{query}"
-    UrlScheme_Git             = 20; // "[git://]{hostname}/{repo}[/{path}]"
+    UrlScheme_Git             = 16; // "[git://]{hostname}/{repo}[/{path}]"
 }
 
-
-
-// TagUID is a minimal wrapper for a tag.ID
-message TagUID {
-    int64   ID_0 = 2; // UTC << 16 -- see tag.ID
-    fixed64 ID_1 = 3;
-    fixed64 ID_2 = 4;
-
-    string  UID  = 6; // optional tag.Spec or other UID
-}
-
-
-
-// Tag is a multi-use workhorse. All fields are optional and whose meaning is contextual.
-//
-// Often used to reference an asset, a Link can reference any resource, a show, project, episode, or XR beacon.
-// The tagging naming convention describes a semi-ordered list of UTF tags.
-//      As tags first appear when going from left to right in the list, they are considered "more significant" or "higher priority" than tags that appear later.
-//      It is up to amp-search-dev-tag-specification to order search results based on tag filters (case sensitive, time ranges, or any UTF8 enum identifier)
-//      By convention, tags are case sensitive by default, however there are many filter presets -- This is how people "type or speak search"
-//      "Two tag rule" -- if you can think of two or more other tags in an order ranking, then do that instead.
+// Tag is a multi-purpose, human-readable, intuitive, phonetically / hands-free, friendly cryptographically anonymous tagging and system actor "tag" or "badge" identifier.
+// Typically, a "Tags" string is parsed and hashed for safe and high performance data access.
+// SHA1 or any compatible 24 byte UTF8 literal hash DFA.
 message Tag {
+    int64   ID_0 = 2; // tag.ID[0]
+    fixed64 ID_1 = 3; // tag.ID[1]
+    fixed64 ID_2 = 4; // tag.ID[2]
 
-    int64   TagID_0       = 2; // optional tag ID or key or coordinate lookup
-    fixed64 TagID_1       = 3;
-    fixed64 TagID_2       = 4;
-    string  UID           = 6; // optional tag.Spec or other UID
+    string  ContentType = 10; // e.g. "text/html", "image/png", "image/*", "amp.vis/content.*"
+    string  UID         = 12; // UID, SKU, or other literal
+    string  Text        = 13; // tag.Spec, custom content, or expression
+    string  URL         = 15; // IEEE 1738 URL: schema://hostname.com/path/query
 
-    string  Text          = 7; // optional utf8 content / title / description
-    double  Ordering      = 9; // optional ordering
+    // Metric specifies the metric system used for the size metric values
+    Metric  Metric      = 20;
 
-    string  URL          = 13; // "http://amp-systems.com", "https://...", "amp://...", "ipfs://...", "file://...", "data:..."
-    string  ContentType  = 14; // "text/html", "image/png", "image/*", "amp.vis/content.*"
+    // SizeX, SizeY, SizeZ specify the size of the object in a given metric system
+    int64   SizeX       = 21;
+    int64   SizeY       = 22;
+    int64   SizeZ       = 23;
 
-    // uint32  LanguageCode = 18; // ISO 639 (big endian)  -- e.g. 'en', 'fr', 'de'
-    // uint32  RegionCode   = 19; // ISO 3166 (big endian) -- e.g. 'us', 'ca', 'gb'
+}
 
-    Metric  Metric       = 26; // specifies the metric system used for the size metric values
-    uint64  SizeX        = 27;
-    uint64  SizeY        = 28;
-    uint64  SizeZ        = 29;
 
-    repeated Tag Tags    = 32;
+// Tags is a multi-purpose, automatically serializable and customable tree.
+//
+// All fields are optional and whose meaning is contextual.
+//
+message Tags {
+    Tag           ID      = 1; // optional Tag
+    repeated Tags SubTags = 8;
 }
 
 
@@ -301,16 +283,25 @@ enum Metric {
     Metric_OrthoPixel                    = 1;
     Metric_OrthoMeter                    = 2;
     Metric_OrthoMillimeter               = 3;
-    Metric_OrthoNanometer                = 4;
+    Metric_OrthoPlank                    = 4;
     Metric_HexGridMillimeter             = 5;
     Metric_TrapezoDodecahedronMillimeter = 6;
 }
 
 
-
-
-
-
+/*
+enum MetaFlags {
+    MetaFlags_None             = 0;
+    MetaFlags_Asset            = 0x01;  // Unrecognized URL scheme
+    MetaFlags_Texture          = 0x02;  // Unrecognized URL scheme
+    MetaFlags_TwoD             = 0x04;  // "[http[s]://]{hostname}[:{port}]/{query}"
+    MetaFlags_ThreeD           = 0x08;  // "[http[s]://]{hostname}[:{port}]/{query}"
+    MetaFlags_Artwork          = 0x10;  // "[http[s]://]{hostname}[:{port}]/{query}"
+    MetaFlags_Badge            = 0x20;  // Unrecognized URL scheme
+    MetaFlags_File             = 0x40;  // "[data:]{mime-type}[[;base64],{data-encoding}]"
+    MetaFlags_Protocol         = 0x80;  // "[file://]{hfs-pathname}"
+}
+*/
 
 
 // CryptoKitID identifies an encryption suite that implements ski.CryptoKit
@@ -378,7 +369,6 @@ enum ErrCode {
     ErrCode_InvalidURI                  = 5023;
     ErrCode_BadValue                    = 5024;
     ErrCode_InvalidTag                  = 5025;
-    ErrCode_InvalidTagSpec              = 5026;
     ErrCode_AttrNotFound                = 5029;
     ErrCode_NothingToCommit             = 5030;
     ErrCode_CommitFailed                = 5031;

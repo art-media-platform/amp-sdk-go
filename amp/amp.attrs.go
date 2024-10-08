@@ -60,25 +60,6 @@ func ErrorToValue(v error) tag.Value {
 	return artErr
 }
 
-func (v *TagUID) MarshalToStore(in []byte) (out []byte, err error) {
-	return MarshalPbToStore(v, in)
-}
-
-func (v *TagUID) TagSpec() tag.Spec {
-	return AttrSpec.With("TagUID")
-}
-
-func (v *TagUID) New() tag.Value {
-	return &TagUID{}
-}
-
-func (v *TagUID) SetFromTime(t time.Time) {
-	tag := tag.FromTime(t, false)
-	v.ID_0 = int64(tag[0])
-	v.ID_1 = tag[1]
-	v.ID_2 = tag[2]
-}
-
 func (v *Tag) MarshalToStore(in []byte) (out []byte, err error) {
 	return MarshalPbToStore(v, in)
 }
@@ -91,18 +72,66 @@ func (v *Tag) New() tag.Value {
 	return &Tag{}
 }
 
-func (v *Tag) TagID() tag.ID {
+func (v *Tag) SetFromTime(t time.Time) {
+	tag := tag.FromTime(t, false)
+	v.ID_0 = int64(tag[0])
+	v.ID_1 = tag[1]
+	v.ID_2 = tag[2]
+}
+
+func (v *Tags) MarshalToStore(in []byte) (out []byte, err error) {
+	return MarshalPbToStore(v, in)
+}
+
+func (v *Tags) TagSpec() tag.Spec {
+	return AttrSpec.With("Tags")
+}
+
+func (v *Tags) New() tag.Value {
+	return &Tags{}
+}
+
+func (v *Tag) SetID(tagID tag.ID) {
+	v.ID_0 = int64(tagID[0])
+	v.ID_1 = tagID[1]
+	v.ID_2 = tagID[2]
+}
+
+func (v *Tag) IsNil() bool {
+	return v.URL != "" && v.UID == "" && v.Text == "" && v.ID_0 == 0 && v.ID_1 == 0 && v.ID_2 == 0
+}
+
+func (v *Tag) AsID() tag.ID {
+	if v.ID_0 == 0 && v.ID_1 == 0 && v.ID_2 == 0 {
+		if v.UID != "" {
+			v.SetID(tag.FromLiteral([]byte(v.UID)))
+		} else if v.Text != "" {
+			v.SetID(tag.FromString(v.Text))
+		}
+	}
 	return [3]uint64{
-		uint64(v.TagID_0),
-		v.TagID_1,
-		v.TagID_2,
+		uint64(v.ID_0),
+		v.ID_1,
+		v.ID_2,
 	}
 }
 
-func (v *Tag) SetTagID(tagID tag.ID) {
-	v.TagID_0 = int64(tagID[0])
-	v.TagID_1 = tagID[1]
-	v.TagID_2 = tagID[2]
+func (v *Tag) AsLiteral() string {
+	if v.UID != "" {
+		return v.UID
+	}
+	if v.Text != "" {
+		return v.Text
+	}
+	if v.ID_0 == 0 && v.ID_1 == 0 && v.ID_2 == 0 {
+		return ""
+	}
+	var tagID tag.ID
+	tagID[0] = uint64(v.ID_0)
+	tagID[1] = v.ID_1
+	tagID[2] = v.ID_2
+	return tagID.Base32()
+
 }
 
 func (v *Err) MarshalToStore(in []byte) (out []byte, err error) {
@@ -189,25 +218,12 @@ func (v *PinRequest) New() tag.Value {
 	return &PinRequest{}
 }
 
-func (v *PinRequest) SetTargetID(id tag.ID) {
-	if v.PinTarget == nil {
-		v.PinTarget = &Tag{}
-	}
-	v.PinTarget.TagID_0 = int64(id[0])
-	v.PinTarget.TagID_1 = id[1]
-	v.PinTarget.TagID_2 = id[2]
-}
-
 func (v *PinRequest) TargetID() tag.ID {
 	target := v.PinTarget
 	if target == nil {
 		return tag.ID{}
 	}
-	return [3]uint64{
-		uint64(target.TagID_0),
-		target.TagID_1,
-		target.TagID_2,
-	}
+	return target.AsID()
 }
 
 /*

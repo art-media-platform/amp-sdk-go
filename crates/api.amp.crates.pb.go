@@ -303,10 +303,11 @@ type AssetEntry struct {
 	// Comma delimited and whitespace-trimmed list of of tags
 	Tags string `protobuf:"bytes,31,opt,name=Tags,proto3" json:"Tags,omitempty"`
 	// A short phrase or fragment describing this asset, starting with an article where appropriate. e.g.:
-	//      "A typical 6 crew member fire truck"
-	//      "A leading U.S. naval ship-based helicopter"
-	//      "The Texas capital building located in Austin"
-	//      "An animated scared-geometry inspired flat seal"
+	//
+	//	"A typical 6 crew member fire truck"
+	//	"A leading U.S. naval ship-based helicopter"
+	//	"The Texas capital building located in Austin"
+	//	"An animated scared-geometry inspired flat seal"
 	ShortDesc string `protobuf:"bytes,32,opt,name=ShortDesc,proto3" json:"ShortDesc,omitempty"`
 }
 
@@ -509,11 +510,12 @@ type CrateInfo struct {
 	// This URI string can only contains chars in [A-Za-z0-9_.-] (other than the separating '/' char).
 	// PublisherID uniquely identifies the author/owner/publisher of this crate (and potentially other crates).
 	// CrateID uniquely identifies this crate for the given publisher and all subsequent revisions.
-	//    "plan-systems.org/plan.app.ui"
-	//    "plan-systems.org/about-plan-systems"
-	//    "themushroom.farm/land"
-	//    "themushroom.farm/mycology-201"
-	//    "the-smiths.family/123-Maple"
+	//
+	//	"plan-systems.org/plan.app.ui"
+	//	"plan-systems.org/about-plan-systems"
+	//	"themushroom.farm/land"
+	//	"themushroom.farm/mycology-201"
+	//	"the-smiths.family/123-Maple"
 	CrateURI string `protobuf:"bytes,4,opt,name=CrateURI,proto3" json:"CrateURI,omitempty"`
 	// PublisherName is a human-readable of the author/owner/publisher of this crate and can change without repercussions (i.e. is purely optical).
 	PublisherName string `protobuf:"bytes,6,opt,name=PublisherName,proto3" json:"PublisherName,omitempty"`
@@ -693,8 +695,8 @@ func (m *CrateInfo) GetApproxSize() int64 {
 // It contains catalog and type info that PLAN loads at runtime to know what's inside binary asset bundles without having to load them.
 //
 // A reference to a PLAN asset is via a URI with the form:
-//   assetURI := "PublisherID/CrateID[@CrateBuildID]/{AssetEntry.Pathname}"
 //
+//	assetURI := "PublisherID/CrateID[@CrateBuildID]/{AssetEntry.Pathname}"
 type CrateManifest struct {
 	Info *CrateInfo `protobuf:"bytes,1,opt,name=Info,proto3" json:"Info,omitempty"`
 	// IconBundleName is the bundle name ID of the bundle containing icons (Sprites) used to represent the "real" crate assets.
@@ -762,7 +764,8 @@ type CratesSnapshot struct {
 	// This is a template URL where the symbols "CrateURI", "CrateBuildID", "PlatformID" are delimited with { }.
 	// The symbol "{.}" is to be replaced with a local pathname if the URL refers to a local file system pathname.
 	// e.g. "https://whatever.com/{CrateURI}__{CrateBuildID}.{PlatformID}.crate"
-	//      "{.}/{CrateURI}__{CrateBuildID}.{PlatformID}.crate"
+	//
+	//	"{.}/{CrateURI}__{CrateBuildID}.{PlatformID}.crate"
 	DownloadURL string       `protobuf:"bytes,3,opt,name=DownloadURL,proto3" json:"DownloadURL,omitempty"`
 	Crates      []*CrateInfo `protobuf:"bytes,10,rep,name=Crates,proto3" json:"Crates,omitempty"`
 }
@@ -919,489 +922,6 @@ func (x CrateSchema) String() string {
 		return s
 	}
 	return strconv.Itoa(int(x))
-}
-func (this *KVEntry) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*KVEntry)
-	if !ok {
-		that2, ok := that.(KVEntry)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Key != that1.Key {
-		return false
-	}
-	if this.Value != that1.Value {
-		return false
-	}
-	return true
-}
-func (this *AppVars) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*AppVars)
-	if !ok {
-		that2, ok := that.(AppVars)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.AppDomain != that1.AppDomain {
-		return false
-	}
-	if this.AppDesc != that1.AppDesc {
-		return false
-	}
-	if this.OrgHomeURL != that1.OrgHomeURL {
-		return false
-	}
-	if this.AppHomeURL != that1.AppHomeURL {
-		return false
-	}
-	if this.CratesSnapshotURL != that1.CratesSnapshotURL {
-		return false
-	}
-	if len(this.AppDownloadURLs) != len(that1.AppDownloadURLs) {
-		return false
-	}
-	for i := range this.AppDownloadURLs {
-		if this.AppDownloadURLs[i] != that1.AppDownloadURLs[i] {
-			return false
-		}
-	}
-	if len(this.URLSchemes) != len(that1.URLSchemes) {
-		return false
-	}
-	for i := range this.URLSchemes {
-		if this.URLSchemes[i] != that1.URLSchemes[i] {
-			return false
-		}
-	}
-	if len(this.Settings) != len(that1.Settings) {
-		return false
-	}
-	for i := range this.Settings {
-		if this.Settings[i] != that1.Settings[i] {
-			return false
-		}
-	}
-	if len(this.Links) != len(that1.Links) {
-		return false
-	}
-	for i := range this.Links {
-		if !this.Links[i].Equal(that1.Links[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *AssetEntry) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*AssetEntry)
-	if !ok {
-		that2, ok := that.(AssetEntry)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.Flags != that1.Flags {
-		return false
-	}
-	if this.EntryURI != that1.EntryURI {
-		return false
-	}
-	if this.Label != that1.Label {
-		return false
-	}
-	if this.CenterX != that1.CenterX {
-		return false
-	}
-	if this.CenterY != that1.CenterY {
-		return false
-	}
-	if this.CenterZ != that1.CenterZ {
-		return false
-	}
-	if this.ExtentsX != that1.ExtentsX {
-		return false
-	}
-	if this.ExtentsY != that1.ExtentsY {
-		return false
-	}
-	if this.ExtentsZ != that1.ExtentsZ {
-		return false
-	}
-	if this.LocalURI != that1.LocalURI {
-		return false
-	}
-	if this.Tags != that1.Tags {
-		return false
-	}
-	if this.ShortDesc != that1.ShortDesc {
-		return false
-	}
-	return true
-}
-func (this *BundleManifest) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*BundleManifest)
-	if !ok {
-		that2, ok := that.(BundleManifest)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.BundleTitle != that1.BundleTitle {
-		return false
-	}
-	if this.BundleNameID != that1.BundleNameID {
-		return false
-	}
-	if len(this.Assets) != len(that1.Assets) {
-		return false
-	}
-	for i := range this.Assets {
-		if !this.Assets[i].Equal(that1.Assets[i]) {
-			return false
-		}
-	}
-	if this.LoadAllHint != that1.LoadAllHint {
-		return false
-	}
-	return true
-}
-func (this *CrateInfo) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*CrateInfo)
-	if !ok {
-		that2, ok := that.(CrateInfo)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.CrateSchema != that1.CrateSchema {
-		return false
-	}
-	if this.InstID != that1.InstID {
-		return false
-	}
-	if this.CrateURI != that1.CrateURI {
-		return false
-	}
-	if this.PublisherName != that1.PublisherName {
-		return false
-	}
-	if this.CrateName != that1.CrateName {
-		return false
-	}
-	if this.ShortDesc != that1.ShortDesc {
-		return false
-	}
-	if this.Tags != that1.Tags {
-		return false
-	}
-	if this.TimeCreated != that1.TimeCreated {
-		return false
-	}
-	if this.TimeBuilt != that1.TimeBuilt {
-		return false
-	}
-	if this.MajorVersion != that1.MajorVersion {
-		return false
-	}
-	if this.MinorVersion != that1.MinorVersion {
-		return false
-	}
-	if this.BuildNumber != that1.BuildNumber {
-		return false
-	}
-	if this.BuildID != that1.BuildID {
-		return false
-	}
-	if this.HomeURL != that1.HomeURL {
-		return false
-	}
-	if this.URL != that1.URL {
-		return false
-	}
-	if this.ApproxSize != that1.ApproxSize {
-		return false
-	}
-	return true
-}
-func (this *CrateManifest) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*CrateManifest)
-	if !ok {
-		that2, ok := that.(CrateManifest)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if !this.Info.Equal(that1.Info) {
-		return false
-	}
-	if this.IconBundleName != that1.IconBundleName {
-		return false
-	}
-	if len(this.Bundles) != len(that1.Bundles) {
-		return false
-	}
-	for i := range this.Bundles {
-		if !this.Bundles[i].Equal(that1.Bundles[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *CratesSnapshot) Equal(that interface{}) bool {
-	if that == nil {
-		return this == nil
-	}
-
-	that1, ok := that.(*CratesSnapshot)
-	if !ok {
-		that2, ok := that.(CratesSnapshot)
-		if ok {
-			that1 = &that2
-		} else {
-			return false
-		}
-	}
-	if that1 == nil {
-		return this == nil
-	} else if this == nil {
-		return false
-	}
-	if this.RevID != that1.RevID {
-		return false
-	}
-	if this.DownloadURL != that1.DownloadURL {
-		return false
-	}
-	if len(this.Crates) != len(that1.Crates) {
-		return false
-	}
-	for i := range this.Crates {
-		if !this.Crates[i].Equal(that1.Crates[i]) {
-			return false
-		}
-	}
-	return true
-}
-func (this *KVEntry) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 6)
-	s = append(s, "&crates.KVEntry{")
-	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
-	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *AppVars) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 13)
-	s = append(s, "&crates.AppVars{")
-	s = append(s, "AppDomain: "+fmt.Sprintf("%#v", this.AppDomain)+",\n")
-	s = append(s, "AppDesc: "+fmt.Sprintf("%#v", this.AppDesc)+",\n")
-	s = append(s, "OrgHomeURL: "+fmt.Sprintf("%#v", this.OrgHomeURL)+",\n")
-	s = append(s, "AppHomeURL: "+fmt.Sprintf("%#v", this.AppHomeURL)+",\n")
-	s = append(s, "CratesSnapshotURL: "+fmt.Sprintf("%#v", this.CratesSnapshotURL)+",\n")
-	keysForAppDownloadURLs := make([]string, 0, len(this.AppDownloadURLs))
-	for k, _ := range this.AppDownloadURLs {
-		keysForAppDownloadURLs = append(keysForAppDownloadURLs, k)
-	}
-	github_com_gogo_protobuf_sortkeys.Strings(keysForAppDownloadURLs)
-	mapStringForAppDownloadURLs := "map[string]string{"
-	for _, k := range keysForAppDownloadURLs {
-		mapStringForAppDownloadURLs += fmt.Sprintf("%#v: %#v,", k, this.AppDownloadURLs[k])
-	}
-	mapStringForAppDownloadURLs += "}"
-	if this.AppDownloadURLs != nil {
-		s = append(s, "AppDownloadURLs: "+mapStringForAppDownloadURLs+",\n")
-	}
-	s = append(s, "URLSchemes: "+fmt.Sprintf("%#v", this.URLSchemes)+",\n")
-	keysForSettings := make([]string, 0, len(this.Settings))
-	for k, _ := range this.Settings {
-		keysForSettings = append(keysForSettings, k)
-	}
-	github_com_gogo_protobuf_sortkeys.Strings(keysForSettings)
-	mapStringForSettings := "map[string]string{"
-	for _, k := range keysForSettings {
-		mapStringForSettings += fmt.Sprintf("%#v: %#v,", k, this.Settings[k])
-	}
-	mapStringForSettings += "}"
-	if this.Settings != nil {
-		s = append(s, "Settings: "+mapStringForSettings+",\n")
-	}
-	if this.Links != nil {
-		s = append(s, "Links: "+fmt.Sprintf("%#v", this.Links)+",\n")
-	}
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *AssetEntry) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 16)
-	s = append(s, "&crates.AssetEntry{")
-	s = append(s, "Flags: "+fmt.Sprintf("%#v", this.Flags)+",\n")
-	s = append(s, "EntryURI: "+fmt.Sprintf("%#v", this.EntryURI)+",\n")
-	s = append(s, "Label: "+fmt.Sprintf("%#v", this.Label)+",\n")
-	s = append(s, "CenterX: "+fmt.Sprintf("%#v", this.CenterX)+",\n")
-	s = append(s, "CenterY: "+fmt.Sprintf("%#v", this.CenterY)+",\n")
-	s = append(s, "CenterZ: "+fmt.Sprintf("%#v", this.CenterZ)+",\n")
-	s = append(s, "ExtentsX: "+fmt.Sprintf("%#v", this.ExtentsX)+",\n")
-	s = append(s, "ExtentsY: "+fmt.Sprintf("%#v", this.ExtentsY)+",\n")
-	s = append(s, "ExtentsZ: "+fmt.Sprintf("%#v", this.ExtentsZ)+",\n")
-	s = append(s, "LocalURI: "+fmt.Sprintf("%#v", this.LocalURI)+",\n")
-	s = append(s, "Tags: "+fmt.Sprintf("%#v", this.Tags)+",\n")
-	s = append(s, "ShortDesc: "+fmt.Sprintf("%#v", this.ShortDesc)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *BundleManifest) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 8)
-	s = append(s, "&crates.BundleManifest{")
-	s = append(s, "BundleTitle: "+fmt.Sprintf("%#v", this.BundleTitle)+",\n")
-	s = append(s, "BundleNameID: "+fmt.Sprintf("%#v", this.BundleNameID)+",\n")
-	if this.Assets != nil {
-		s = append(s, "Assets: "+fmt.Sprintf("%#v", this.Assets)+",\n")
-	}
-	s = append(s, "LoadAllHint: "+fmt.Sprintf("%#v", this.LoadAllHint)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *CrateInfo) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 20)
-	s = append(s, "&crates.CrateInfo{")
-	s = append(s, "CrateSchema: "+fmt.Sprintf("%#v", this.CrateSchema)+",\n")
-	s = append(s, "InstID: "+fmt.Sprintf("%#v", this.InstID)+",\n")
-	s = append(s, "CrateURI: "+fmt.Sprintf("%#v", this.CrateURI)+",\n")
-	s = append(s, "PublisherName: "+fmt.Sprintf("%#v", this.PublisherName)+",\n")
-	s = append(s, "CrateName: "+fmt.Sprintf("%#v", this.CrateName)+",\n")
-	s = append(s, "ShortDesc: "+fmt.Sprintf("%#v", this.ShortDesc)+",\n")
-	s = append(s, "Tags: "+fmt.Sprintf("%#v", this.Tags)+",\n")
-	s = append(s, "TimeCreated: "+fmt.Sprintf("%#v", this.TimeCreated)+",\n")
-	s = append(s, "TimeBuilt: "+fmt.Sprintf("%#v", this.TimeBuilt)+",\n")
-	s = append(s, "MajorVersion: "+fmt.Sprintf("%#v", this.MajorVersion)+",\n")
-	s = append(s, "MinorVersion: "+fmt.Sprintf("%#v", this.MinorVersion)+",\n")
-	s = append(s, "BuildNumber: "+fmt.Sprintf("%#v", this.BuildNumber)+",\n")
-	s = append(s, "BuildID: "+fmt.Sprintf("%#v", this.BuildID)+",\n")
-	s = append(s, "HomeURL: "+fmt.Sprintf("%#v", this.HomeURL)+",\n")
-	s = append(s, "URL: "+fmt.Sprintf("%#v", this.URL)+",\n")
-	s = append(s, "ApproxSize: "+fmt.Sprintf("%#v", this.ApproxSize)+",\n")
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *CrateManifest) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 7)
-	s = append(s, "&crates.CrateManifest{")
-	if this.Info != nil {
-		s = append(s, "Info: "+fmt.Sprintf("%#v", this.Info)+",\n")
-	}
-	s = append(s, "IconBundleName: "+fmt.Sprintf("%#v", this.IconBundleName)+",\n")
-	if this.Bundles != nil {
-		s = append(s, "Bundles: "+fmt.Sprintf("%#v", this.Bundles)+",\n")
-	}
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func (this *CratesSnapshot) GoString() string {
-	if this == nil {
-		return "nil"
-	}
-	s := make([]string, 0, 7)
-	s = append(s, "&crates.CratesSnapshot{")
-	s = append(s, "RevID: "+fmt.Sprintf("%#v", this.RevID)+",\n")
-	s = append(s, "DownloadURL: "+fmt.Sprintf("%#v", this.DownloadURL)+",\n")
-	if this.Crates != nil {
-		s = append(s, "Crates: "+fmt.Sprintf("%#v", this.Crates)+",\n")
-	}
-	s = append(s, "}")
-	return strings.Join(s, "")
-}
-func valueToGoStringApiAmpCrates(v interface{}, typ string) string {
-	rv := reflect.ValueOf(v)
-	if rv.IsNil() {
-		return "nil"
-	}
-	pv := reflect.Indirect(rv).Interface()
-	return fmt.Sprintf("func(v %v) *%v { return &v } ( %#v )", typ, typ, pv)
 }
 func (m *KVEntry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
@@ -1987,6 +1507,489 @@ func encodeVarintApiAmpCrates(dAtA []byte, offset int, v uint64) int {
 	}
 	dAtA[offset] = uint8(v)
 	return base
+}
+func (this *KVEntry) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*KVEntry)
+	if !ok {
+		that2, ok := that.(KVEntry)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Key != that1.Key {
+		return false
+	}
+	if this.Value != that1.Value {
+		return false
+	}
+	return true
+}
+func (this *AppVars) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*AppVars)
+	if !ok {
+		that2, ok := that.(AppVars)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.AppDomain != that1.AppDomain {
+		return false
+	}
+	if this.AppDesc != that1.AppDesc {
+		return false
+	}
+	if this.OrgHomeURL != that1.OrgHomeURL {
+		return false
+	}
+	if this.AppHomeURL != that1.AppHomeURL {
+		return false
+	}
+	if this.CratesSnapshotURL != that1.CratesSnapshotURL {
+		return false
+	}
+	if len(this.AppDownloadURLs) != len(that1.AppDownloadURLs) {
+		return false
+	}
+	for i := range this.AppDownloadURLs {
+		if this.AppDownloadURLs[i] != that1.AppDownloadURLs[i] {
+			return false
+		}
+	}
+	if len(this.URLSchemes) != len(that1.URLSchemes) {
+		return false
+	}
+	for i := range this.URLSchemes {
+		if this.URLSchemes[i] != that1.URLSchemes[i] {
+			return false
+		}
+	}
+	if len(this.Settings) != len(that1.Settings) {
+		return false
+	}
+	for i := range this.Settings {
+		if this.Settings[i] != that1.Settings[i] {
+			return false
+		}
+	}
+	if len(this.Links) != len(that1.Links) {
+		return false
+	}
+	for i := range this.Links {
+		if !this.Links[i].Equal(that1.Links[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *AssetEntry) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*AssetEntry)
+	if !ok {
+		that2, ok := that.(AssetEntry)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.Flags != that1.Flags {
+		return false
+	}
+	if this.EntryURI != that1.EntryURI {
+		return false
+	}
+	if this.Label != that1.Label {
+		return false
+	}
+	if this.CenterX != that1.CenterX {
+		return false
+	}
+	if this.CenterY != that1.CenterY {
+		return false
+	}
+	if this.CenterZ != that1.CenterZ {
+		return false
+	}
+	if this.ExtentsX != that1.ExtentsX {
+		return false
+	}
+	if this.ExtentsY != that1.ExtentsY {
+		return false
+	}
+	if this.ExtentsZ != that1.ExtentsZ {
+		return false
+	}
+	if this.LocalURI != that1.LocalURI {
+		return false
+	}
+	if this.Tags != that1.Tags {
+		return false
+	}
+	if this.ShortDesc != that1.ShortDesc {
+		return false
+	}
+	return true
+}
+func (this *BundleManifest) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*BundleManifest)
+	if !ok {
+		that2, ok := that.(BundleManifest)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.BundleTitle != that1.BundleTitle {
+		return false
+	}
+	if this.BundleNameID != that1.BundleNameID {
+		return false
+	}
+	if len(this.Assets) != len(that1.Assets) {
+		return false
+	}
+	for i := range this.Assets {
+		if !this.Assets[i].Equal(that1.Assets[i]) {
+			return false
+		}
+	}
+	if this.LoadAllHint != that1.LoadAllHint {
+		return false
+	}
+	return true
+}
+func (this *CrateInfo) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*CrateInfo)
+	if !ok {
+		that2, ok := that.(CrateInfo)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.CrateSchema != that1.CrateSchema {
+		return false
+	}
+	if this.InstID != that1.InstID {
+		return false
+	}
+	if this.CrateURI != that1.CrateURI {
+		return false
+	}
+	if this.PublisherName != that1.PublisherName {
+		return false
+	}
+	if this.CrateName != that1.CrateName {
+		return false
+	}
+	if this.ShortDesc != that1.ShortDesc {
+		return false
+	}
+	if this.Tags != that1.Tags {
+		return false
+	}
+	if this.TimeCreated != that1.TimeCreated {
+		return false
+	}
+	if this.TimeBuilt != that1.TimeBuilt {
+		return false
+	}
+	if this.MajorVersion != that1.MajorVersion {
+		return false
+	}
+	if this.MinorVersion != that1.MinorVersion {
+		return false
+	}
+	if this.BuildNumber != that1.BuildNumber {
+		return false
+	}
+	if this.BuildID != that1.BuildID {
+		return false
+	}
+	if this.HomeURL != that1.HomeURL {
+		return false
+	}
+	if this.URL != that1.URL {
+		return false
+	}
+	if this.ApproxSize != that1.ApproxSize {
+		return false
+	}
+	return true
+}
+func (this *CrateManifest) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*CrateManifest)
+	if !ok {
+		that2, ok := that.(CrateManifest)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if !this.Info.Equal(that1.Info) {
+		return false
+	}
+	if this.IconBundleName != that1.IconBundleName {
+		return false
+	}
+	if len(this.Bundles) != len(that1.Bundles) {
+		return false
+	}
+	for i := range this.Bundles {
+		if !this.Bundles[i].Equal(that1.Bundles[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *CratesSnapshot) Equal(that interface{}) bool {
+	if that == nil {
+		return this == nil
+	}
+
+	that1, ok := that.(*CratesSnapshot)
+	if !ok {
+		that2, ok := that.(CratesSnapshot)
+		if ok {
+			that1 = &that2
+		} else {
+			return false
+		}
+	}
+	if that1 == nil {
+		return this == nil
+	} else if this == nil {
+		return false
+	}
+	if this.RevID != that1.RevID {
+		return false
+	}
+	if this.DownloadURL != that1.DownloadURL {
+		return false
+	}
+	if len(this.Crates) != len(that1.Crates) {
+		return false
+	}
+	for i := range this.Crates {
+		if !this.Crates[i].Equal(that1.Crates[i]) {
+			return false
+		}
+	}
+	return true
+}
+func (this *KVEntry) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&crates.KVEntry{")
+	s = append(s, "Key: "+fmt.Sprintf("%#v", this.Key)+",\n")
+	s = append(s, "Value: "+fmt.Sprintf("%#v", this.Value)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *AppVars) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 13)
+	s = append(s, "&crates.AppVars{")
+	s = append(s, "AppDomain: "+fmt.Sprintf("%#v", this.AppDomain)+",\n")
+	s = append(s, "AppDesc: "+fmt.Sprintf("%#v", this.AppDesc)+",\n")
+	s = append(s, "OrgHomeURL: "+fmt.Sprintf("%#v", this.OrgHomeURL)+",\n")
+	s = append(s, "AppHomeURL: "+fmt.Sprintf("%#v", this.AppHomeURL)+",\n")
+	s = append(s, "CratesSnapshotURL: "+fmt.Sprintf("%#v", this.CratesSnapshotURL)+",\n")
+	keysForAppDownloadURLs := make([]string, 0, len(this.AppDownloadURLs))
+	for k, _ := range this.AppDownloadURLs {
+		keysForAppDownloadURLs = append(keysForAppDownloadURLs, k)
+	}
+	github_com_gogo_protobuf_sortkeys.Strings(keysForAppDownloadURLs)
+	mapStringForAppDownloadURLs := "map[string]string{"
+	for _, k := range keysForAppDownloadURLs {
+		mapStringForAppDownloadURLs += fmt.Sprintf("%#v: %#v,", k, this.AppDownloadURLs[k])
+	}
+	mapStringForAppDownloadURLs += "}"
+	if this.AppDownloadURLs != nil {
+		s = append(s, "AppDownloadURLs: "+mapStringForAppDownloadURLs+",\n")
+	}
+	s = append(s, "URLSchemes: "+fmt.Sprintf("%#v", this.URLSchemes)+",\n")
+	keysForSettings := make([]string, 0, len(this.Settings))
+	for k, _ := range this.Settings {
+		keysForSettings = append(keysForSettings, k)
+	}
+	github_com_gogo_protobuf_sortkeys.Strings(keysForSettings)
+	mapStringForSettings := "map[string]string{"
+	for _, k := range keysForSettings {
+		mapStringForSettings += fmt.Sprintf("%#v: %#v,", k, this.Settings[k])
+	}
+	mapStringForSettings += "}"
+	if this.Settings != nil {
+		s = append(s, "Settings: "+mapStringForSettings+",\n")
+	}
+	if this.Links != nil {
+		s = append(s, "Links: "+fmt.Sprintf("%#v", this.Links)+",\n")
+	}
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *AssetEntry) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 16)
+	s = append(s, "&crates.AssetEntry{")
+	s = append(s, "Flags: "+fmt.Sprintf("%#v", this.Flags)+",\n")
+	s = append(s, "EntryURI: "+fmt.Sprintf("%#v", this.EntryURI)+",\n")
+	s = append(s, "Label: "+fmt.Sprintf("%#v", this.Label)+",\n")
+	s = append(s, "CenterX: "+fmt.Sprintf("%#v", this.CenterX)+",\n")
+	s = append(s, "CenterY: "+fmt.Sprintf("%#v", this.CenterY)+",\n")
+	s = append(s, "CenterZ: "+fmt.Sprintf("%#v", this.CenterZ)+",\n")
+	s = append(s, "ExtentsX: "+fmt.Sprintf("%#v", this.ExtentsX)+",\n")
+	s = append(s, "ExtentsY: "+fmt.Sprintf("%#v", this.ExtentsY)+",\n")
+	s = append(s, "ExtentsZ: "+fmt.Sprintf("%#v", this.ExtentsZ)+",\n")
+	s = append(s, "LocalURI: "+fmt.Sprintf("%#v", this.LocalURI)+",\n")
+	s = append(s, "Tags: "+fmt.Sprintf("%#v", this.Tags)+",\n")
+	s = append(s, "ShortDesc: "+fmt.Sprintf("%#v", this.ShortDesc)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *BundleManifest) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 8)
+	s = append(s, "&crates.BundleManifest{")
+	s = append(s, "BundleTitle: "+fmt.Sprintf("%#v", this.BundleTitle)+",\n")
+	s = append(s, "BundleNameID: "+fmt.Sprintf("%#v", this.BundleNameID)+",\n")
+	if this.Assets != nil {
+		s = append(s, "Assets: "+fmt.Sprintf("%#v", this.Assets)+",\n")
+	}
+	s = append(s, "LoadAllHint: "+fmt.Sprintf("%#v", this.LoadAllHint)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *CrateInfo) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 20)
+	s = append(s, "&crates.CrateInfo{")
+	s = append(s, "CrateSchema: "+fmt.Sprintf("%#v", this.CrateSchema)+",\n")
+	s = append(s, "InstID: "+fmt.Sprintf("%#v", this.InstID)+",\n")
+	s = append(s, "CrateURI: "+fmt.Sprintf("%#v", this.CrateURI)+",\n")
+	s = append(s, "PublisherName: "+fmt.Sprintf("%#v", this.PublisherName)+",\n")
+	s = append(s, "CrateName: "+fmt.Sprintf("%#v", this.CrateName)+",\n")
+	s = append(s, "ShortDesc: "+fmt.Sprintf("%#v", this.ShortDesc)+",\n")
+	s = append(s, "Tags: "+fmt.Sprintf("%#v", this.Tags)+",\n")
+	s = append(s, "TimeCreated: "+fmt.Sprintf("%#v", this.TimeCreated)+",\n")
+	s = append(s, "TimeBuilt: "+fmt.Sprintf("%#v", this.TimeBuilt)+",\n")
+	s = append(s, "MajorVersion: "+fmt.Sprintf("%#v", this.MajorVersion)+",\n")
+	s = append(s, "MinorVersion: "+fmt.Sprintf("%#v", this.MinorVersion)+",\n")
+	s = append(s, "BuildNumber: "+fmt.Sprintf("%#v", this.BuildNumber)+",\n")
+	s = append(s, "BuildID: "+fmt.Sprintf("%#v", this.BuildID)+",\n")
+	s = append(s, "HomeURL: "+fmt.Sprintf("%#v", this.HomeURL)+",\n")
+	s = append(s, "URL: "+fmt.Sprintf("%#v", this.URL)+",\n")
+	s = append(s, "ApproxSize: "+fmt.Sprintf("%#v", this.ApproxSize)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *CrateManifest) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 7)
+	s = append(s, "&crates.CrateManifest{")
+	if this.Info != nil {
+		s = append(s, "Info: "+fmt.Sprintf("%#v", this.Info)+",\n")
+	}
+	s = append(s, "IconBundleName: "+fmt.Sprintf("%#v", this.IconBundleName)+",\n")
+	if this.Bundles != nil {
+		s = append(s, "Bundles: "+fmt.Sprintf("%#v", this.Bundles)+",\n")
+	}
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *CratesSnapshot) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 7)
+	s = append(s, "&crates.CratesSnapshot{")
+	s = append(s, "RevID: "+fmt.Sprintf("%#v", this.RevID)+",\n")
+	s = append(s, "DownloadURL: "+fmt.Sprintf("%#v", this.DownloadURL)+",\n")
+	if this.Crates != nil {
+		s = append(s, "Crates: "+fmt.Sprintf("%#v", this.Crates)+",\n")
+	}
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func valueToGoStringApiAmpCrates(v interface{}, typ string) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("func(v %v) *%v { return &v } ( %#v )", typ, typ, pv)
 }
 func (m *KVEntry) Size() (n int) {
 	if m == nil {

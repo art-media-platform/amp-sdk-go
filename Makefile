@@ -5,7 +5,7 @@ PARENT_PATH := $(patsubst %/,%,$(dir $(BUILD_PATH)))
 UNITY_PROJ := ${PARENT_PATH}/amp-client-unity
 UNITY_PATH := $(shell python3 ${UNITY_PROJ}/amp-utils.py UNITY_PATH "${UNITY_PROJ}")
 AMP_UNITY_PATH = ${UNITY_PROJ}/Assets/AMP
-
+PROTOC := ${GOBIN}/protoc
 
 ## display this help message
 help:
@@ -24,6 +24,7 @@ help:
 
 ## install protobufs tools needed to turn a .proto file into Go and C# files
 tools-proto:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	go install github.com/gogo/protobuf/protoc-gen-gogoslick
 	go install github.com/gogo/protobuf/proto
 	go get     github.com/gogo/protobuf/jsonpb
@@ -31,23 +32,22 @@ tools-proto:
 	go get     github.com/gogo/protobuf/gogoproto
 
 
-
 ## generate .cs and .go from .proto files
 generate:
 #   protoc: https://github.com/protocolbuffers/protobuf/releases
-	protoc \
+	${PROTOC} \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.runtime/" \
 	    --proto_path=. \
 		amp/amp.proto
 
-	protoc \
+	${PROTOC} \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.std/" \
 	    --proto_path=. \
 		amp/std/std.proto
 
-	protoc \
+	${PROTOC} \
 	    --gogoslick_out=plugins:. --gogoslick_opt=paths=source_relative \
 	    --csharp_out "${AMP_UNITY_PATH}/amp.runtime.crates/" \
 	    --proto_path=. \
